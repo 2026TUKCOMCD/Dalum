@@ -1,0 +1,16 @@
+# 1차 크롤링 결과물
+output/**/*.csv
+
+# 2차 크롤링 결과물
+merged/**/*.csv
+
+# 최종 결과물
+final/**/*.csv
+
+# Python cache
+__pycache__/
+*.pyc
+
+# OS / Editor
+.DS_Store
+.vscode/
