@@ -20,6 +20,7 @@ CATEGORIES = {
     #OUTER
     "코트": "https://empty.seoul.kr/product/list.html?cate_no=93",
     "레더": "https://empty.seoul.kr/product/list.html?cate_no=90",
+    "퍼": "https://empty.seoul.kr/product/list.html?cate_no=148",
     "다운": "https://empty.seoul.kr/product/list.html?cate_no=109",
     #TOP
     "티셔츠": "https://empty.seoul.kr/product/list.html?cate_no=54",
@@ -49,6 +50,7 @@ CATEGORY_MAP = {
     #OUTER
     "코트": {"대분류": "OUTER", "중분류": "COAT"},
     "레더": {"대분류": "OUTER", "중분류": "JACKET"},
+    "퍼": {"대분류": "OUTER", "중분류": "JACKET"},
     "다운": {"대분류": "OUTER", "중분류": "PADDING"},
     #TOP
     "티셔츠": {"대분류": "TOP", "중분류": "TSHIRT"},
