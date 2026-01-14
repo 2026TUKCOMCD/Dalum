@@ -17,9 +17,11 @@ CATEGORIES = {
     "롱패딩": "https://www.musinsa.com/category/002013",
     "무스탕/퍼": "https://www.musinsa.com/category/002025",
     "레더자켓": "https://www.musinsa.com/category/002002",
+    "야상": "https://www.musinsa.com/category/002014",
     "싱글코트": "https://www.musinsa.com/category/002007",
     "더블코트": "https://www.musinsa.com/category/002024",
     "후드집업": "https://www.musinsa.com/category/002022",
+    "베스트": "https://www.musinsa.com/category/002021",
     #TOP
     "맨투맨/스웨트": "https://www.musinsa.com/category/001005",
     "후드": "https://www.musinsa.com/category/001004?gf=A",
@@ -62,9 +64,11 @@ CATEGORY_MAP = {
     "롱패딩": {"대분류": "OUTER","중분류": "PADDING"},
     "무스탕/퍼": {"대분류": "OUTER","중분류": "JACKET"},
     "레더자켓": {"대분류": "OUTER","중분류": "JACKET"},
+    "야상": {"대분류": "OUTER","중분류": "JACKET"},
     "싱글코트": {"대분류": "OUTER","중분류": "COAT"},
     "더블코트": {"대분류": "OUTER","중분류": "COAT"},
     "후드집업": {"대분류": "OUTER","중분류": "HOODED_ZIP_UP"},
+    "베스트": {"대분류": "OUTER","중분류": "VEST"},
     #TOP
     "맨투맨/스웨트": {"대분류": "TOP","중분류": "SWEATSHIRT"},
     "후드": {"대분류": "TOP","중분류": "HOODIE"},
