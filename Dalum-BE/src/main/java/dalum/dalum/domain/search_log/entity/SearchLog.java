@@ -22,7 +22,7 @@ public class SearchLog extends BaseEntity {
     private Member member;
 
     @Column(name = "input_image_url", nullable = false, columnDefinition = "TEXT")
-    private String InputImageUrl;
+    private String inputImageUrl;
 
     @Column(name = "brand")
     private String brand;
