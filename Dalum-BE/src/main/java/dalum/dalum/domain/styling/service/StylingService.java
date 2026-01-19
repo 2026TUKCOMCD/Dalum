@@ -2,7 +2,7 @@ package dalum.dalum.domain.styling.service;
 
 import dalum.dalum.domain.like_product.entity.LikeProduct;
 import dalum.dalum.domain.like_product.exception.LikeProductException;
-import dalum.dalum.domain.like_product.exception.code.LikeProductError;
+import dalum.dalum.domain.like_product.exception.code.LikeProductErrorCode;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.exception.MemberException;
@@ -50,7 +50,7 @@ public class StylingService {
                 () -> new ProductException(ProductErrorCode.NOT_FOUND));
 
         LikeProduct likeProduct = likeProductRepository.findById(targetProductId).orElseThrow(
-                () -> new LikeProductException(LikeProductError.NOT_FOUND));
+                () -> new LikeProductException(LikeProductErrorCode.NOT_FOUND));
 
         // AI 반환 결과 필요 -> 제품들이 리스트 형태로 반환
         List<Long> aiResultIds = new ArrayList<>();

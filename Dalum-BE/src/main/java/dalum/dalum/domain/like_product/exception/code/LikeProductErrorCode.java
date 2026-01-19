@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 
 @Getter
 @AllArgsConstructor
-public enum LikeProductError implements BaseErrorCode {
+public enum LikeProductErrorCode implements BaseErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND,
             "LIKE_PRODUCT_404_1",
             "해당 좋아요 제품을 찾지 못했습니다."),
