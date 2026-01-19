@@ -6,6 +6,7 @@ import dalum.dalum.domain.dupe_product.enitty.DupeProduct;
 import dalum.dalum.domain.dupe_product.repository.DupeProductRepository;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
+import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.domain.product.converter.ProductConverter;
 import dalum.dalum.domain.product.dto.response.ProductDto;
@@ -13,6 +14,7 @@ import dalum.dalum.domain.product.entity.Product;
 import dalum.dalum.domain.product.repository.ProductRepository;
 import dalum.dalum.domain.search_log.entity.SearchLog;
 import dalum.dalum.domain.search_log.repository.SearchLogRepository;
+import dalum.dalum.global.apipayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,7 +40,7 @@ public class DupeSearchService {
 
     public DupeSearchResponse searchDupe(Long memberId, DupeSearchRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 회원입니다."));
+                .orElseThrow(() -> new GeneralException(MemberErrorCode.NOT_FOUND));
 
         // s3 사용시에 필요
 //        MultipartFile file = request.image();
