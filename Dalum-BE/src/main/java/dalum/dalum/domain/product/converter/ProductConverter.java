@@ -16,6 +16,7 @@ public class ProductConverter {
         return ProductDto.builder()
                 .productId(product.getId())
                 .name(product.getProductName())
+                .category(product.getLargeCategory().name())
                 .brand(product.getBrand())
                 .price(product.getPrice())
                 .imageUrl(product.getImageUrl())

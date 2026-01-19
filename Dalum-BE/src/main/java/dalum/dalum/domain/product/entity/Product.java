@@ -1,5 +1,6 @@
 package dalum.dalum.domain.product.entity;
 
+import dalum.dalum.domain.product.enums.LargeCategory;
 import dalum.dalum.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,8 +21,9 @@ public class Product extends BaseEntity {
     private String shoppingMall;
 
     // 대분류, 중분류, 소분류는 어느정도 정형화된다 싶으면 enum으로 바꾸는 것을 고려
+    @Enumerated(EnumType.STRING)
     @Column(name = "large_category", nullable = false)
-    private String largeCategory;
+    private LargeCategory largeCategory;
 
     @Column(name = "medium_category", nullable = false)
     private String mediumCategory;
