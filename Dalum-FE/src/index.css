@@ -1,0 +1,26 @@
+@import "tailwindcss/preflight";
+@import "tailwindcss/utilities";
+@reference "tailwindcss/theme";
+
+html {
+  margin: 0px;
+  padding: 0px;
+  overflow-x: hidden;
+  height: auto;
+}
+
+body {
+  margin: 0px;
+  padding: 0px;
+  font-family: "pretendard", sans-serif;
+  min-height: 100vh;
+  height: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+  overflow-y: auto;
+  position: relative;
+  overflow-y: scroll;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+  background-color: #fafafa;
+}
