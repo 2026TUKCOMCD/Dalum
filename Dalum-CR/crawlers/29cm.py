@@ -2,122 +2,152 @@ from playwright.sync_api import sync_playwright
 import csv
 import time
 import re
+import os
 from urllib.parse import urlparse, parse_qs, urlencode, urlunparse
 
 # ===============================
 # 출력 설정
 # ===============================
-OUTPUT_CSV = "29cm_products.csv"
-MAX_PAGES_PER_CATEGORY = 300      # 안전장치(원하면 키워)
+OUTPUT_DIR = "/Users/kang/Desktop/Dalum/Dalum-CR/output/29cm"
+MAX_PAGES_PER_CATEGORY = 9999
 PAGE_PAUSE_SEC = 0.25
-EMPTY_PAGES_STOP = 2              # 연속 N페이지 신규 0개면 종료
-
+EMPTY_PAGES_STOP = 2
 
 # ===============================
-# ✅ URL만 채우면 되는 템플릿
-# key: (대분류, 중분류, 하위분류)
-# value: 29cm category list URL (page=1 포함)
+# 카테고리 구조
 # ===============================
 CATEGORIES = {
-    # ---------------- OUTER / 아우터 ----------------
-    ("OUTER", "아우터", "야상"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102122&page=1",
-    ("OUTER", "아우터", "블루종"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102123&page=1",
-    ("OUTER", "아우터", "바시티"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102124&page=1",
-    ("OUTER", "아우터", "데님 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102125&page=1",
-    ("OUTER", "아우터", "퍼 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102126&page=1",
-    ("OUTER", "아우터", "트레이닝 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102127&page=1",
-    ("OUTER", "아우터", "점퍼"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102128&page=1",
-    ("OUTER", "아우터", "바람막이"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102129&page=1",
-    ("OUTER", "아우터", "아노락"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102130&page=1",
-    ("OUTER", "아우터", "후드 집업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102109&page=1",
-    ("OUTER", "아우터", "플리스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102114&page=1",
-    ("OUTER", "아우터", "무스탕"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102116&page=1",
-    ("OUTER", "아우터", "트렌치/맥코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102102&page=1",
-    ("OUTER", "아우터", "나일론/코치 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102112&page=1",
-    ("OUTER", "아우터", "베스트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102106&page=1",
-    ("OUTER", "아우터", "레더 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102111&page=1",
-    ("OUTER", "아우터", "블레이저"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102110&page=1",
-    ("OUTER", "아우터", "숏코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102117&page=1",
-    ("OUTER", "아우터", "하프코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102118&page=1",
-    ("OUTER", "아우터", "롱코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102119&page=1",
-    ("OUTER", "아우터", "경량패딩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102105&page=1",
-    ("OUTER", "아우터", "숏패딩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102104&page=1",
-    ("OUTER", "아우터", "롱패딩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102103&page=1",
-    ("OUTER", "아우터", "기타 아우터"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102113&page=1",
+    # ---------------- OUTER ----------------
+    ("OUTER", "PADDING", "야상"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102122&page=1",
+    ("OUTER", "PADDING", "경량패딩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102105&page=1",
+    ("OUTER", "PADDING", "숏패딩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102104&page=1",
+    ("OUTER", "PADDING", "롱패딩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102103&page=1",
+    ("OUTER", "PADDING", "베스트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102106&page=1",
+    
+    ("OUTER", "COAT", "트렌치/맥코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102102&page=1",
+    ("OUTER", "COAT", "숏코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102117&page=1",
+    ("OUTER", "COAT", "하프코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102118&page=1",
+    ("OUTER", "COAT", "롱코트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102119&page=1",
+    
+    ("OUTER", "JACKET", "블루종"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102123&page=1",
+    ("OUTER", "JACKET", "바시티"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102124&page=1",
+    ("OUTER", "JACKET", "데님 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102125&page=1",
+    ("OUTER", "JACKET", "퍼 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102126&page=1",
+    ("OUTER", "JACKET", "트레이닝 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102127&page=1",
+    ("OUTER", "JACKET", "점퍼"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102128&page=1",
+    ("OUTER", "JACKET", "바람막이"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102129&page=1",
+    ("OUTER", "JACKET", "아노락"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102130&page=1",
+    ("OUTER", "JACKET", "나일론/코치 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102112&page=1",
+    ("OUTER", "JACKET", "레더 재킷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102111&page=1",
+    ("OUTER", "JACKET", "블레이저"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102110&page=1",
+    ("OUTER", "JACKET", "무스탕"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102116&page=1",
+    
+    ("OUTER", "VEST", "베스트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102106&page=1",
+    
+    ("OUTER", "CARDIGAN", "카디건"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110104&page=1",
+    
+    ("OUTER", "HOODED_ZIP_UP", "후드 집업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102109&page=1",
+    ("OUTER", "HOODED_ZIP_UP", "집업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103109&page=1",
+    ("OUTER", "HOODED_ZIP_UP", "니트 집업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110106&page=1",
+    
+    ("OUTER", "ETC_OUTER", "기타 아우터"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102113&page=1",
 
-    # ---------------- TOP / 상의 ----------------
-    ("TOP", "상의", "반소매 셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103105&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "상의", "반소매 티셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103101&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "상의", "피케/카라 티셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103104&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=x",
-    ("TOP", "상의", "슬리브리스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103103&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "상의", "스웨트셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103107&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "상의", "후디"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103108&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "상의", "집업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103109&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "상의", "긴소매 셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103106&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "상의", "긴소매 티셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103102&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
+    # ---------------- TOP ----------------
+    ("TOP", "TSHIRT", "반소매 티셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103101&page=1",
+    ("TOP", "TSHIRT", "긴소매 티셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103102&page=1",
+    ("TOP", "TSHIRT", "피케/카라 티셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103104&page=1",
+    ("TOP", "TSHIRT", "슬리브리스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103103&page=1",
+    
+    ("TOP", "SHIRT_BLOUSE", "반소매 셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103105&page=1",
+    ("TOP", "SHIRT_BLOUSE", "긴소매 셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103106&page=1",
+    
+    ("TOP", "SWEATSHIRT", "스웨트셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103107&page=1",
+    
+    ("TOP", "HOODIE", "후디"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272103100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272103108&page=1",
+    ("TOP", "HOODIE", "니트 후드"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110108&page=1",
+    
+    ("TOP", "KNIT", "크루넥"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110101&page=1",
+    ("TOP", "KNIT", "브이넥"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110102&page=1",
+    ("TOP", "KNIT", "터틀넥"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110103&page=1",
+    ("TOP", "KNIT", "폴로셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110107&page=1",
+    ("TOP", "KNIT", "니트 베스트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110105&page=1",
+    ("TOP", "FLEECE", "플리스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272102100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272102114&page=1",
+    ("TOP", "ETC_TOP", "기타 니트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110109&page=1",
+    
+    # ---------------- BOTTOM ----------------
+    ("BOTTOM", "DENIM", "데님 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104104&page=1",
+    
+    ("BOTTOM", "SLACKS", "슬랙스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104106&page=1",
+    
+    ("BOTTOM", "COTTON_PANTS", "코튼 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104105&page=1",
+    ("BOTTOM", "COTTON_PANTS", "슬림 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104103&page=1",
+    ("BOTTOM", "COTTON_PANTS", "스트레이트 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104101&page=1",
+    ("BOTTOM", "COTTON_PANTS", "와이드 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104102&page=1",
+    ("BOTTOM", "COTTON_PANTS", "부츠컷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104109&page=1",
+    
+    ("BOTTOM", "TRAINING_PANTS", "트레이닝 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104107&page=1",
+    
+    ("BOTTOM", "SHORTS", "쇼트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104108&page=1",
+    
+    ("BOTTOM", "LEGGINGS", "레깅스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104110&page=1",
+    
+    ("BOTTOM", "ETC_BOTTOM", "기타 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104111&page=1",
 
-    # ---------------- TOP / 니트웨어 ----------------
-    ("TOP", "니트웨어", "기타 니트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110109&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "크루넥"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110101&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "브이넥"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110102&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "터틀넥"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110103&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "폴로셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110107&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "니트 집업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110106&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "카디건"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110104&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "니트 베스트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110105&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("TOP", "니트웨어", "니트 후드"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272110100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272110108&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
+    # ---------------- DRESS ----------------
+    ("DRESS", "SETUP", "수트 셋업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272112100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272112101&page=1",
+    ("DRESS", "SETUP", "기타 상하의 셋업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272112100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272112104&page=1",
+    ("DRESS", "SETUP", "스웻/트레이닝 셋업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272112100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272112103&page=1",
+    ("DRESS", "SETUP", "홈웨어 세트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272113100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272113103&page=1",
+    ("DRESS", "SETUP", "로브"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272113100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272113104&page=1",
 
-    # ---------------- BOTTOM / 하의 ----------------
-    ("BOTTOM", "하의", "부츠컷"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104109&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "레깅스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104110&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "쇼트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104108&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "슬림 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104103&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "스트레이트 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104101&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "와이드 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104102&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "데님 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104104&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "트레이닝 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104107&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "슬랙스"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104106&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "코튼 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104105&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "하의", "기타 팬츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272104100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272104111&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
+    # ---------------- BAG ----------------
+    ("BAG", "BACKPACK", "백팩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273104100",
+    
+    ("BAG", "CROSSBODY", "크로스백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273101100",
+    ("BAG", "CROSSBODY", "웨이스트백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273102100",
+    
+    ("BAG", "SHOULDER", "숄더백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273105100",
+    
+    ("BAG", "TOTE", "토트백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273103100",
+    ("BAG", "TOTE", "에코/캔버스백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273107100",
+    
+    ("BAG", "CLUTCH", "클러치"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273115100",
+    
+    ("BAG", "ETC_BAG", "보스턴백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273119100",
+    ("BAG", "ETC_BAG", "캐리어/여행가방"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273118100",
+    ("BAG", "ETC_BAG", "랩탑백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273106100",
+    ("BAG", "ETC_BAG", "기타 가방"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=273110100",
 
-    # ---------------- TOP/BOTTOM/DRESS / 홈웨어 ----------------
-    ("TOP", "홈웨어", "홈웨어 상의"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272113100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272113101&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BOTTOM", "홈웨어", "홈웨어 하의"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272113100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272113102&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("DRESS", "홈웨어", "홈웨어 세트"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272113100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272113103&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("DRESS", "홈웨어", "로브"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272113100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272113104&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
+    # ---------------- SHOES ----------------
+    ("SHOES", "SNEAKERS", "스니커즈"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=274101100",
+    
+    ("SHOES", "BOOTS", "부츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=274104100",
+    
+    ("SHOES", "LOAFER", "로퍼"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=274102100",
+    ("SHOES", "LOAFER", "구두"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=274103100",
+    
+    ("SHOES", "SANDAL_SLIPPER", "샌들"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=274105100",
+    ("SHOES", "SANDAL_SLIPPER", "슬리퍼"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=274110100",
+    
+    ("SHOES", "SPORTS_SHOES", "기능화"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categoryMediumCode=274115100",
 
-    # ---------------- DRESS / 셋업 ----------------
-    ("DRESS", "셋업", "수트 셋업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272112100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272112101&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("DRESS", "셋업", "기타 상하의 셋업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272112100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272112104&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("DRESS", "셋업", "스웻/트레이닝 셋업"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272112100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272112103&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-
-    # ---------------- ACCESSORY / 이너웨어 ----------------
-    ("ACCESSORY", "이너웨어", "팬티"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272105100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272105101&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("ACCESSORY", "이너웨어", "언더셔츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272105100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272105102&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("ACCESSORY", "이너웨어", "내의/내복"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272105100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272105104&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("ACCESSORY", "이너웨어", "기타 언더웨어"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=272100100&categoryMediumCode=272105100&sort=RECOMMENDED&defaultSort=RECOMMENDED&categorySmallCode=272105105&page=1&colors=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-
-    # ---------------- BAG / 가방 ----------------
-    ("BAG", "가방", "보스턴백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273119100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "캐리어/여행가방"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273118100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "크로스백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273101100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "토트백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273103100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "웨이스트백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273102100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "백팩"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273104100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "숄더백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273105100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "랩탑백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273106100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "에코/캔버스백"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273107100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "클러치"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273115100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("BAG", "가방", "기타 가방"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=273100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=273110100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-
-    # ---------------- SHOES / 신발 ----------------
-    ("SHOES", "신발", "스니커즈"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=274101100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("SHOES", "신발", "기능화"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=274115100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("SHOES", "신발", "구두"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=274103100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("SHOES", "신발", "부츠"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=274104100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("SHOES", "신발", "로퍼"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=274102100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("SHOES", "신발", "샌들"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=274105100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
-    ("SHOES", "신발", "슬리퍼"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=274100100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&colors=&categoryMediumCode=274110100&categorySmallCode=&minPrice=&maxPrice=&isFreeShipping=&excludeSoldOut=&isDiscount=&brands=&tag=&extraFacets=&attributes=&ticketEndDate=&ticketStartDate=",
+    # ---------------- HAT ----------------
+    ("HAT", "CAP", "볼캡"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101103",
+    ("HAT", "CAP", "버킷햇"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101101",
+    ("HAT", "CAP", "선캡/바이저"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101109",
+    
+    ("HAT", "BEANIE", "비니"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101104",
+    ("HAT", "BEANIE", "워치캡"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101110",
+    
+    ("HAT", "BALACLAVA", "바라클라바"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101106",
+    
+    ("HAT", "TROOPER", "트루퍼"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101107",
+    
+    ("HAT", "FEDORA", "페도라"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101105",
+    
+    ("HAT", "BERET", "베레모"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101102",
+    
+    ("HAT", "ETC_HAT", "기타 모자"): "https://www.29cm.co.kr/store/category/list?categoryLargeCode=275100100&categoryMediumCode=275101100&sort=RECOMMENDED&defaultSort=RECOMMENDED&page=1&categorySmallCode=275101108",
 }
 
 
@@ -152,7 +182,7 @@ def calc_original_price(sell_price: str, discount_rate: str) -> str:
 
 
 # ===============================
-# 목록 카드 추출 JS
+# 개선된 가격 추출 JavaScript
 # ===============================
 JS_EXTRACT = r"""
 () => {
@@ -174,16 +204,52 @@ JS_EXTRACT = r"""
 
     const box = a.closest("li") || a.parentElement || a;
 
+    // ⭐ 개선: 가격 박스를 더 정확하게 찾기
     let price = "", discount = "";
-    let priceBox = box?.querySelector("div.items-center");
-    if (!priceBox) priceBox = box?.querySelector("div[class*='items-center']");
+    
+    // 방법 1: text-primary 또는 text-xxl-bold 클래스가 있는 div 찾기 (가격 박스의 특징)
+    let priceBox = null;
+    const priceBoxCandidates = box?.querySelectorAll("div.items-center") || [];
+    
+    for (const candidate of priceBoxCandidates) {
+      // p 태그가 있고, 그 안에 숫자나 %가 있는 것만 가격 박스로 인정
+      const ps = candidate.querySelectorAll("p");
+      if (ps.length > 0) {
+        const hasPrice = Array.from(ps).some(p => {
+          const text = (p.textContent || "").trim();
+          return /\d/.test(text) || text.includes("%");
+        });
+        
+        if (hasPrice) {
+          priceBox = candidate;
+          break;
+        }
+      }
+    }
+    
     if (priceBox) {
-      const ps = priceBox.querySelectorAll("p");
-      if (ps.length >= 2) {
-        discount = (ps[0].textContent || "").trim();
-        price = (ps[1].textContent || "").trim();
-      } else if (ps.length === 1) {
-        price = (ps[0].textContent || "").trim();
+      const ps = Array.from(priceBox.querySelectorAll("p"));
+      const texts = ps.map(p => (p.textContent || "").trim()).filter(Boolean);
+      
+      // 할인율 찾기
+      const discountItem = texts.find(t => t.includes("%"));
+      if (discountItem) {
+        discount = discountItem;
+      }
+      
+      // 가격 찾기
+      const priceItem = texts.find(t => !t.includes("%") && /\d/.test(t));
+      if (priceItem) {
+        price = priceItem;
+      }
+    }
+    
+    // 방법 2: 여전히 못 찾았으면 box 전체에서 "숫자+원" 패턴 찾기
+    if (!price && box) {
+      const allText = box.innerText || "";
+      const priceMatch = allText.match(/(\d{1,3}(?:,\d{3})*)\s*원/);
+      if (priceMatch) {
+        price = priceMatch[1];
       }
     }
 
@@ -206,96 +272,119 @@ JS_EXTRACT = r"""
 # 메인 크롤러
 # ===============================
 def scrape():
-    with open(OUTPUT_CSV, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.DictWriter(
-            f,
-            fieldnames=[
-                "대분류",
-                "중분류",
-                "카테고리",
-                "상품명",
-                "브랜드",
-                "정가",
-                "판매가",
-                "할인율(%)",
-                "상품 URL",
-                "이미지 URL",
-            ],
-        )
-        writer.writeheader()
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    
+    data_by_category = {
+        "OUTER": [],
+        "TOP": [],
+        "BOTTOM": [],
+        "DRESS": [],
+        "BAG": [],
+        "SHOES": [],
+        "HAT": []
+    }
+    
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=True)
+        context = browser.new_context(viewport={"width": 1400, "height": 900})
 
-        with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            context = browser.new_context(viewport={"width": 1400, "height": 900})
+        def block(route, request):
+            if request.resource_type in ["image", "media", "font"]:
+                return route.abort()
+            return route.continue_()
 
-            def block(route, request):
-                if request.resource_type in ["image", "media", "font"]:
-                    return route.abort()
-                return route.continue_()
+        page = context.new_page()
+        page.route("**/*", block)
 
-            page = context.new_page()
-            page.route("**/*", block)
+        seen = set()
 
-            seen = set()
+        for (main_cat, sub_cat, original_cat), base_url in CATEGORIES.items():
+            if not base_url.strip():
+                print(f"⏭ URL 없음 → 스킵: {main_cat}/{sub_cat}/{original_cat}")
+                continue
 
-            for (main_cat, mid_cat, sub_cat), base_url in CATEGORIES.items():
-                if not base_url.strip():
-                    print(f"⏭ URL 없음 → 스킵: {main_cat}/{mid_cat}/{sub_cat}")
-                    continue
+            print(f"\n📂 START: {main_cat} / {sub_cat} / {original_cat}")
+            empty_pages = 0
 
-                print(f"\n📂 START: {main_cat} / {mid_cat} / {sub_cat}")
-                empty_pages = 0
+            for page_num in range(1, MAX_PAGES_PER_CATEGORY + 1):
+                url = set_page(base_url, page_num)
+                print(f"  ▶ page={page_num}")
 
-                for page_num in range(1, MAX_PAGES_PER_CATEGORY + 1):
-                    url = set_page(base_url, page_num)
-                    print(f"  ▶ page={page_num}")
+                try:
+                    page.goto(url, wait_until="domcontentloaded", timeout=60000)
+                    page.wait_for_selector("a[href^='https://product.29cm.co.kr/catalog/']", timeout=30000)
+                except Exception:
+                    break
 
-                    try:
-                        page.goto(url, wait_until="domcontentloaded", timeout=60000)
-                        page.wait_for_selector("a[href^='https://product.29cm.co.kr/catalog/']", timeout=30000)
-                    except Exception:
+                time.sleep(PAGE_PAUSE_SEC)
+                items = page.evaluate(JS_EXTRACT)
+
+                added = 0
+                for it in items:
+                    href = it.get("href", "")
+                    if not href or href in seen:
+                        continue
+                    seen.add(href)
+                    added += 1
+
+                    sell = only_digits(it.get("price", ""))
+                    rate = only_digits(it.get("discount", ""))
+                    original = calc_original_price(sell, rate)
+
+                    row = {
+                        "대분류": main_cat,
+                        "중분류": sub_cat,
+                        "카테고리": original_cat,
+                        "상품명": it.get("name", "") or "",
+                        "브랜드": it.get("brand", "") or "",
+                        "정가": original,
+                        "판매가": sell,
+                        "할인율(%)": rate,
+                        "상품 URL": href,
+                        "이미지 URL": it.get("imgUrl", "") or "",
+                    }
+                    
+                    data_by_category[main_cat].append(row)
+
+                if added == 0:
+                    empty_pages += 1
+                    if empty_pages >= EMPTY_PAGES_STOP:
                         break
+                else:
+                    empty_pages = 0
 
-                    time.sleep(PAGE_PAUSE_SEC)
-                    items = page.evaluate(JS_EXTRACT)
+            print(f"✅ END: {main_cat}/{sub_cat}/{original_cat}")
 
-                    added = 0
-                    for it in items:
-                        href = it.get("href", "")
-                        if not href or href in seen:
-                            continue
-                        seen.add(href)
-                        added += 1
+        browser.close()
 
-                        sell = only_digits(it.get("price", ""))
-                        rate = only_digits(it.get("discount", ""))
-                        original = calc_original_price(sell, rate)
+    # CSV 저장
+    fieldnames = [
+        "대분류",
+        "중분류",
+        "카테고리",
+        "상품명",
+        "브랜드",
+        "정가",
+        "판매가",
+        "할인율(%)",
+        "상품 URL",
+        "이미지 URL",
+    ]
+    
+    total_count = 0
+    for large_cat, rows in data_by_category.items():
+        if not rows:
+            continue
+        
+        output_file = os.path.join(OUTPUT_DIR, f"{large_cat}.csv")
+        with open(output_file, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writerows(rows)
+        
+        total_count += len(rows)
+        print(f"\n✅ {large_cat} CSV 저장 완료: {output_file} ({len(rows):,}개)")
 
-                        writer.writerow({
-                            "대분류": main_cat,
-                            "중분류": mid_cat,
-                            "카테고리": sub_cat,
-                            "상품명": it.get("name", "") or "",
-                            "브랜드": it.get("brand", "") or "",
-                            "정가": original,
-                            "판매가": sell,
-                            "할인율(%)": rate,
-                            "상품 URL": href,
-                            "이미지 URL": it.get("imgUrl", "") or "",
-                        })
-
-                    if added == 0:
-                        empty_pages += 1
-                        if empty_pages >= EMPTY_PAGES_STOP:
-                            break
-                    else:
-                        empty_pages = 0
-
-                print(f"✅ END: {main_cat}/{mid_cat}/{sub_cat}")
-
-            browser.close()
-
-    print(f"\n✅ CSV 생성 완료: {OUTPUT_CSV}")
+    print(f"\n✅ 전체 CSV 저장 완료: {OUTPUT_DIR}/ (총 {total_count:,}개)")
 
 
 if __name__ == "__main__":
