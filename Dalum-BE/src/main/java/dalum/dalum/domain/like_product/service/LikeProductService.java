@@ -1,5 +1,6 @@
 package dalum.dalum.domain.like_product.service;
 
+import dalum.dalum.domain.like_product.converter.LikeProductConverter;
 import dalum.dalum.domain.like_product.dto.response.LikeToggleResponse;
 import dalum.dalum.domain.like_product.entity.LikeProduct;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
@@ -33,13 +34,13 @@ public class LikeProductService {
                 () -> new ProductException(ProductErrorCode.NOT_FOUND));
 
         // 좋아요 여부 검증
-        boolean isLiked = getIsLiked(member, product);
+        boolean isLiked = toggleAction(member, product);
         
-        return new LikeToggleResponse(isLiked);
+        return LikeProductConverter.toLikeToggleResponse(isLiked);
     }
 
 
-    private Boolean getIsLiked(Member member, Product product) {
+    private Boolean toggleAction(Member member, Product product) {
         // 좋아요가 등록되어 있다면 좋아요 취소
         return likeProductRepository.findByMemberAndProduct(member, product)
                 .map(likeProduct -> {
