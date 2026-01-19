@@ -10,7 +10,7 @@ import java.util.List;
 public record StylingRecommendationResponse(
         Long stylingId,
         ProductDto mainItem,
-        List<ProductDto> resultItems,
+        List<RecommendationCategoryResponse> resultItems,
         LocalDateTime createdAt
 ) {
 }

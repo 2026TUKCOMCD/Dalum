@@ -12,7 +12,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
-@EnableJpaAuditing
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/v1")
