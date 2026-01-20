@@ -10,8 +10,12 @@ import org.springframework.http.HttpStatus;
 public enum StylingSuccessCode implements BaseSuccessCode {
     OK(HttpStatus.OK,
             "STYLING200_1",
-            "요청 성공")
+            "스타일링을 성공적으로 조회하였습니다."),
+    CREATED(HttpStatus.CREATED,
+            "STYLING201_1",
+            "스타일링이 성공적으로 생성되었습니다.")
     ;
+
     private final HttpStatus status;
     private final String code;
     private final String message;

@@ -1,22 +1,18 @@
 package dalum.dalum.domain.styling.service;
 
 import dalum.dalum.domain.like_product.entity.LikeProduct;
-import dalum.dalum.domain.like_product.exception.LikeProductException;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
-import dalum.dalum.domain.member.exception.MemberException;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.domain.product.converter.ProductConverter;
 import dalum.dalum.domain.product.dto.response.ProductDto;
 import dalum.dalum.domain.product.entity.Product;
-import dalum.dalum.domain.product.exception.ProductException;
 import dalum.dalum.domain.product.repository.ProductRepository;
 import dalum.dalum.domain.styling.converter.StylingConverter;
 import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
 import dalum.dalum.domain.styling.entity.Styling;
 import dalum.dalum.domain.styling.repository.StylingRepository;
 import dalum.dalum.domain.styling_product.repository.StylingProductRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +33,7 @@ import static org.mockito.Mockito.*;
 class StylingServiceTest {
 
     @InjectMocks
-    private StylingService stylingService; // 진짜 서비스 (여기에 가짜들을 주입)
+    private StylingServiceImpl stylingService; // 진짜 서비스 (여기에 가짜들을 주입)
 
     @Mock
     private MemberRepository memberRepository;
