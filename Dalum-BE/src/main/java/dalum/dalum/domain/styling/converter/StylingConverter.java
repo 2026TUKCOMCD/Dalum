@@ -1,14 +1,12 @@
 package dalum.dalum.domain.styling.converter;
 
 import dalum.dalum.domain.product.dto.response.ProductDto;
-import dalum.dalum.domain.product.enums.LargeCategory;
-import dalum.dalum.domain.styling.dto.response.MyStylingResponse;
+import dalum.dalum.domain.styling.dto.response.StylingSaveResponse;
 import dalum.dalum.domain.styling.dto.response.RecommendationCategoryResponse;
 import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
 import dalum.dalum.domain.styling.entity.Styling;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,11 +37,9 @@ public class StylingConverter {
                 .build();
     }
 
-    public static MyStylingResponse toMyStylingResponse(Styling styling, List<ProductDto> products) {
-        return MyStylingResponse.builder()
-                .stylingId(styling.getId())
-                .createdAt(styling.getCreatedAt())
-                .products(products)
+    public static StylingSaveResponse toStylingSaveResponse(Long stylingId) {
+        return StylingSaveResponse.builder()
+                .stylingId(stylingId)
                 .build();
     }
 

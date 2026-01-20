@@ -40,4 +40,8 @@ public class Styling extends BaseEntity {
         stylingProducts.add(stylingProduct);
         stylingProduct.setStyling(this);
     }
+
+    public void confirmSave() {
+        this.isScrapped = true; // 스타일링 저장 메소드
+    }
 }

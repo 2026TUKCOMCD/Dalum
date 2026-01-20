@@ -15,8 +15,11 @@ import dalum.dalum.domain.product.exception.ProductException;
 import dalum.dalum.domain.product.exception.code.ProductErrorCode;
 import dalum.dalum.domain.product.repository.ProductRepository;
 import dalum.dalum.domain.styling.converter.StylingConverter;
+import dalum.dalum.domain.styling.dto.response.StylingSaveResponse;
 import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
 import dalum.dalum.domain.styling.entity.Styling;
+import dalum.dalum.domain.styling.exception.StylingException;
+import dalum.dalum.domain.styling.exception.code.StylingErrorCode;
 import dalum.dalum.domain.styling.repository.StylingRepository;
 import dalum.dalum.domain.styling_product.repository.StylingProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -42,6 +45,7 @@ public class StylingServiceImpl implements StylingService {
     private final ProductConverter productConverter;
     private final StylingConverter stylingConverter;
 
+    @Override
     public StylingRecommendationResponse createRecommendation(Long memberId, Long targetProductId) {
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));
@@ -78,6 +82,18 @@ public class StylingServiceImpl implements StylingService {
 
         StylingRecommendationResponse response = stylingConverter.toResponse(styling, mainProductDto, recommendProductsDtos);
 
+        return response;
+
+    }
+
+    @Override
+    public StylingSaveResponse saveStyling(Long memberId, Long stylingId) {
+        Styling styling = stylingRepository.findById(stylingId).orElseThrow(
+                () -> new StylingException(StylingErrorCode.NOT_FOUND));
+
+        styling.confirmSave();
+
+        StylingSaveResponse response = stylingConverter.toStylingSaveResponse(styling.getId());
         return response;
 
     }
