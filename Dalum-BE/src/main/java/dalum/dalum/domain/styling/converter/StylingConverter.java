@@ -37,7 +37,7 @@ public class StylingConverter {
                 .build();
     }
 
-    public static StylingSaveResponse toStylingSaveResponse(Long stylingId) {
+    public StylingSaveResponse toStylingSaveResponse(Long stylingId) {
         return StylingSaveResponse.builder()
                 .stylingId(stylingId)
                 .build();
