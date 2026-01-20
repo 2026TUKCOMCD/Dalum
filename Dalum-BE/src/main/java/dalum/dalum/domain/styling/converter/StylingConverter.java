@@ -1,7 +1,7 @@
 package dalum.dalum.domain.styling.converter;
 
 import dalum.dalum.domain.product.dto.response.ProductDto;
-import dalum.dalum.domain.product.enums.LargeCategory;
+import dalum.dalum.domain.styling.dto.response.StylingSaveResponse;
 import dalum.dalum.domain.styling.dto.response.RecommendationCategoryResponse;
 import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
 import dalum.dalum.domain.styling.entity.Styling;
@@ -36,4 +36,11 @@ public class StylingConverter {
                 .resultItems(recommendations)
                 .build();
     }
+
+    public StylingSaveResponse toStylingSaveResponse(Long stylingId) {
+        return StylingSaveResponse.builder()
+                .stylingId(stylingId)
+                .build();
+    }
+
 }

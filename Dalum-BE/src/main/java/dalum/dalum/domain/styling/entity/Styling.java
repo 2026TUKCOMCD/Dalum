@@ -5,6 +5,7 @@ import dalum.dalum.domain.styling_product.entity.StylingProduct;
 import dalum.dalum.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,9 @@ public class Styling extends BaseEntity {
     @Id
     @GeneratedValue
     private Long id;
+
+    @ColumnDefault("false")
+    private boolean isScrapped;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id", nullable = false)
@@ -35,5 +39,9 @@ public class Styling extends BaseEntity {
     public void addStylingProduct(StylingProduct stylingProduct) {
         stylingProducts.add(stylingProduct);
         stylingProduct.setStyling(this);
+    }
+
+    public void confirmSave() {
+        this.isScrapped = true; // 스타일링 저장 메소드
     }
 }

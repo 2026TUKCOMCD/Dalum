@@ -1,22 +1,19 @@
 package dalum.dalum.domain.styling.service;
 
 import dalum.dalum.domain.like_product.entity.LikeProduct;
-import dalum.dalum.domain.like_product.exception.LikeProductException;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
-import dalum.dalum.domain.member.exception.MemberException;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.domain.product.converter.ProductConverter;
 import dalum.dalum.domain.product.dto.response.ProductDto;
 import dalum.dalum.domain.product.entity.Product;
-import dalum.dalum.domain.product.exception.ProductException;
 import dalum.dalum.domain.product.repository.ProductRepository;
 import dalum.dalum.domain.styling.converter.StylingConverter;
 import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
+import dalum.dalum.domain.styling.dto.response.StylingSaveResponse;
 import dalum.dalum.domain.styling.entity.Styling;
 import dalum.dalum.domain.styling.repository.StylingRepository;
 import dalum.dalum.domain.styling_product.repository.StylingProductRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -37,7 +34,7 @@ import static org.mockito.Mockito.*;
 class StylingServiceTest {
 
     @InjectMocks
-    private StylingService stylingService; // 진짜 서비스 (여기에 가짜들을 주입)
+    private StylingServiceImpl stylingService; // 진짜 서비스 (여기에 가짜들을 주입)
 
     @Mock
     private MemberRepository memberRepository;
@@ -105,6 +102,41 @@ class StylingServiceTest {
         // Then
         assertThat(response).isNotNull();
         verify(stylingRepository, times(1)).save(any(Styling.class));
+    }
+
+    @Test
+    @DisplayName("스타일링 저장 성공")
+    void testSaveStylingSuccess() {
+        // Given
+        Long stylingId = 100L;
+        Long memberId = 1L;
+
+        Member testMember = Member.builder().id(memberId).build();
+        LikeProduct testLikeProduct = LikeProduct.builder().member(testMember).build();
+        Styling testStyling = Styling.builder()
+                .id(stylingId)
+                .member(testMember)
+                .likeProduct(testLikeProduct)
+                .build();
+
+        StylingSaveResponse mockResponse = StylingSaveResponse.builder().stylingId(stylingId).build();
+
+        // 1. Repository Mocking
+        when(stylingRepository.findById(stylingId))
+                .thenReturn(Optional.of(testStyling));
+
+        // 2. Converter Mocking
+        when(stylingConverter.toStylingSaveResponse(stylingId))
+                .thenReturn(mockResponse);
+
+        // When
+        StylingSaveResponse response = stylingService.saveStyling(memberId, stylingId);
+
+        // Then
+        assertThat(response).isNotNull();
+        assertThat(response.stylingId()).isEqualTo(stylingId);
+        verify(stylingRepository, times(1)).findById(stylingId);
+        verify(stylingConverter, times(1)).toStylingSaveResponse(stylingId);
     }
 
 }
