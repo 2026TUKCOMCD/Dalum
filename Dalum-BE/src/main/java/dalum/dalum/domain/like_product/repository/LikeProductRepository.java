@@ -3,6 +3,8 @@ package dalum.dalum.domain.like_product.repository;
 import dalum.dalum.domain.like_product.entity.LikeProduct;
 import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.product.entity.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -24,4 +26,7 @@ public interface LikeProductRepository extends JpaRepository<LikeProduct, Long> 
 
     // 좋아요 여부만 빠르게 확인
     boolean existsByMemberAndProduct(Member member, Product product);
+
+    Page<LikeProduct> findAllByMemberOrderByCreatedAtDesc(Member member, Pageable pageable);
+
 }

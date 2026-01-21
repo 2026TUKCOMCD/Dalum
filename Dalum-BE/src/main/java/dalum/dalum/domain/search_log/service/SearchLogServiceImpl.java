@@ -49,7 +49,7 @@ public class SearchLogServiceImpl implements SearchLogService {
 
         PageRequest pageRequest = PageRequest.of(pageIndex, pageSize);
 
-        Page<SearchLog> searchLogPage = searchLogRepository.findAllByMemberOrderByCreatedAt(member, pageRequest);
+        Page<SearchLog> searchLogPage = searchLogRepository.findAllByMemberOrderByCreatedAtDesc(member, pageRequest);
 
         SearchLogListResponse response = searchLogConverter.toSearchLogListResponse(searchLogPage);
 
