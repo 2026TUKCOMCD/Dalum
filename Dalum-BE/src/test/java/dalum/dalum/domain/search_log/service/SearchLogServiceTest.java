@@ -6,7 +6,6 @@ import dalum.dalum.domain.search_log.converter.SearchLogConverter;
 import dalum.dalum.domain.search_log.dto.response.SearchLogListResponse;
 import dalum.dalum.domain.search_log.entity.SearchLog;
 import dalum.dalum.domain.search_log.repository.SearchLogRepository;
-import dalum.dalum.global.apipayload.exception.GeneralException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -39,7 +38,7 @@ class SearchLogServiceTest {
     private SearchLogConverter searchLogConverter;
 
     @InjectMocks
-    private SearchLogService searchLogService;
+    private SearchLogServiceImpl searchLogService;
 
     @Test
     @DisplayName("정상적으로 검색 로그를 조회한다")

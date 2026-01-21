@@ -1,11 +1,13 @@
 package dalum.dalum.domain.search_log.controller;
 
+import dalum.dalum.domain.search_log.dto.response.SearchLogDetailResponse;
 import dalum.dalum.domain.search_log.dto.response.SearchLogListResponse;
 import dalum.dalum.domain.search_log.exception.code.SearchLogSuccessCode;
-import dalum.dalum.domain.search_log.service.SearchLogService;
+import dalum.dalum.domain.search_log.service.SearchLogServiceImpl;
 import dalum.dalum.global.apipayload.ApiResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1")
 public class SearchLogController {
 
-    private final SearchLogService searchLogService;
+    private final SearchLogServiceImpl searchLogService;
 
     @Operation(summary = "내 검색 기록 조회", description = "마이페이지에서 내 검색 히스토리를 페이징하여 조회합니다.")
     @GetMapping("/me/search-logs")
@@ -32,6 +34,19 @@ public class SearchLogController {
         memberId = (memberId == null) ? 1L : memberId;
 
         SearchLogListResponse response = searchLogService.getSearchLog(memberId, page, size);
+
+        return ApiResponse.success(SearchLogSuccessCode.OK, response);
+    }
+
+    @Operation(summary = "내 검색 기록 상세 조회", description = "내 검색 히스토리를 상세 조회합니다.")
+    @GetMapping("/me/search-logs/{serachId}")
+    public ApiResponse<SearchLogDetailResponse> getSearchLogDetail(
+            Long memberId,
+            @RequestParam Long searchId
+    ) {
+        memberId = (memberId == null) ? 1L : memberId;
+
+        SearchLogDetailResponse response = searchLogService.getSearchLogDetail(memberId, searchId);
 
         return ApiResponse.success(SearchLogSuccessCode.OK, response);
     }
