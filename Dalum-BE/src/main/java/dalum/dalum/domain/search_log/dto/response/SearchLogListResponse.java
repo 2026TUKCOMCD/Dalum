@@ -1,6 +1,7 @@
 package dalum.dalum.domain.search_log.dto.response;
 
 import lombok.Builder;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 

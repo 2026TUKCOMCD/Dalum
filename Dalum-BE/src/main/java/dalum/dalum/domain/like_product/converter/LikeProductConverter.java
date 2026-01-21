@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class LikeProductConverter {
 
-    public static LikeToggleResponse toLikeToggleResponse(boolean liked) {
+    public LikeToggleResponse toLikeToggleResponse(boolean liked) {
         return new LikeToggleResponse(liked);
     }
 }

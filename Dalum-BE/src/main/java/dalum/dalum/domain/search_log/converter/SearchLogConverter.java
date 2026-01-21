@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 @Component
 public class SearchLogConverter {
 
-    public static SearchLogResponse toSearchLogResponse(SearchLog searchLog) {
+    public SearchLogResponse toSearchLogResponse(SearchLog searchLog) {
         return SearchLogResponse.builder()
                 .searchLogId(searchLog.getId())
                 .inputImageUrl(searchLog.getInputImageUrl())
@@ -20,9 +20,9 @@ public class SearchLogConverter {
                 .build();
     }
 
-    public static SearchLogListResponse toSearchLogListResponse(Page<SearchLog> searchLogPage) {
+    public SearchLogListResponse toSearchLogListResponse(Page<SearchLog> searchLogPage) {
         List<SearchLogResponse> searchLogResponses = searchLogPage.stream()
-                .map(SearchLogConverter::toSearchLogResponse)
+                .map(this::toSearchLogResponse)
                 .collect(Collectors.toList());
 
         return SearchLogListResponse.builder()
