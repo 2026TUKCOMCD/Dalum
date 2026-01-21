@@ -25,6 +25,8 @@ public class LikeProductService {
     private final MemberRepository memberRepository;
     private final ProductRepository productRepository;
 
+    private final LikeProductConverter likeProductConverter;
+
     public LikeToggleResponse toggleLike(Long memberId, Long productId) {
 
         Member member = memberRepository.findById(memberId).orElseThrow(
@@ -35,8 +37,10 @@ public class LikeProductService {
 
         // 좋아요 여부 검증
         boolean isLiked = toggleAction(member, product);
-        
-        return LikeProductConverter.toLikeToggleResponse(isLiked);
+
+        LikeToggleResponse response = likeProductConverter.toLikeToggleResponse(isLiked);
+
+        return response;
     }
 
 
