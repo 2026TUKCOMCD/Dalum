@@ -1,5 +1,8 @@
 package dalum.dalum.domain.search_log.converter;
 
+import dalum.dalum.domain.product.dto.response.ProductDto;
+import dalum.dalum.domain.search_log.dto.response.SearchConditionDto;
+import dalum.dalum.domain.search_log.dto.response.SearchLogDetailResponse;
 import dalum.dalum.domain.search_log.dto.response.SearchLogListResponse;
 import dalum.dalum.domain.search_log.dto.response.SearchLogResponse;
 import dalum.dalum.domain.search_log.entity.SearchLog;
@@ -30,8 +33,24 @@ public class SearchLogConverter {
                 .totalElements(searchLogPage.getTotalElements())
                 .searchLogs(searchLogResponses)
                 .build();
+    }
 
+    public SearchConditionDto searchConditionDto(SearchLog searchLog) {
+        return SearchConditionDto.builder()
+                .minPrice(searchLog.getMinPrice())
+                .maxPrice(searchLog.getMaxPrice())
+                .build();
+    }
 
+    public SearchLogDetailResponse toSearchLogDetailResponse(SearchLog searchLog, List<ProductDto> products) {
+        SearchConditionDto conditions = this.searchConditionDto(searchLog);
+        return SearchLogDetailResponse.builder()
+                .searchLogId(searchLog.getId())
+                .searchDate(searchLog.getCreatedAt())
+                .imageUrl(searchLog.getInputImageUrl())
+                .conditions(conditions)
+                .results(products)
+                .build();
     }
 
 }
