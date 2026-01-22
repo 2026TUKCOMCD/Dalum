@@ -17,3 +17,24 @@ spring:
     properties:
       hibernate:
         show_sql: true
+  jwt:
+    secret: {JWT_SECRET_KEY}
+    access-expiration: {JWT_ACCESS_EXPIRATION}
+    refresh-expiration: {JWT_REFRESH_EXPIRATION}
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: { KAKAO_REST_API_KEY }
+            redirect-uri: http://localhost:8080/login/oauth2/code/kakao
+            client-authentication-method: POST
+            scope: profile_nickname, account_email
+
+        provider:
+          kakao:
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+
+
