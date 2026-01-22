@@ -1,10 +1,9 @@
 package dalum.dalum.domain.styling.converter;
 
 import dalum.dalum.domain.product.dto.response.ProductDto;
-import dalum.dalum.domain.styling.dto.response.StylingSaveResponse;
-import dalum.dalum.domain.styling.dto.response.RecommendationCategoryResponse;
-import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
+import dalum.dalum.domain.styling.dto.response.*;
 import dalum.dalum.domain.styling.entity.Styling;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -42,5 +41,33 @@ public class StylingConverter {
                 .stylingId(stylingId)
                 .build();
     }
+
+    public MyStylingResponse toMyStylingResponse(Styling styling) {
+
+        String targetImageUrl = "";
+
+        // NullPointerException 방지
+        if (styling.getLikeProduct() != null && styling.getLikeProduct().getProduct() != null) {
+            targetImageUrl = styling.getLikeProduct().getProduct().getImageUrl();
+        }
+
+        return MyStylingResponse.builder()
+                .stylingId(styling.getId())
+                .imageUrl(targetImageUrl)
+                .createdAt(styling.getCreatedAt())
+                .build();
+    }
+
+    public MyStylingListResponse toMyStylingListResponse(Page<Styling> stylingPage) {
+
+        List<MyStylingResponse> myStylinglist = stylingPage.stream().
+                map(this::toMyStylingResponse).toList();
+
+        return MyStylingListResponse.builder()
+                .stylings(myStylinglist)
+                .build();
+    }
+
+
 
 }
