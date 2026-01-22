@@ -28,7 +28,7 @@ public class LikeProductController {
 
         memberId = (memberId == null) ? 1L : memberId; // 임시
 
-        LikeToggleResponse response = likeProductService.toggleLike(productId, memberId);
+        LikeToggleResponse response = likeProductService.toggleLike(memberId, productId);
 
         return ApiResponse.success(ProductSuccessCode.OK, response);
     }
