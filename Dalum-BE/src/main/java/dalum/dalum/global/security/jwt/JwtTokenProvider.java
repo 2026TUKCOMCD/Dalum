@@ -23,12 +23,16 @@ public class JwtTokenProvider {
 
     private final Key key;
     private final long accessTokenValidityTime;
+    private final long refreshTokenValidityTime;
+
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secretKey,
-                            @Value("${jwt.access-expiration}") long accessTokenValidityTime) {
+                            @Value("${jwt.access-expiration}") long accessTokenValidityTime,
+                            @Value("${jwt.refresh-expiration}") long refreshTokenValidityTime) {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey); // Base64 디코딩 (선택사항)
         this.key = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenValidityTime = accessTokenValidityTime;
+        this.refreshTokenValidityTime = refreshTokenValidityTime;
     }
 
     // 1. 토큰 생성 (로그인 성공 시 호출)
@@ -43,6 +47,7 @@ public class JwtTokenProvider {
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
+
 
     // 2. 토큰에서 인증 정보 조회 (필터에서 호출)
     public Authentication getAuthentication(String token) {
@@ -70,6 +75,19 @@ public class JwtTokenProvider {
             log.info("JWT 토큰이 잘못되었습니다.");
         }
         return false;
+    }
+
+    public String createRefreshToken(Long memberId) {
+        Date now = new Date();
+        // 리프레시 토큰 유효기간
+        Date validity = new Date(now.getTime() + refreshTokenValidityTime);
+
+        return Jwts.builder()
+                .setSubject(String.valueOf(memberId))
+                .setIssuedAt(now)
+                .setExpiration(validity)
+                .signWith(key, SignatureAlgorithm.HS256)
+                .compact();
     }
 
     // 헤더에서 Bearer 토큰 추출

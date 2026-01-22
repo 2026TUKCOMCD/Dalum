@@ -23,7 +23,7 @@ public class KakaoAuthService {
     private String clientId;
 
     @Value("${kakao.redirect-uri}")
-    private String redirectUri;
+    private String defaultRedirectUri;
 
     private static final String KAKAO_TOKEN_URI = "https://kauth.kakao.com/oauth/token";
     private static final String KAKAO_USER_INFO_URI = "https://kapi.kakao.com/v2/user/me";
@@ -31,30 +31,47 @@ public class KakaoAuthService {
     /**
      * 1. 인가 코드를 받아 액세스 토큰을 요청
      */
-    public String getAccessToken(String code) {
+    public String getAccessToken(String code, String redirectUri) {
+        String finalRedirectUri = (redirectUri != null && !redirectUri.isEmpty())
+                ? redirectUri
+                : defaultRedirectUri;
 
-        // 요청 파라미터 구성 (x-www-form-urlencoded)
         MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
         formData.add("grant_type", "authorization_code");
         formData.add("client_id", clientId);
-        formData.add("redirect_uri", redirectUri);
+        formData.add("redirect_uri", finalRedirectUri);
         formData.add("code", code);
 
-        // WebClient 요청 (POST)
-        KakaoTokenResponse response = webClient.post()
-                .uri(KAKAO_TOKEN_URI)
-                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                .body(BodyInserters.fromFormData(formData))
-                .retrieve()
-                .bodyToMono(KakaoTokenResponse.class)
-                .block(); // 결과가 올 때까지 대기 (동기 처리)
+        log.info("=== 카카오 토큰 요청 ===");
+        log.info("client_id: {}", clientId);
+        log.info("redirect_uri: {}", finalRedirectUri);
+        log.info("code: {}", code.substring(0, Math.min(10, code.length())) + "...");
 
-        if (response == null || response.accessToken() == null) {
-            log.error("카카오 토큰 발급 실패");
-            throw new RuntimeException("카카오 토큰을 받아오지 못했습니다.");
+        try {
+            KakaoTokenResponse response = webClient.post()
+                    .uri(KAKAO_TOKEN_URI)
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                    .body(BodyInserters.fromFormData(formData))
+                    .retrieve()
+                    .onStatus(status -> status.is4xxClientError() || status.is5xxServerError(),
+                            clientResponse -> clientResponse.bodyToMono(String.class)
+                                    .map(errorBody -> {
+                                        log.error("카카오 API 에러 응답: {}", errorBody);
+                                        return new RuntimeException("카카오 API 에러: " + errorBody);
+                                    }))
+                    .bodyToMono(KakaoTokenResponse.class)
+                    .block();
+
+            if (response == null || response.accessToken() == null) {
+                log.error("카카오 토큰 발급 실패");
+                throw new RuntimeException("카카오 토큰을 받아오지 못했습니다.");
+            }
+
+            return response.accessToken();
+        } catch (Exception e) {
+            log.error("카카오 토큰 요청 중 예외 발생: ", e);
+            throw e;
         }
-
-        return response.accessToken();
     }
 
     /**
