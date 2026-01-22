@@ -15,6 +15,7 @@ import dalum.dalum.domain.product.exception.ProductException;
 import dalum.dalum.domain.product.exception.code.ProductErrorCode;
 import dalum.dalum.domain.product.repository.ProductRepository;
 import dalum.dalum.domain.styling.converter.StylingConverter;
+import dalum.dalum.domain.styling.dto.response.MyStylingListResponse;
 import dalum.dalum.domain.styling.dto.response.StylingSaveResponse;
 import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
 import dalum.dalum.domain.styling.entity.Styling;
@@ -23,6 +24,8 @@ import dalum.dalum.domain.styling.exception.code.StylingErrorCode;
 import dalum.dalum.domain.styling.repository.StylingRepository;
 import dalum.dalum.domain.styling_product.repository.StylingProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -94,6 +97,26 @@ public class StylingServiceImpl implements StylingService {
         styling.confirmSave();
 
         StylingSaveResponse response = stylingConverter.toStylingSaveResponse(styling.getId());
+        return response;
+
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MyStylingListResponse getMyStylings(Long memberId, Integer page, Integer size) {
+
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.NOT_FOUND));
+
+        int pageIndex = (page != null && page > 0) ? page - 1 : 0;
+        int pageSize = (size != null) ? size : 10;
+        PageRequest pageRequest = PageRequest.of(pageIndex, pageSize);
+
+        Page<Styling> stylingPage = stylingRepository.
+                findAllByMemberIdAndIsScrappedTrueOrderByCreatedAtDesc(member.getId(), pageRequest);
+
+        MyStylingListResponse response = stylingConverter.toMyStylingListResponse(stylingPage);
+
         return response;
 
     }
