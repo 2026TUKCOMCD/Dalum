@@ -9,7 +9,7 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum DupeProductErrorCode implements BaseErrorCode {
         NOT_FOUND(HttpStatus.NOT_FOUND,
-                "DUPEPRODUCT_500_1",
+                "DUPE_PRODUCT_500_1",
                 "서버 오류입니다.")
     ;
         private final HttpStatus status;

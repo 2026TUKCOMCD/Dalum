@@ -12,6 +12,6 @@ import java.util.List;
 public interface SearchLogRepository extends JpaRepository<SearchLog, Long> {
 
     // 검색 기록 조회
-    Page<SearchLog> findAllByMemberOrderByCreatedAt(Member member, Pageable pageable);
+    Page<SearchLog> findAllByMemberOrderByCreatedAtDesc(Member member, Pageable pageable);
 
 }

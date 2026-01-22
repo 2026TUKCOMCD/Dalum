@@ -1,6 +1,8 @@
 package dalum.dalum.domain.like_product.service;
 
-import dalum.dalum.domain.like_product.dto.response.LikeToggleResponse;
+import dalum.dalum.domain.like_product.converter.LikeProductConverter;
+import dalum.dalum.domain.like_product.dto.response.LikeProductListResponse;
+import dalum.dalum.domain.like_product.dto.response.LikeProductResponse;
 import dalum.dalum.domain.like_product.entity.LikeProduct;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
@@ -15,91 +17,278 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class) // Mockito 사용 선언
+@ExtendWith(MockitoExtension.class)
+@DisplayName("LikeProductService - getLikeProducts 테스트")
 class LikeProductServiceTest {
-
-    @InjectMocks
-    private LikeProductService likeProductService; // 가짜 객체들이 주입될 진짜 서비스
 
     @Mock
     private LikeProductRepository likeProductRepository;
+
     @Mock
     private MemberRepository memberRepository;
+
     @Mock
     private ProductRepository productRepository;
 
+    @Mock
+    private LikeProductConverter likeProductConverter;
+
+    @InjectMocks
+    private LikeProductService likeProductService;
+
     @Test
-    @DisplayName("좋아요 등록 성공: 기존에 좋아요가 없을 때 -> 저장되고 true 반환")
-    void toggleLike_Register() {
+    @DisplayName("좋아요 목록 조회 - 성공")
+    void getLikeProducts_Success() {
         // given
         Long memberId = 1L;
-        Long productId = 100L;
+        Integer page = 1;
+        Integer size = 10;
 
-        Member member = Member.builder().id(memberId).build(); // 테스트용 가짜 멤버
-        Product product = Product.builder().id(productId).build(); // 테스트용 가짜 상품
+        Member member = Member.builder()
+                .id(memberId)
+                .build();
 
-        // 가짜 행동 정의 (Stubbing)
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(productRepository.findById(productId)).willReturn(Optional.of(product));
-        // 핵심: DB 찾아봤는데 없다고 가정!
-        given(likeProductRepository.findByMemberAndProduct(member, product)).willReturn(Optional.empty());
+        Product product1 = Product.builder()
+                .id(1L)
+                .productName("상품1")
+                .brand("브랜드1")
+                .price(10000)
+                .imageUrl("https://example.com/product1.jpg")
+                .build();
+
+        Product product2 = Product.builder()
+                .id(2L)
+                .productName("상품2")
+                .brand("브랜드2")
+                .price(20000)
+                .imageUrl("https://example.com/product2.jpg")
+                .build();
+
+        LikeProduct likeProduct1 = LikeProduct.builder()
+                .id(1L)
+                .member(member)
+                .product(product1)
+                .build();
+
+        LikeProduct likeProduct2 = LikeProduct.builder()
+                .id(2L)
+                .member(member)
+                .product(product2)
+                .build();
+
+        List<LikeProduct> likeProductList = List.of(likeProduct1, likeProduct2);
+        Page<LikeProduct> likeProductPage = new PageImpl<>(likeProductList, PageRequest.of(0, 10), 2);
+
+        LikeProductResponse likeProductResponse1 = LikeProductResponse.builder()
+                .productId(1L)
+                .name("상품1")
+                .discountRate(0.1)
+                .discountPrice(9000)
+                .imageUrl("https://example.com/product1.jpg")
+                .purchaseLink("https://example.com/buy1")
+                .isLiked(true)
+                .build();
+
+        LikeProductResponse likeProductResponse2 = LikeProductResponse.builder()
+                .productId(2L)
+                .name("상품2")
+                .discountRate(0.2)
+                .discountPrice(16000)
+                .imageUrl("https://example.com/product2.jpg")
+                .purchaseLink("https://example.com/buy2")
+                .isLiked(true)
+                .build();
+
+        List<LikeProductResponse> likeProductResponses = List.of(likeProductResponse1, likeProductResponse2);
+
+        LikeProductListResponse expectedResponse = LikeProductListResponse.builder()
+                .totalPage(1)
+                .totalElements(2L)
+                .likeProducts(likeProductResponses)
+                .build();
+
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+        when(likeProductRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
+                .thenReturn(likeProductPage);
+        when(likeProductConverter.toLikeProductListResponse(likeProductPage)).thenReturn(expectedResponse);
 
         // when
-        LikeToggleResponse response = likeProductService.toggleLike(memberId, productId);
+        LikeProductListResponse result = likeProductService.getLikeProducts(memberId, page, size);
 
         // then
-        assertThat(response.isLiked()).isTrue(); // 결과가 true여야 함
-        verify(likeProductRepository, times(1)).save(any(LikeProduct.class)); // save가 1번 호출되었는지 검증
-        verify(likeProductRepository, times(0)).delete(any(LikeProduct.class)); // delete는 호출되면 안 됨
+        assertThat(result).isNotNull();
+        assertThat(result.totalPage()).isEqualTo(1);
+        assertThat(result.totalElements()).isEqualTo(2L);
+        assertThat(result.likeProducts()).hasSize(2);
+        assertThat(result.likeProducts().get(0).isLiked()).isTrue();
+        assertThat(result.likeProducts().get(1).isLiked()).isTrue();
+
+        verify(memberRepository).findById(memberId);
+        verify(likeProductRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), eq(PageRequest.of(0, 10)));
+        verify(likeProductConverter).toLikeProductListResponse(likeProductPage);
+    }
+
+
+    @Test
+    @DisplayName("좋아요 목록 조회 - 페이지와 사이즈가 null일 때 기본값 사용")
+    void getLikeProducts_WithNullPageAndSize() {
+        // given
+        Long memberId = 1L;
+
+        Member member = Member.builder()
+                .id(memberId)
+                .build();
+
+        List<LikeProduct> emptyList = new ArrayList<>();
+        Page<LikeProduct> emptyPage = new PageImpl<>(emptyList, PageRequest.of(0, 10), 0);
+
+        LikeProductListResponse expectedResponse = LikeProductListResponse.builder()
+                .totalPage(0)
+                .totalElements(0L)
+                .likeProducts(Collections.emptyList())
+                .build();
+
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+        when(likeProductRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
+                .thenReturn(emptyPage);
+        when(likeProductConverter.toLikeProductListResponse(emptyPage)).thenReturn(expectedResponse);
+
+        // when
+        LikeProductListResponse result = likeProductService.getLikeProducts(memberId, null, null);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.likeProducts()).isEmpty();
+
+        verify(memberRepository).findById(memberId);
+        verify(likeProductRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), eq(PageRequest.of(0, 10)));
+        verify(likeProductConverter).toLikeProductListResponse(emptyPage);
     }
 
     @Test
-    @DisplayName("좋아요 취소 성공: 기존에 좋아요가 있을 때 -> 삭제되고 false 반환")
-    void toggleLike_Cancel() {
+    @DisplayName("좋아요 목록 조회 - 페이지가 0 이하일 때 첫 번째 페이지 조회")
+    void getLikeProducts_WithInvalidPage() {
         // given
         Long memberId = 1L;
-        Long productId = 100L;
+        Integer page = 0;
+        Integer size = 10;
 
-        Member member = Member.builder().id(memberId).build();
-        Product product = Product.builder().id(productId).build();
-        LikeProduct likeProduct = LikeProduct.builder().member(member).product(product).build();
+        Member member = Member.builder()
+                .id(memberId)
+                .build();
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.of(member));
-        given(productRepository.findById(productId)).willReturn(Optional.of(product));
-        // 핵심: DB 찾아봤는데 이미 있다고 가정!
-        given(likeProductRepository.findByMemberAndProduct(member, product)).willReturn(Optional.of(likeProduct));
+        List<LikeProduct> emptyList = new ArrayList<>();
+        Page<LikeProduct> emptyPage = new PageImpl<>(emptyList, PageRequest.of(0, 10), 0);
+
+        LikeProductListResponse expectedResponse = LikeProductListResponse.builder()
+                .totalPage(0)
+                .totalElements(0L)
+                .likeProducts(Collections.emptyList())
+                .build();
+
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+        when(likeProductRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
+                .thenReturn(emptyPage);
+        when(likeProductConverter.toLikeProductListResponse(emptyPage)).thenReturn(expectedResponse);
 
         // when
-        LikeToggleResponse response = likeProductService.toggleLike(memberId, productId);
+        LikeProductListResponse result = likeProductService.getLikeProducts(memberId, page, size);
 
         // then
-        assertThat(response.isLiked()).isFalse(); // 결과가 false여야 함
-        verify(likeProductRepository, times(1)).delete(likeProduct); // delete가 1번 호출되었는지 검증
-        verify(likeProductRepository, times(0)).save(any(LikeProduct.class)); // save는 호출되면 안 됨
+        assertThat(result).isNotNull();
+
+        verify(memberRepository).findById(memberId);
+        verify(likeProductRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), eq(PageRequest.of(0, 10)));
+        verify(likeProductConverter).toLikeProductListResponse(emptyPage);
     }
 
     @Test
-    @DisplayName("실패: 존재하지 않는 회원이 요청하면 예외 발생")
-    void toggleLike_Fail_MemberNotFound() {
+    @DisplayName("좋아요 목록 조회 - 좋아요한 상품이 없는 경우")
+    void getLikeProducts_EmptyLikeProducts() {
         // given
-        Long memberId = 999L;
-        Long productId = 100L;
+        Long memberId = 1L;
+        Integer page = 1;
+        Integer size = 10;
 
-        given(memberRepository.findById(memberId)).willReturn(Optional.empty()); // 회원 없음
+        Member member = Member.builder()
+                .id(memberId)
+                .build();
 
-        // when & then
-        assertThrows(MemberException.class, () -> {
-            likeProductService.toggleLike(memberId, productId);
-        });
+        List<LikeProduct> emptyList = Collections.emptyList();
+        Page<LikeProduct> emptyPage = new PageImpl<>(emptyList, PageRequest.of(0, 10), 0);
+
+        LikeProductListResponse expectedResponse = LikeProductListResponse.builder()
+                .totalPage(0)
+                .totalElements(0L)
+                .likeProducts(Collections.emptyList())
+                .build();
+
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+        when(likeProductRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
+                .thenReturn(emptyPage);
+        when(likeProductConverter.toLikeProductListResponse(emptyPage)).thenReturn(expectedResponse);
+
+        // when
+        LikeProductListResponse result = likeProductService.getLikeProducts(memberId, page, size);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.totalPage()).isEqualTo(0);
+        assertThat(result.totalElements()).isEqualTo(0L);
+        assertThat(result.likeProducts()).isEmpty();
+
+        verify(memberRepository).findById(memberId);
+        verify(likeProductRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), eq(PageRequest.of(0, 10)));
+        verify(likeProductConverter).toLikeProductListResponse(emptyPage);
+    }
+
+    @Test
+    @DisplayName("좋아요 목록 조회 - 커스텀 페이지 사이즈")
+    void getLikeProducts_WithCustomPageSize() {
+        // given
+        Long memberId = 1L;
+        Integer page = 2;
+        Integer size = 5;
+
+        Member member = Member.builder()
+                .id(memberId)
+                .build();
+
+        List<LikeProduct> emptyList = new ArrayList<>();
+        Page<LikeProduct> emptyPage = new PageImpl<>(emptyList, PageRequest.of(1, 5), 0);
+
+        LikeProductListResponse expectedResponse = LikeProductListResponse.builder()
+                .totalPage(0)
+                .totalElements(0L)
+                .likeProducts(Collections.emptyList())
+                .build();
+
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
+        when(likeProductRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
+                .thenReturn(emptyPage);
+        when(likeProductConverter.toLikeProductListResponse(emptyPage)).thenReturn(expectedResponse);
+
+        // when
+        LikeProductListResponse result = likeProductService.getLikeProducts(memberId, page, size);
+
+        // then
+        assertThat(result).isNotNull();
+
+        verify(memberRepository).findById(memberId);
+        verify(likeProductRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), eq(PageRequest.of(1, 5)));
+        verify(likeProductConverter).toLikeProductListResponse(emptyPage);
     }
 }

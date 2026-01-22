@@ -4,8 +4,6 @@ import dalum.dalum.domain.dupe_product.enitty.DupeProduct;
 import dalum.dalum.domain.dupe_product.repository.DupeProductRepository;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
-import dalum.dalum.domain.member.exception.MemberException;
-import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.domain.product.converter.ProductConverter;
 import dalum.dalum.domain.product.dto.response.ProductDto;
@@ -73,7 +71,7 @@ class SearchLogServiceTest {
         SearchLogListResponse response = new SearchLogListResponse(0, 0L, new ArrayList<>());
 
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(searchLogRepository.findAllByMemberOrderByCreatedAt(eq(member), any(PageRequest.class)))
+        when(searchLogRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
                 .thenReturn(searchLogPage);
         when(searchLogConverter.toSearchLogListResponse(searchLogPage)).thenReturn(response);
 
@@ -83,7 +81,7 @@ class SearchLogServiceTest {
         // then
         assertThat(result).isNotNull();
         verify(memberRepository).findById(memberId);
-        verify(searchLogRepository).findAllByMemberOrderByCreatedAt(eq(member), any(PageRequest.class));
+        verify(searchLogRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class));
         verify(searchLogConverter).toSearchLogListResponse(searchLogPage);
     }
 
@@ -99,7 +97,7 @@ class SearchLogServiceTest {
         SearchLogListResponse response = new SearchLogListResponse(0, 0L, new ArrayList<>());
 
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(searchLogRepository.findAllByMemberOrderByCreatedAt(eq(member), any(PageRequest.class)))
+        when(searchLogRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
                 .thenReturn(searchLogPage);
         when(searchLogConverter.toSearchLogListResponse(searchLogPage)).thenReturn(response);
 
@@ -108,7 +106,7 @@ class SearchLogServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        verify(searchLogRepository).findAllByMemberOrderByCreatedAt(eq(member), eq(PageRequest.of(0, 10)));
+        verify(searchLogRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), eq(PageRequest.of(0, 10)));
     }
 
     @Test
@@ -125,7 +123,7 @@ class SearchLogServiceTest {
         SearchLogListResponse response = new SearchLogListResponse(0, 0L, new ArrayList<>());
 
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
-        when(searchLogRepository.findAllByMemberOrderByCreatedAt(eq(member), any(PageRequest.class)))
+        when(searchLogRepository.findAllByMemberOrderByCreatedAtDesc(eq(member), any(PageRequest.class)))
                 .thenReturn(searchLogPage);
         when(searchLogConverter.toSearchLogListResponse(searchLogPage)).thenReturn(response);
 
@@ -134,7 +132,7 @@ class SearchLogServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        verify(searchLogRepository).findAllByMemberOrderByCreatedAt(eq(member), eq(PageRequest.of(0, 10)));
+        verify(searchLogRepository).findAllByMemberOrderByCreatedAtDesc(eq(member), eq(PageRequest.of(0, 10)));
     }
 
     @Test
