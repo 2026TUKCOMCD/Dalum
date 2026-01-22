@@ -218,7 +218,7 @@ class StylingServiceTest {
         when(stylingConverter.toMyStylingListResponse(stylingPage)).thenReturn(expectedResponse);
 
         // when
-        MyStylingListResponse result = stylingService.getMyStylings(memberId, page, size);
+        MyStylingListResponse result = stylingService.getMyStyling(memberId, page, size);
 
         // then
         assertThat(result).isNotNull();
@@ -254,7 +254,7 @@ class StylingServiceTest {
         when(stylingConverter.toMyStylingListResponse(emptyPage)).thenReturn(expectedResponse);
 
         // when
-        MyStylingListResponse result = stylingService.getMyStylings(memberId, null, null);
+        MyStylingListResponse result = stylingService.getMyStyling(memberId, null, null);
 
         // then
         assertThat(result).isNotNull();
@@ -290,7 +290,7 @@ class StylingServiceTest {
         when(stylingConverter.toMyStylingListResponse(emptyPage)).thenReturn(expectedResponse);
 
         // when
-        MyStylingListResponse result = stylingService.getMyStylings(memberId, page, size);
+        MyStylingListResponse result = stylingService.getMyStyling(memberId, page, size);
 
         // then
         assertThat(result).isNotNull();
@@ -325,7 +325,7 @@ class StylingServiceTest {
         when(stylingConverter.toMyStylingListResponse(emptyPage)).thenReturn(expectedResponse);
 
         // when
-        MyStylingListResponse result = stylingService.getMyStylings(memberId, page, size);
+        MyStylingListResponse result = stylingService.getMyStyling(memberId, page, size);
 
         // then
         assertThat(result).isNotNull();
@@ -361,7 +361,7 @@ class StylingServiceTest {
         when(stylingConverter.toMyStylingListResponse(emptyPage)).thenReturn(expectedResponse);
 
         // when
-        MyStylingListResponse result = stylingService.getMyStylings(memberId, page, size);
+        MyStylingListResponse result = stylingService.getMyStyling(memberId, page, size);
 
         // then
         assertThat(result).isNotNull();
@@ -421,7 +421,7 @@ class StylingServiceTest {
         when(stylingConverter.toMyStylingListResponse(stylingPage)).thenReturn(expectedResponse);
 
         // when
-        MyStylingListResponse result = stylingService.getMyStylings(memberId, page, size);
+        MyStylingListResponse result = stylingService.getMyStyling(memberId, page, size);
 
         // then
         assertThat(result).isNotNull();
