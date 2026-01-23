@@ -5,8 +5,10 @@ import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.enums.SocialType;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
-import dalum.dalum.global.security.kakao.dto.response.KakaoUserInfoResponse;
-import dalum.dalum.global.security.kakao.service.KakaoAuthService;
+import dalum.dalum.global.security.social.dto.response.GoogleUserInfoResponse;
+import dalum.dalum.global.security.social.dto.response.KakaoUserInfoResponse;
+import dalum.dalum.global.security.social.service.GoogleAuthService;
+import dalum.dalum.global.security.social.service.KakaoAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -16,9 +18,10 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final KakaoAuthService kakaoAuthService;
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final KakaoAuthService kakaoAuthService;
+    private final GoogleAuthService googleAuthService;
 
     @Value("${jwt.access-expiration}")
     private Long accessExpiration;
@@ -33,15 +36,16 @@ public class AuthService {
                 // KakaoAuthService에 redirectUri도 같이 넘겨줘야 함!
                 String accessToken = kakaoAuthService.getAccessToken(code, redirectUri);
                 KakaoUserInfoResponse userInfo = kakaoAuthService.getUserInfo(accessToken);
-                member = getOrCreateMember(userInfo, SocialType.KAKAO);
+                member = getOrCreateMemberKakao(userInfo, SocialType.KAKAO);
             }
             case "naver" -> {
                 // member = naverAuthService.login(code, state);
                 throw new IllegalArgumentException("네이버 로그인은 준비 중입니다.");
             }
             case "google" -> {
-                // member = googleAuthService.login(code, redirectUri);
-                throw new IllegalArgumentException("구글 로그인은 준비 중입니다.");
+                String accessToken = googleAuthService.getAccessToken(code, redirectUri);
+                GoogleUserInfoResponse userInfo = googleAuthService.getUserInfo(accessToken);
+                member = getOrCreateMemberGoogle(userInfo);
             }
             default -> throw new IllegalArgumentException("지원하지 않는 소셜 로그인입니다: " + provider);
         }
@@ -60,8 +64,8 @@ public class AuthService {
                 .build();
     }
 
-    // 회원가입 및 조회 공통 로직
-    private Member getOrCreateMember(KakaoUserInfoResponse userInfo, SocialType loginType) {
+    // 카카오 회원가입 로직
+    private Member getOrCreateMemberKakao(KakaoUserInfoResponse userInfo, SocialType loginType) {
         String email = userInfo.kakaoAccount().email();
         if (email == null || email.isBlank()) {
             email = userInfo.id() + "@kakao.user";
@@ -75,6 +79,20 @@ public class AuthService {
                         .email(finalEmail)
                         .nickname(userInfo.kakaoAccount().profile().nickname())
                         .socialType(loginType)
+                        .socialId(socialId)
+                        .build()));
+    }
+
+    private Member getOrCreateMemberGoogle(GoogleUserInfoResponse userInfo) {
+        String email = userInfo.email(); // 구글은 이메일이 무조건 있음 (scope에 email 포함 시)
+
+        String socialId = String.valueOf(userInfo.sub());
+
+        return memberRepository.findByEmail(email)
+                .orElseGet(() -> memberRepository.save(Member.builder()
+                        .email(email)
+                        .nickname(userInfo.name())
+                        .socialType(SocialType.GOOGLE)
                         .socialId(socialId)
                         .build()));
     }

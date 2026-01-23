@@ -5,6 +5,7 @@ import dalum.dalum.domain.dupe_product.dto.response.DupeSearchResponse;
 import dalum.dalum.domain.dupe_product.exception.code.DupeProductSuccessCode;
 import dalum.dalum.domain.dupe_product.service.DupeSearchService;
 import dalum.dalum.global.apipayload.ApiResponse;
+import dalum.dalum.global.security.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,10 +24,9 @@ public class DupeProductController {
     @Operation(summary= "듀프 제품 검색 API", description = "사진에 따른 듀프 제품을 검색합니다.")
     @PostMapping(value = "/search/dupe", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResponse<DupeSearchResponse> searchDupe(
-            Long memberId,
-            @ParameterObject @ModelAttribute DupeSearchRequest request
-            ) {
-        memberId = memberId == null ? 1L : memberId;
+            @ParameterObject @ModelAttribute DupeSearchRequest request) {
+
+        Long memberId = SecurityUtil.getCurrentMemberId();
 
         DupeSearchResponse response = dupeSearchService.searchDupe(memberId, request);
 

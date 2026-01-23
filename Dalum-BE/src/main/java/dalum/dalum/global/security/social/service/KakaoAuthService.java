@@ -1,7 +1,7 @@
-package dalum.dalum.global.security.kakao.service;
+package dalum.dalum.global.security.social.service;
 
-import dalum.dalum.global.security.kakao.dto.response.KakaoTokenResponse;
-import dalum.dalum.global.security.kakao.dto.response.KakaoUserInfoResponse;
+import dalum.dalum.global.security.social.dto.response.KakaoTokenResponse;
+import dalum.dalum.global.security.social.dto.response.KakaoUserInfoResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

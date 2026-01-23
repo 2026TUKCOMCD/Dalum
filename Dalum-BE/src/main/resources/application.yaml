@@ -40,6 +40,13 @@ kakao:
   client-id: ${KAKAO_REST_API_KEY}
   redirect-uri: http://localhost:8080/login/oauth2/code/kakao
 
+google:
+  client-id: ${GOOGLE_CLIENT_ID}
+  client-secret: ${GOOGLE_CLIENT_SECRET}
+  redirect-uri: http://localhost:8080/login/oauth2/code/google
+  token-uri: https://oauth2.googleapis.com/token
+  user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+
 jwt:
   secret: ${JWT_SECRET_KEY}
   access-expiration: ${JWT_ACCESS_EXPIRATION}
