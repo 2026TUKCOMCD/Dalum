@@ -23,7 +23,6 @@ public class AuthController {
             @PathVariable String provider,
             @RequestBody @Valid SocialLoginRequest request
     ) {
-        // 서비스로 provider와 DTO 내용 전달
         AuthTokenResponse response = authService.socialLogin(
                 provider,
                 request.authorizationCode(),
