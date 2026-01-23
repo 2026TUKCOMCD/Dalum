@@ -5,6 +5,7 @@ import dalum.dalum.domain.search_log.dto.response.SearchLogListResponse;
 import dalum.dalum.domain.search_log.exception.code.SearchLogSuccessCode;
 import dalum.dalum.domain.search_log.service.SearchLogService;
 import dalum.dalum.global.apipayload.ApiResponse;
+import dalum.dalum.global.security.SecurityUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
@@ -23,14 +24,14 @@ public class SearchLogController {
     @Operation(summary = "내 검색 기록 조회", description = "마이페이지에서 내 검색 히스토리를 페이징하여 조회합니다.")
     @GetMapping("/me/search-logs")
     public ApiResponse<SearchLogListResponse> getSearchLog(
-            Long memberId,
             @Parameter(description = "페이지 번호 (1부터 시작)")
             @RequestParam(defaultValue = "1") Integer page,
 
             @Parameter(description = "한 페이지에 보여줄 개수")
             @RequestParam(defaultValue = "10") Integer size
     ) {
-        memberId = (memberId == null) ? 1L : memberId;
+
+        Long memberId = SecurityUtil.getCurrentMemberId();
 
         SearchLogListResponse response = searchLogService.getSearchLog(memberId, page, size);
 
@@ -40,10 +41,9 @@ public class SearchLogController {
     @Operation(summary = "내 검색 기록 상세 조회", description = "내 검색 히스토리를 상세 조회합니다.")
     @GetMapping("/me/search-logs/{serachId}")
     public ApiResponse<SearchLogDetailResponse> getSearchLogDetail(
-            Long memberId,
             @RequestParam Long searchId
     ) {
-        memberId = (memberId == null) ? 1L : memberId;
+        Long memberId = SecurityUtil.getCurrentMemberId();
 
         SearchLogDetailResponse response = searchLogService.getSearchLogDetail(memberId, searchId);
 
