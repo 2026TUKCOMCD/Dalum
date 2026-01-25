@@ -30,7 +30,7 @@ CATEGORY_MAP = {
     "중고_하의": {"대분류": "BOTTOM", "중분류": "USED_BOTTOM"},
     "중고_신발": {"대분류": "SHOES", "중분류": "USED_SHOES"},
     "중고_가방": {"대분류": "BAG", "중분류": "USED_BAG"},
-    "중고_모자": {"대분류": "ACCESSORY", "중분류": "USED_HAT"},
+    "중고_모자": {"대분류": "HAT", "중분류": "USED_HAT"},
     "중고_치마": {"대분류": "BOTTOM", "중분류": "USED_SKIRT"},
     "중고_원피스": {"대분류": "DRESS", "중분류": "USED_ONE_PIECE"}
 }
