@@ -1,0 +1,18 @@
+[project]
+name = "dalum-ai"
+version = "0.1.0"
+description = "AI python 기초 세팅"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+  "torch",
+  "torchvision",
+  "numpy",
+  "pandas",
+  "scikit-learn",
+  "pyyaml",
+  "pymysql",
+  "sqlalchemy",
+  "tqdm",
+  "Pillow"
+]
