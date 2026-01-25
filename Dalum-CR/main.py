@@ -19,7 +19,7 @@ FINAL_DIR = os.path.join(BASE_DIR, "final")
 CRAWLERS = [
     "musinsa.py",
     "musinsa_empty.py",
-    "cm29.py",
+    "29cm.py",
     "fruitsfamily.py",
     # "kream.py",
 ]
@@ -38,7 +38,7 @@ CATEGORIES = [
     "BOTTOM",
     "SHOES",
     "BAG",
-    "ACC",
+    "HAT",
     "DRESS",
 ]
 
