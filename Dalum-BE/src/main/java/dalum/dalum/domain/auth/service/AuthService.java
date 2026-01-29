@@ -7,8 +7,10 @@ import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
 import dalum.dalum.global.security.social.dto.response.GoogleUserInfoResponse;
 import dalum.dalum.global.security.social.dto.response.KakaoUserInfoResponse;
+import dalum.dalum.global.security.social.dto.response.NaverUserInfoResponse;
 import dalum.dalum.global.security.social.service.GoogleAuthService;
 import dalum.dalum.global.security.social.service.KakaoAuthService;
+import dalum.dalum.global.security.social.service.NaverAuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final KakaoAuthService kakaoAuthService;
     private final GoogleAuthService googleAuthService;
+    private final NaverAuthService naverAuthService;
 
     @Value("${jwt.access-expiration}")
     private Long accessExpiration;
@@ -36,11 +39,12 @@ public class AuthService {
                 // KakaoAuthService에 redirectUri도 같이 넘겨줘야 함!
                 String accessToken = kakaoAuthService.getAccessToken(code, redirectUri);
                 KakaoUserInfoResponse userInfo = kakaoAuthService.getUserInfo(accessToken);
-                member = getOrCreateMemberKakao(userInfo, SocialType.KAKAO);
+                member = getOrCreateMemberKakao(userInfo);
             }
             case "naver" -> {
-                // member = naverAuthService.login(code, state);
-                throw new IllegalArgumentException("네이버 로그인은 준비 중입니다.");
+                String accessToken = naverAuthService.getAccessToken(code);
+                NaverUserInfoResponse userInfo = naverAuthService.getUserInfo(accessToken);
+                member = getOrCreateMemberNaver(userInfo);
             }
             case "google" -> {
                 String accessToken = googleAuthService.getAccessToken(code, redirectUri);
@@ -65,7 +69,7 @@ public class AuthService {
     }
 
     // 카카오 회원가입 로직
-    private Member getOrCreateMemberKakao(KakaoUserInfoResponse userInfo, SocialType loginType) {
+    private Member getOrCreateMemberKakao(KakaoUserInfoResponse userInfo) {
         String email = userInfo.kakaoAccount().email();
         if (email == null || email.isBlank()) {
             email = userInfo.id() + "@kakao.user";
@@ -78,7 +82,7 @@ public class AuthService {
                 .orElseGet(() -> memberRepository.save(Member.builder()
                         .email(finalEmail)
                         .nickname(userInfo.kakaoAccount().profile().nickname())
-                        .socialType(loginType)
+                        .socialType(SocialType.KAKAO)
                         .socialId(socialId)
                         .build()));
     }
@@ -94,6 +98,25 @@ public class AuthService {
                         .nickname(userInfo.name())
                         .socialType(SocialType.GOOGLE)
                         .socialId(socialId)
+                        .build()));
+    }
+
+
+    private Member getOrCreateMemberNaver(NaverUserInfoResponse userInfo) {
+        NaverUserInfoResponse.Response response = userInfo.response();
+        String email = response.email();
+
+        if (email == null || email.isBlank()) {
+            email = response.id() + "@naver.user";
+        }
+
+        String finalEmail = email;
+        return memberRepository.findByEmail(finalEmail)
+                .orElseGet(() -> memberRepository.save(Member.builder()
+                        .email(finalEmail)
+                        .nickname(response.nickname())
+                        .socialType(SocialType.NAVER)
+                        .socialId(response.id())
                         .build()));
     }
 }
