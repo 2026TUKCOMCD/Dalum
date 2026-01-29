@@ -87,6 +87,8 @@ public class DupeSearchService {
             DupeProduct dupeProduct = DupeProduct.builder()
                     .searchLog(searchLog)
                     .product(product)
+                    .rank(1)
+                    .similarityScore(80.0)
                     .build();
             dupeProductRepository.save(dupeProduct);
         }
