@@ -18,22 +18,22 @@ BASE_URL = "https://empty.seoul.kr"
 
 CATEGORIES = {
     #OUTER
+    "숏 패딩": "https://empty.seoul.kr/product/list.html?cate_no=109",
     "코트": "https://empty.seoul.kr/product/list.html?cate_no=93",
-    "레더": "https://empty.seoul.kr/product/list.html?cate_no=90",
-    "퍼": "https://empty.seoul.kr/product/list.html?cate_no=148",
-    "다운": "https://empty.seoul.kr/product/list.html?cate_no=109",
+    "레더 자켓": "https://empty.seoul.kr/product/list.html?cate_no=90",
+    "무스탕/퍼": "https://empty.seoul.kr/product/list.html?cate_no=148",
     #TOP
     "티셔츠": "https://empty.seoul.kr/product/list.html?cate_no=54",
-    "스웻셔츠": "https://empty.seoul.kr/product/list.html?cate_no=77",
-    "셔츠&블라우스": "https://empty.seoul.kr/product/list.html?cate_no=101", 
-    "후디": "https://empty.seoul.kr/product/list.html?cate_no=64",
-    "폴리스": "https://empty.seoul.kr/product/list.html?cate_no=822",
+    "긴소매 셔츠": "https://empty.seoul.kr/product/list.html?cate_no=101", 
+    "스웨트 셔츠": "https://empty.seoul.kr/product/list.html?cate_no=77",
+    "후드": "https://empty.seoul.kr/product/list.html?cate_no=64",
+    "플리스": "https://empty.seoul.kr/product/list.html?cate_no=822",
     #BOTTOM
-    "데님": "https://empty.seoul.kr/product/list.html?cate_no=61",
+    "데님 팬츠": "https://empty.seoul.kr/product/list.html?cate_no=61",
     "팬츠": "https://empty.seoul.kr/product/list.html?cate_no=75",
     "스커트": "https://empty.seoul.kr/product/list.html?cate_no=95",
     #DRESS
-    "드레스": "https://empty.seoul.kr/product/list.html?cate_no=59",
+    "원피스": "https://empty.seoul.kr/product/list.html?cate_no=59",
     #BAG
     "백팩": "https://empty.seoul.kr/product/list.html?cate_no=98",
     "토트백": "https://empty.seoul.kr/product/list.html?cate_no=88",
@@ -48,18 +48,18 @@ CATEGORIES = {
 
 CATEGORY_MAP = {
     #OUTER
+    "숏 패딩": {"대분류": "OUTER", "중분류": "PADDING"},
     "코트": {"대분류": "OUTER", "중분류": "COAT"},
-    "레더": {"대분류": "OUTER", "중분류": "JACKET"},
-    "퍼": {"대분류": "OUTER", "중분류": "JACKET"},
-    "다운": {"대분류": "OUTER", "중분류": "PADDING"},
+    "레더 자켓": {"대분류": "OUTER", "중분류": "JACKET"},
+    "무스탕/퍼": {"대분류": "OUTER", "중분류": "JACKET"},
     #TOP
     "티셔츠": {"대분류": "TOP", "중분류": "TSHIRT"},
-    "스웻셔츠": {"대분류": "TOP", "중분류": "SWEATSHIRT"},
-    "셔츠&블라우스": {"대분류": "TOP", "중분류": "SHIRT"},
-    "후디": {"대분류": "TOP", "중분류": "HOODIE"},
-    "폴리스": {"대분류": "TOP", "중분류": "FLEECE"},
+    "긴소매 셔츠": {"대분류": "TOP", "중분류": "LSHIRT"},
+    "스웨트 셔츠": {"대분류": "TOP", "중분류": "SWEATSHIRT"},
+    "후드": {"대분류": "TOP", "중분류": "HOODIE"},
+    "플리스": {"대분류": "TOP", "중분류": "FLEECE"},
     #BOTTOM
-    "데님": {"대분류": "BOTTOM", "중분류": "DENIM"},
+    "데님 팬츠": {"대분류": "BOTTOM", "중분류": "DENIM"},
     "팬츠": {"대분류": "BOTTOM", "중분류": "PANTS"},
     "스커트": {"대분류": "BOTTOM", "중분류": "SKIRT"},
     #DRESS
@@ -72,7 +72,7 @@ CATEGORY_MAP = {
     "스니커즈": {"대분류": "SHOES", "중분류": "SNEAKERS"},
     "부츠": {"대분류": "SHOES", "중분류": "BOOTS"},
     #HAT
-    "캡모자": {"대분류": "HAT", "중분류": "CAP"},
+    "볼캡": {"대분류": "HAT", "중분류": "CAP"},
     "비니": {"대분류": "HAT", "중분류": "BEANIE"}
 
 }
