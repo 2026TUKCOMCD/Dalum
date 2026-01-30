@@ -43,6 +43,7 @@ CATEGORIES = [
 ]
 
 FINAL_HEADER = [
+    "제품 식별",
     "쇼핑몰",
     "대분류",
     "중분류",
@@ -67,11 +68,11 @@ def ensure_dirs():
 # 크롤러 실행
 # ===============================
 def run_crawlers():
-    print("\n🚀 [1/3] 크롤링 단계 시작")
+    print("\n[1/3] 크롤링 단계 시작")
 
     for crawler in CRAWLERS:
         crawler_path = os.path.join(CRAWLERS_DIR, crawler)
-        print(f"\n▶ 실행 중: {crawler}")
+        print(f"\n실행 중: {crawler}")
 
         try:
             result = subprocess.run(
@@ -80,14 +81,14 @@ def run_crawlers():
             )
 
             if result.returncode != 0:
-                print(f"⚠ 크롤러 실패: {crawler} (continue)")
+                print(f"크롤러 실패: {crawler} (continue)")
             else:
-                print(f"✅ 완료: {crawler}")
+                print(f"완료: {crawler}")
 
         except Exception as e:
-            print(f"❌ 실행 오류: {crawler} | {e}")
+            print(f"실행 오류: {crawler} | {e}")
 
-    print("\n🚀 크롤링 단계 종료")
+    print("\n크롤링 단계 종료")
 
 # ===============================
 def read_csv_no_header(path):
@@ -106,7 +107,7 @@ def read_csv_no_header(path):
 # output → merged
 # ===============================
 def merge_by_category():
-    print("\n📦 [2/3] 2차 결과물 생성 (output → merged)")
+    print("\n[2/3] 2차 결과물 생성 (output → merged)")
 
     for category in CATEGORIES:
         merged_rows = []
@@ -127,13 +128,37 @@ def merge_by_category():
             writer = csv.writer(f)
             writer.writerows(merged_rows)
 
-        print(f"✅ merged/{category}.csv ({len(merged_rows)}개)")
+        print(f"merged/{category}.csv ({len(merged_rows)}개)")
 
 # ===============================
 # merged → final
 # ===============================
 def merge_all():
-    print("\n⭐ [3/3] 최종 결과물 생성 (merged → final)")
+    print("\n[3/3] 최종 결과물 생성 (merged → final)")
+
+    final_rows = []
+    product_id = 1  # 제품 식별 번호 시작
+
+    for category in CATEGORIES:
+        path = os.path.join(MERGED_DIR, f"{category}.csv")
+        rows = read_csv_no_header(path)
+
+        for row in rows:
+            final_rows.append([product_id] + row)
+            product_id += 1
+
+    if not final_rows:
+        print("최종 병합 데이터 없음")
+        return
+
+    final_path = os.path.join(FINAL_DIR, "all_products.csv")
+    with open(final_path, "w", newline="", encoding="utf-8-sig") as f:
+        writer = csv.writer(f)
+        writer.writerow(FINAL_HEADER)
+        writer.writerows(final_rows)
+
+    print(f"all_products.csv 생성 완료 ({len(final_rows)}개)")
+    print("\n[3/3] 최종 결과물 생성 (merged → final)")
 
     final_rows = []
 
@@ -143,7 +168,7 @@ def merge_all():
         final_rows.extend(rows)
 
     if not final_rows:
-        print("❌ 최종 병합 데이터 없음")
+        print("최종 병합 데이터 없음")
         return
 
     final_path = os.path.join(FINAL_DIR, "all_products.csv")
@@ -152,7 +177,7 @@ def merge_all():
         writer.writerow(FINAL_HEADER)
         writer.writerows(final_rows)
 
-    print(f"🎉 final/all_products.csv 생성 완료 ({len(final_rows)}개)")
+    print(f"all_products.csv 생성 완료 ({len(final_rows)}개)")
 
 # ===============================
 def main():
