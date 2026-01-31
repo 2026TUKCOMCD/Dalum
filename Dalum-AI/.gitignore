@@ -1,19 +1,26 @@
-# python
+# =========================
+# Python
+# =========================
 __pycache__/
-*.pyc
-*.pyo
+*.py[cod]
+*.pyd
+*.so
+*.dll
 
-# venv
+# Virtual Environments
 .venv/
+.venv_*/
 venv/
+env/
 
-# env
-.env
+# Outputs / Artifacts
+vit/outputs/
+outputs/
 
-# logs
-logs/
+# Logs
+*.log
 
-# model artifacts
-*.pt
-*.pth
-*.ckpt
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
