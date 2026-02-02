@@ -58,6 +58,8 @@ public class AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(member.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
+        member.updateRefreshToken(refreshToken);
+        memberRepository.save(member);
 
         // 3. 응답 DTO 생성
         return AuthTokenResponse.builder()

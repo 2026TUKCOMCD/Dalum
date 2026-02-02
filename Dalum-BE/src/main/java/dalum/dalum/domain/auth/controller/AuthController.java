@@ -54,6 +54,9 @@ public class AuthController {
         String accessToken = jwtTokenProvider.createAccessToken(testMember.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
 
+        testMember.updateRefreshToken(refreshToken);
+        memberRepository.save(testMember);
+
         return ApiResponse.success(AuthSuccessCode.OK,
                 AuthTokenResponse.builder()
                         .grantType("Bearer")
