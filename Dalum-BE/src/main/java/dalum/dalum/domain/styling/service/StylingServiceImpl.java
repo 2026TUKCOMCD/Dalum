@@ -123,7 +123,6 @@ public class StylingServiceImpl implements StylingService {
 
     }
 
-
     @Override
     public MyStylingDetailResponse getMyStylingDetail(Long memberId, Long stylingId) {
 

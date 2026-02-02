@@ -9,8 +9,8 @@ import org.springframework.http.HttpStatus;
 @AllArgsConstructor
 public enum StylingErrorCode implements BaseErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND,
-            "PRODUCT_404_1",
-            "해당 제품을 찾지 못했습니다."),
+            "STYLING_404_1",
+            "해당 스타일링을 찾지 못했습니다."),
     ;
     private final HttpStatus status;
     private final String code;

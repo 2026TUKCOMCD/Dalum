@@ -102,7 +102,6 @@ public class AuthService {
             throw new AuthException(AuthErrorCode.EXPIRED_TOKEN);
         }
 
-
         if (!refreshToken.equals(storedRefreshToken)) {
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }

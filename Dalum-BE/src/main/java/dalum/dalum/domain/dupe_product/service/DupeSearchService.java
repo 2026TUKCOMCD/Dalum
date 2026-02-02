@@ -6,6 +6,7 @@ import dalum.dalum.domain.dupe_product.enitty.DupeProduct;
 import dalum.dalum.domain.dupe_product.repository.DupeProductRepository;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
+import dalum.dalum.domain.member.exception.MemberException;
 import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.domain.product.converter.ProductConverter;
@@ -40,21 +41,20 @@ public class DupeSearchService {
 
     public DupeSearchResponse searchDupe(Long memberId, DupeSearchRequest request) {
         Member member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new GeneralException(MemberErrorCode.NOT_FOUND));
+                .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND));
 
         // s3 사용시에 필요
-//        MultipartFile file = request.image();
+        MultipartFile file = request.image();
 
         String imageUrl = "https://via.placeholder.com/500?text=MockImage";
         // String imageUrl = s3Service.upload(image); -> S3 코드로 변경해야함
 
         // searchLog 생성
-        SearchLog searchLog = getLog(request, member);
-
+        SearchLog searchLog = getLog(request, member, imageUrl);
         searchLogRepository.save(searchLog);
 
         // 듀프 제품 추천받기
-        List<Long> recommendProductIds = List.of(1L, 2L, 3L);
+        List<Long> recommendProductIds = List.of(1L);
         // List<Long> recommendProductIds = aiService.getRecommendations(imageUrl);
 
         List<Product> products = productRepository.findAllById(recommendProductIds);
@@ -71,10 +71,10 @@ public class DupeSearchService {
 
     }
 
-    private static SearchLog getLog(DupeSearchRequest request, Member member) {
+    private static SearchLog getLog(DupeSearchRequest request, Member member, String imageUrl) {
         SearchLog searchLog = SearchLog.builder()
                 .member(member)
-                .inputImageUrl(request.image())
+                .inputImageUrl(imageUrl)
                 .brand(request.brand())
                 .minPrice(request.minPrice())
                 .maxPrice(request.maxPrice())
