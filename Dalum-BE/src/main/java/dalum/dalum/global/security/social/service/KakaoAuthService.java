@@ -78,7 +78,6 @@ public class KakaoAuthService {
      * 2. 액세스 토큰으로 사용자 정보를 요청
      */
     public KakaoUserInfoResponse getUserInfo(String accessToken) {
-
         // WebClient 요청 (GET)
         // 헤더에 Authorization: Bearer {token} 추가
         KakaoUserInfoResponse response = webClient.get()
