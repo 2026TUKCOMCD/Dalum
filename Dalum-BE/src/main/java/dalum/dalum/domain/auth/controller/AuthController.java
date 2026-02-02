@@ -8,8 +8,10 @@ import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.enums.SocialType;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.global.apipayload.ApiResponse;
+import dalum.dalum.global.redis.RedisUtil;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
 import io.swagger.v3.oas.annotations.Operation;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -22,6 +24,7 @@ public class AuthController {
     private final AuthService authService;
     private final MemberRepository memberRepository;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisUtil redisUtil;
 
     @Operation(summary = "소셜 로그인/회원가입", description = "Provider(kakao, naver, google)에 따라 소셜 로그인을 진행하고 토큰을 발급합니다.")
     @PostMapping("/login/{provider}")
@@ -54,8 +57,7 @@ public class AuthController {
         String accessToken = jwtTokenProvider.createAccessToken(testMember.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
 
-        testMember.updateRefreshToken(refreshToken);
-        memberRepository.save(testMember);
+        redisUtil.setDataExpire("RT :" + testMember.getId(), refreshToken, 100000000000L);
 
         return ApiResponse.success(AuthSuccessCode.OK,
                 AuthTokenResponse.builder()
@@ -78,5 +80,15 @@ public class AuthController {
         AuthTokenResponse response = authService.refreshAccessToken(token);
 
         return ApiResponse.success(AuthSuccessCode.REISSUE, response);
+    }
+
+    @Operation(summary = "로그아웃 API", description = "엑세스 토큰과 리프레시 토큰을 모두 만료 처리합니다.")
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(HttpServletRequest request) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
+
+        authService.logout(accessToken);
+
+        return ApiResponse.success(AuthSuccessCode.LOGOUT, null);
     }
 }
