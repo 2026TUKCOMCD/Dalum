@@ -38,3 +38,9 @@ out/
 
 ## Plain text files ##
 .DS_Store
+
+### Environment Files ###
+.env
+
+### Database ###
+postgres-data/
