@@ -14,4 +14,7 @@ public interface SearchLogRepository extends JpaRepository<SearchLog, Long> {
     // 검색 기록 조회
     Page<SearchLog> findAllByMemberOrderByCreatedAtDesc(Member member, Pageable pageable);
 
+    void deleteByMemberId(Long memberId);
+
+    List<SearchLog> findByMemberId(Long memberId);
 }

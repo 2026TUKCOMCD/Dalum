@@ -91,4 +91,15 @@ public class AuthController {
 
         return ApiResponse.success(AuthSuccessCode.LOGOUT, null);
     }
+
+    @Operation(summary = "회원 탈퇴 API", description = "회원 탈퇴를 진행합니다.")
+    @DeleteMapping("/withdraw")
+    public ApiResponse<Void> withdraw(HttpServletRequest request) {
+        String accessToken = jwtTokenProvider.resolveToken(request);
+        Long memberId = Long.parseLong(jwtTokenProvider.getAuthentication(accessToken).getName());
+
+        authService.withdraw(memberId, accessToken);
+
+        return ApiResponse.success(AuthSuccessCode.WITHDRAW, null);
+    }
 }

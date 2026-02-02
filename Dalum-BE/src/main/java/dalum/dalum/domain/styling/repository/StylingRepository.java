@@ -9,4 +9,6 @@ public interface StylingRepository extends JpaRepository<Styling, Long> {
 
     // MemberId 일치 AND 좋아요한 상품만 조회
     Page<Styling> findAllByMemberIdAndIsScrappedTrueOrderByCreatedAtDesc(Long memberId, Pageable pageable);
+
+    void deleteByMemberId(Long memberId);
 }

@@ -3,11 +3,16 @@ package dalum.dalum.domain.auth.service;
 import dalum.dalum.domain.auth.dto.response.AuthTokenResponse;
 import dalum.dalum.domain.auth.exception.AuthException;
 import dalum.dalum.domain.auth.exception.code.AuthErrorCode;
+import dalum.dalum.domain.dupe_product.repository.DupeProductRepository;
+import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.enums.SocialType;
 import dalum.dalum.domain.member.exception.MemberException;
 import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
+import dalum.dalum.domain.search_log.entity.SearchLog;
+import dalum.dalum.domain.search_log.repository.SearchLogRepository;
+import dalum.dalum.domain.styling.repository.StylingRepository;
 import dalum.dalum.global.redis.RedisUtil;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
 import dalum.dalum.global.security.social.dto.response.GoogleUserInfoResponse;
@@ -21,6 +26,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 @Service
 @RequiredArgsConstructor
 public class AuthService {
@@ -31,6 +38,10 @@ public class AuthService {
     private final GoogleAuthService googleAuthService;
     private final NaverAuthService naverAuthService;
     private final RedisUtil redisUtil;
+    private final LikeProductRepository likeProductRepository;
+    private final SearchLogRepository searchLogRepository;
+    private final StylingRepository stylingRepository;
+    private final DupeProductRepository dupeProductRepository;
 
     @Value("${jwt.access-expiration}")
     private Long accessExpiration;
@@ -127,6 +138,26 @@ public class AuthService {
         if (expiration > 0) {
             redisUtil.setDataExpire(accessToken, "logout", expiration);
         }
+    }
+
+    @Transactional
+    public void withdraw(Long memberId, String accessToken) {
+        logout(accessToken);
+
+        if (!memberRepository.existsById(memberId)) {
+            throw new MemberException(MemberErrorCode.NOT_FOUND);
+        }
+
+        likeProductRepository.deleteByMemberId(memberId);
+
+        List<SearchLog> memberLogs = searchLogRepository.findByMemberId(memberId);
+
+        for (SearchLog log : memberLogs) {
+            dupeProductRepository.deleteBySearchLog(log);
+        }
+
+        searchLogRepository.deleteAll(memberLogs);
+        memberRepository.deleteById(memberId);
     }
 
     // 카카오 회원가입 로직

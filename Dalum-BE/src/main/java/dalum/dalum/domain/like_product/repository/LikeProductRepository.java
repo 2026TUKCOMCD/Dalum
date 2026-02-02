@@ -29,4 +29,6 @@ public interface LikeProductRepository extends JpaRepository<LikeProduct, Long> 
 
     Page<LikeProduct> findAllByMemberOrderByCreatedAtDesc(Member member, Pageable pageable);
 
+    void deleteByMemberId(Long memberId);
+
 }
