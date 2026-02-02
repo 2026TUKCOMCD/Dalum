@@ -8,6 +8,7 @@ import dalum.dalum.domain.member.enums.SocialType;
 import dalum.dalum.domain.member.exception.MemberException;
 import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
+import dalum.dalum.global.redis.RedisUtil;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
 import dalum.dalum.global.security.social.dto.response.GoogleUserInfoResponse;
 import dalum.dalum.global.security.social.dto.response.KakaoUserInfoResponse;
@@ -29,9 +30,13 @@ public class AuthService {
     private final KakaoAuthService kakaoAuthService;
     private final GoogleAuthService googleAuthService;
     private final NaverAuthService naverAuthService;
+    private final RedisUtil redisUtil;
 
     @Value("${jwt.access-expiration}")
     private Long accessExpiration;
+
+    @Value("${jwt.refresh-expiration}")
+    private Long refreshExpiration;
 
     @Transactional
     public AuthTokenResponse socialLogin(String provider, String code, String redirectUri) {
@@ -62,8 +67,7 @@ public class AuthService {
         String accessToken = jwtTokenProvider.createAccessToken(member.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
-        member.updateRefreshToken(refreshToken);
-        memberRepository.save(member);
+        redisUtil.setDataExpire("RT :" + member.getId(), refreshToken, refreshExpiration);
 
         // 3. 응답 DTO 생성
         return AuthTokenResponse.builder()
@@ -82,22 +86,28 @@ public class AuthService {
 
         Long memberId = jwtTokenProvider.getMemberIdFromToken(refreshToken);
 
-        Member member = memberRepository.findById(memberId).orElseThrow(
-                () -> new MemberException(MemberErrorCode.NOT_FOUND));
+        String storedRefreshToken = redisUtil.getData("RT :" + memberId);
+        if (storedRefreshToken == null) {
+            throw new AuthException(AuthErrorCode.EXPIRED_TOKEN);
+        }
 
 
-        if (!refreshToken.equals(member.getRefreshToken())) {
+        if (!refreshToken.equals(storedRefreshToken)) {
             throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
 
-            String newAccessToken = jwtTokenProvider.createAccessToken(memberId);
+        if (!memberRepository.existsById(memberId)) {
+            throw new MemberException(MemberErrorCode.NOT_FOUND);
+        }
 
-            return AuthTokenResponse.builder()
-                    .grantType("Bearer")
-                    .accessToken(newAccessToken)
-                    .refreshToken(refreshToken)
-                    .accessTokenExpiresIn(accessExpiration)
-                    .build();
+        String newAccessToken = jwtTokenProvider.createAccessToken(memberId);
+
+        return AuthTokenResponse.builder()
+                .grantType("Bearer")
+                .accessToken(newAccessToken)
+                .refreshToken(refreshToken)
+                .accessTokenExpiresIn(accessExpiration)
+                .build();
         }
 
         // 카카오 회원가입 로직
