@@ -30,7 +30,7 @@ public class DupeProductController {
     })
     @PostMapping(value = "/search/dupe", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResult<DupeSearchResponse> searchDupe(
-            @ParameterObject @ModelAttribute DupeSearchRequest request) {
+             @ModelAttribute DupeSearchRequest request) {
 
         Long memberId = SecurityUtil.getCurrentMemberId();
 

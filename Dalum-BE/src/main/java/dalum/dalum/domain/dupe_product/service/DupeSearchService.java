@@ -44,14 +44,13 @@ public class DupeSearchService {
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND));
 
         // s3 사용시에 필요
-//        MultipartFile file = request.image();
+        MultipartFile file = request.image();
 
         String imageUrl = "https://via.placeholder.com/500?text=MockImage";
         // String imageUrl = s3Service.upload(image); -> S3 코드로 변경해야함
 
         // searchLog 생성
-        SearchLog searchLog = getLog(request, member);
-
+        SearchLog searchLog = getLog(request, member, imageUrl);
         searchLogRepository.save(searchLog);
 
         // 듀프 제품 추천받기
@@ -72,10 +71,10 @@ public class DupeSearchService {
 
     }
 
-    private static SearchLog getLog(DupeSearchRequest request, Member member) {
+    private static SearchLog getLog(DupeSearchRequest request, Member member, String imageUrl) {
         SearchLog searchLog = SearchLog.builder()
                 .member(member)
-                .inputImageUrl(request.image())
+                .inputImageUrl(imageUrl)
                 .brand(request.brand())
                 .minPrice(request.minPrice())
                 .maxPrice(request.maxPrice())

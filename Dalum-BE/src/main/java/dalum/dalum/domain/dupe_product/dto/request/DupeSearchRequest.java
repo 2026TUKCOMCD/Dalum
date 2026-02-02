@@ -4,13 +4,14 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
+import org.springframework.web.multipart.MultipartFile;
+
 
 public record DupeSearchRequest(
 
-//        MultipartFile image,
-        @Schema(description = "이미지 URL", example = "https://example.com/image.jpg") // 임시
+        @Schema(description = "이미지 파일", type = "string", format = "binary", requiredMode = Schema.RequiredMode.REQUIRED)
         @NotNull(message = "이미지를 반드시 첨부해야 합니다.")
-        String image,
+        MultipartFile image,
 
         @Schema(description = "브랜드명", example = "Nike")
         String brand,
