@@ -1,15 +1,14 @@
-package dalum.dalum.global.apipayload.handler;
+package dalum.dalum.global.apipayload.exception;
 
 import dalum.dalum.global.apipayload.ApiResponse;
 import dalum.dalum.global.apipayload.code.BaseErrorCode;
 import dalum.dalum.global.apipayload.code.GeneralErrorCode;
-import dalum.dalum.global.apipayload.exception.GeneralException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 @RestControllerAdvice
-public class GlobalExceptionAdvice {
+public class GeneralExceptionAdvice {
 
     @ExceptionHandler(GeneralException.class)
     public ResponseEntity<ApiResponse<Void>> handleException(
@@ -37,5 +36,7 @@ public class GlobalExceptionAdvice {
                         )
                 );
     }
+
+
 }
 
