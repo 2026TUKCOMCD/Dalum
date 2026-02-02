@@ -29,5 +29,12 @@ public class Member extends BaseEntity {
     @Column(name = "social_id", nullable = false)
     private String socialId;
 
+    @Column(name = "refresh_token", nullable = false, length = 512)
+    private String refreshToken;
 
+    public void updateRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
 }
+
+

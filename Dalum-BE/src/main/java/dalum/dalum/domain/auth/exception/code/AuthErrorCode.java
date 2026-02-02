@@ -8,6 +8,12 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum AuthErrorCode implements BaseErrorCode {
+    INVALID_TOKEN(HttpStatus.UNAUTHORIZED,
+            "AUTH_401_1",
+            "유효하지 않은 토큰입니다."),
+    NOT_FOUND(HttpStatus.NOT_FOUND,
+            "AUTH_404_1",
+            "유효하지 않은 리프레시 토큰입니다."),
     INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,
             "AUTH_500_1",
             "(서버오류) 네이버 토큰 발급 실패입니다.")

@@ -54,6 +54,9 @@ public class AuthController {
         String accessToken = jwtTokenProvider.createAccessToken(testMember.getId());
         String refreshToken = jwtTokenProvider.createRefreshToken(testMember.getId());
 
+        testMember.updateRefreshToken(refreshToken);
+        memberRepository.save(testMember);
+
         return ApiResponse.success(AuthSuccessCode.OK,
                 AuthTokenResponse.builder()
                         .grantType("Bearer")
@@ -61,5 +64,19 @@ public class AuthController {
                         .refreshToken(refreshToken)
                         .accessTokenExpiresIn(100000000000L)
                         .build());
+    }
+
+    @Operation(summary = "엑세스 토큰 재발급 API", description = "리프레시 토큰으로 엑세스 토큰을 재발급합니다.")
+    @PostMapping("/reissue")
+    public ApiResponse<AuthTokenResponse> reissueAccessToken(
+            @RequestHeader("Refresh-Token") String refreshToken
+    ) {
+        String token = refreshToken.startsWith("Bearer ")
+                ? refreshToken.substring(7)
+                : refreshToken;
+
+        AuthTokenResponse response = authService.refreshAccessToken(token);
+
+        return ApiResponse.success(AuthSuccessCode.REISSUE, response);
     }
 }
