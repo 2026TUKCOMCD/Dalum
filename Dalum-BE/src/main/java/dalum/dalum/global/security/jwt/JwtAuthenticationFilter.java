@@ -1,5 +1,8 @@
 package dalum.dalum.global.security.jwt;
 
+import dalum.dalum.domain.auth.exception.AuthException;
+import dalum.dalum.domain.auth.exception.code.AuthErrorCode;
+import dalum.dalum.global.redis.RedisUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +18,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisUtil redisUtil;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
@@ -24,6 +28,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 2. 유효한 토큰인지 확인
         if (token != null && jwtTokenProvider.validateToken(token)) {
+
+            // 로그아웃된 토큰인지 확인
+            if (redisUtil.hasKey(token)) {
+                throw new AuthException(AuthErrorCode.LOGOUT);
+            }
+
             // 3. 유효하면 인증 정보(Authentication)를 가져와서 SecurityContext에 저장
             Authentication authentication = jwtTokenProvider.getAuthentication(token);
             SecurityContextHolder.getContext().setAuthentication(authentication);

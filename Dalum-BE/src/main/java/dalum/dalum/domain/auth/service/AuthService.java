@@ -110,55 +110,74 @@ public class AuthService {
                 .build();
         }
 
-        // 카카오 회원가입 로직
-        private Member getOrCreateMemberKakao(KakaoUserInfoResponse userInfo){
-            String email = userInfo.kakaoAccount().email();
-            if (email == null || email.isBlank()) {
-                email = userInfo.id() + "@kakao.user";
-            }
 
-            String socialId = String.valueOf(userInfo.id()); // 카카오 고유 ID
+    @Transactional
+    public void logout(String accessToken) {
+        long memberId = Long.parseLong(jwtTokenProvider.getAuthentication(accessToken).getName());
 
-            String finalEmail = email;
-            return memberRepository.findByEmail(finalEmail)
-                    .orElseGet(() -> memberRepository.save(Member.builder()
-                            .email(finalEmail)
-                            .nickname(userInfo.kakaoAccount().profile().nickname())
-                            .socialType(SocialType.KAKAO)
-                            .socialId(socialId)
-                            .build()));
-    }
-
-        private Member getOrCreateMemberGoogle (GoogleUserInfoResponse userInfo){
-            String email = userInfo.email(); // 구글은 이메일이 무조건 있음 (scope에 email 포함 시)
-
-            String socialId = String.valueOf(userInfo.sub());
-
-            return memberRepository.findByEmail(email)
-                    .orElseGet(() -> memberRepository.save(Member.builder()
-                            .email(email)
-                            .nickname(userInfo.name())
-                            .socialType(SocialType.GOOGLE)
-                            .socialId(socialId)
-                            .build()));
+        // Redis에서 해당 회원의 refresh token 삭제
+        if (redisUtil.getData("RT :" + memberId) != null) {
+            redisUtil.deleteData("RT :" + memberId);
         }
 
+        // Access Token의 남은 유효시간 계산
+        Long expiration = jwtTokenProvider.getExpiration(accessToken);
 
-        private Member getOrCreateMemberNaver (NaverUserInfoResponse userInfo){
-            NaverUserInfoResponse.Response response = userInfo.response();
-            String email = response.email();
+        // 블랙리스트에 추가 (Key: AccessToken, Value: "logout")
+        if (expiration > 0) {
+            redisUtil.setDataExpire(accessToken, "logout", expiration);
+        }
+    }
 
-            if (email == null || email.isBlank()) {
-                email = response.id() + "@naver.user";
-            }
+    // 카카오 회원가입 로직
+    private Member getOrCreateMemberKakao(KakaoUserInfoResponse userInfo){
+        String email = userInfo.kakaoAccount().email();
+        if (email == null || email.isBlank()) {
+            email = userInfo.id() + "@kakao.user";
+        }
 
-            String finalEmail = email;
-            return memberRepository.findByEmail(finalEmail)
-                    .orElseGet(() -> memberRepository.save(Member.builder()
-                            .email(finalEmail)
-                            .nickname(response.nickname())
-                            .socialType(SocialType.NAVER)
-                            .socialId(response.id())
-                            .build()));
+        String socialId = String.valueOf(userInfo.id()); // 카카오 고유 ID
+
+        String finalEmail = email;
+        return memberRepository.findByEmail(finalEmail)
+                .orElseGet(() -> memberRepository.save(Member.builder()
+                        .email(finalEmail)
+                        .nickname(userInfo.kakaoAccount().profile().nickname())
+                        .socialType(SocialType.KAKAO)
+                        .socialId(socialId)
+                        .build()));
+}
+
+    private Member getOrCreateMemberGoogle (GoogleUserInfoResponse userInfo){
+        String email = userInfo.email(); // 구글은 이메일이 무조건 있음 (scope에 email 포함 시)
+
+        String socialId = String.valueOf(userInfo.sub());
+
+        return memberRepository.findByEmail(email)
+                .orElseGet(() -> memberRepository.save(Member.builder()
+                        .email(email)
+                        .nickname(userInfo.name())
+                        .socialType(SocialType.GOOGLE)
+                        .socialId(socialId)
+                        .build()));
+    }
+
+
+    private Member getOrCreateMemberNaver (NaverUserInfoResponse userInfo){
+        NaverUserInfoResponse.Response response = userInfo.response();
+        String email = response.email();
+
+        if (email == null || email.isBlank()) {
+            email = response.id() + "@naver.user";
+        }
+
+        String finalEmail = email;
+        return memberRepository.findByEmail(finalEmail)
+                .orElseGet(() -> memberRepository.save(Member.builder()
+                        .email(finalEmail)
+                        .nickname(response.nickname())
+                        .socialType(SocialType.NAVER)
+                        .socialId(response.id())
+                        .build()));
     }
 }

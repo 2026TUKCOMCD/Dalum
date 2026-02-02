@@ -1,5 +1,6 @@
 package dalum.dalum.global.config;
 
+import dalum.dalum.global.redis.RedisUtil;
 import dalum.dalum.global.security.jwt.JwtAuthenticationFilter;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final RedisUtil redisUtil;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -47,7 +49,7 @@ public class SecurityConfig {
                 )
 
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 추가
-                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider, redisUtil), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
