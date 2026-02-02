@@ -65,4 +65,18 @@ public class AuthController {
                         .accessTokenExpiresIn(100000000000L)
                         .build());
     }
+
+    @Operation(summary = "엑세스 토큰 재발급 API", description = "리프레시 토큰으로 엑세스 토큰을 재발급합니다.")
+    @PostMapping("/reissue")
+    public ApiResponse<AuthTokenResponse> reissueAccessToken(
+            @RequestHeader("Refresh-Token") String refreshToken
+    ) {
+        String token = refreshToken.startsWith("Bearer ")
+                ? refreshToken.substring(7)
+                : refreshToken;
+
+        AuthTokenResponse response = authService.refreshAccessToken(token);
+
+        return ApiResponse.success(AuthSuccessCode.REISSUE, response);
+    }
 }

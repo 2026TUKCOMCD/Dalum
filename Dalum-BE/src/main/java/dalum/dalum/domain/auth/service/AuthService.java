@@ -1,8 +1,12 @@
 package dalum.dalum.domain.auth.service;
 
 import dalum.dalum.domain.auth.dto.response.AuthTokenResponse;
+import dalum.dalum.domain.auth.exception.AuthException;
+import dalum.dalum.domain.auth.exception.code.AuthErrorCode;
 import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.enums.SocialType;
+import dalum.dalum.domain.member.exception.MemberException;
+import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
 import dalum.dalum.global.security.social.dto.response.GoogleUserInfoResponse;
@@ -70,55 +74,81 @@ public class AuthService {
                 .build();
     }
 
-    // 카카오 회원가입 로직
-    private Member getOrCreateMemberKakao(KakaoUserInfoResponse userInfo) {
-        String email = userInfo.kakaoAccount().email();
-        if (email == null || email.isBlank()) {
-            email = userInfo.id() + "@kakao.user";
+    @Transactional
+    public AuthTokenResponse refreshAccessToken(String refreshToken) {
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            throw new AuthException(AuthErrorCode.NOT_FOUND);
         }
 
-        String socialId = String.valueOf(userInfo.id()); // 카카오 고유 ID
+        Long memberId = jwtTokenProvider.getMemberIdFromToken(refreshToken);
 
-        String finalEmail = email;
-        return memberRepository.findByEmail(finalEmail)
-                .orElseGet(() -> memberRepository.save(Member.builder()
-                        .email(finalEmail)
-                        .nickname(userInfo.kakaoAccount().profile().nickname())
-                        .socialType(SocialType.KAKAO)
-                        .socialId(socialId)
-                        .build()));
-    }
-
-    private Member getOrCreateMemberGoogle(GoogleUserInfoResponse userInfo) {
-        String email = userInfo.email(); // 구글은 이메일이 무조건 있음 (scope에 email 포함 시)
-
-        String socialId = String.valueOf(userInfo.sub());
-
-        return memberRepository.findByEmail(email)
-                .orElseGet(() -> memberRepository.save(Member.builder()
-                        .email(email)
-                        .nickname(userInfo.name())
-                        .socialType(SocialType.GOOGLE)
-                        .socialId(socialId)
-                        .build()));
-    }
+        Member member = memberRepository.findById(memberId).orElseThrow(
+                () -> new MemberException(MemberErrorCode.NOT_FOUND));
 
 
-    private Member getOrCreateMemberNaver(NaverUserInfoResponse userInfo) {
-        NaverUserInfoResponse.Response response = userInfo.response();
-        String email = response.email();
-
-        if (email == null || email.isBlank()) {
-            email = response.id() + "@naver.user";
+        if (!refreshToken.equals(member.getRefreshToken())) {
+            throw new AuthException(AuthErrorCode.INVALID_TOKEN);
         }
 
-        String finalEmail = email;
-        return memberRepository.findByEmail(finalEmail)
-                .orElseGet(() -> memberRepository.save(Member.builder()
-                        .email(finalEmail)
-                        .nickname(response.nickname())
-                        .socialType(SocialType.NAVER)
-                        .socialId(response.id())
-                        .build()));
+            String newAccessToken = jwtTokenProvider.createAccessToken(memberId);
+
+            return AuthTokenResponse.builder()
+                    .grantType("Bearer")
+                    .accessToken(newAccessToken)
+                    .refreshToken(refreshToken)
+                    .accessTokenExpiresIn(accessExpiration)
+                    .build();
+        }
+
+        // 카카오 회원가입 로직
+        private Member getOrCreateMemberKakao(KakaoUserInfoResponse userInfo){
+            String email = userInfo.kakaoAccount().email();
+            if (email == null || email.isBlank()) {
+                email = userInfo.id() + "@kakao.user";
+            }
+
+            String socialId = String.valueOf(userInfo.id()); // 카카오 고유 ID
+
+            String finalEmail = email;
+            return memberRepository.findByEmail(finalEmail)
+                    .orElseGet(() -> memberRepository.save(Member.builder()
+                            .email(finalEmail)
+                            .nickname(userInfo.kakaoAccount().profile().nickname())
+                            .socialType(SocialType.KAKAO)
+                            .socialId(socialId)
+                            .build()));
+    }
+
+        private Member getOrCreateMemberGoogle (GoogleUserInfoResponse userInfo){
+            String email = userInfo.email(); // 구글은 이메일이 무조건 있음 (scope에 email 포함 시)
+
+            String socialId = String.valueOf(userInfo.sub());
+
+            return memberRepository.findByEmail(email)
+                    .orElseGet(() -> memberRepository.save(Member.builder()
+                            .email(email)
+                            .nickname(userInfo.name())
+                            .socialType(SocialType.GOOGLE)
+                            .socialId(socialId)
+                            .build()));
+        }
+
+
+        private Member getOrCreateMemberNaver (NaverUserInfoResponse userInfo){
+            NaverUserInfoResponse.Response response = userInfo.response();
+            String email = response.email();
+
+            if (email == null || email.isBlank()) {
+                email = response.id() + "@naver.user";
+            }
+
+            String finalEmail = email;
+            return memberRepository.findByEmail(finalEmail)
+                    .orElseGet(() -> memberRepository.save(Member.builder()
+                            .email(finalEmail)
+                            .nickname(response.nickname())
+                            .socialType(SocialType.NAVER)
+                            .socialId(response.id())
+                            .build()));
     }
 }
