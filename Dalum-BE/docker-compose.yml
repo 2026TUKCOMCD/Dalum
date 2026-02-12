@@ -14,11 +14,28 @@ services:
     env_file:
       - .env
     environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+      SERVER_IP: ${EC2_PUBLIC_IP}
+
       DB_URL: ${DB_URL}
       DB_USER: ${POSTGRES_USER}
       DB_PW: ${POSTGRES_PASSWORD}
       REDIS_HOST: ${REDIS_HOST}
       REDIS_PORT: ${REDIS_PORT}
+
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ACCESS_EXPIRATION: ${JWT_ACCESS_EXPIRATION}
+      JWT_REFRESH_EXPIRATION: ${JWT_REFRESH_EXPIRATION}
+
+      KAKAO_REST_API_KEY: ${KAKAO_REST_API_KEY}
+
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+
+      NAVER_CLIENT_ID: ${NAVER_CLIENT_ID}
+      NAVER_CLIENT_SECRET: ${NAVER_CLIENT_SECRET}
+
     networks:
       - dalum-network
 
@@ -30,8 +47,6 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
     networks:
@@ -41,8 +56,6 @@ services:
     container_name: dalum-redis
     image: redis:alpine
     restart: always
-    ports:
-      - "6379:6379"
     networks:
       - dalum-network
 
