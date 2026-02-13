@@ -1,6 +1,10 @@
 name: Dalum BE CI
 
 on:
+  push:
+    branches: [ "main", "develop" ]
+    paths:
+      - 'Dalum-BE/**'  # 백엔드 코드가 바뀔 때만 실행
   pull_request:
     branches: [ "main", "develop" ]
     paths:
