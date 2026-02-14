@@ -37,6 +37,14 @@ export default {
         body_14: ["14px", { lineHeight: "140%" }],
         body_12: ["12px", { lineHeight: "140%" }],
       },
+      backgroundImage: {
+        "chevron-left": "url('/icons/chevron-left.svg')",
+        "chevron-right": "url('/icons/chevron-right.svg')",
+        close: "url('/icons/close.svg')",
+        kakao: "url('/icons/kakao.svg')",
+        naver: "url('/icons/naver.svg')",
+        google: "url('/icons/google.svg')",
+      },
       textColor: (theme) => ({
         ...theme("colors"),
       }),
