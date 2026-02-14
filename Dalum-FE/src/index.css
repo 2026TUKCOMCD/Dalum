@@ -1,6 +1,16 @@
+@config "../tailwind.config.js";
+
 @import "tailwindcss/preflight";
 @import "tailwindcss/utilities";
-@reference "tailwindcss/theme";
+@import "tailwindcss/theme";
+
+@font-face {
+  font-family: "Pretendard";
+  src: url("/fonts/PretendardVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
 
 html {
   margin: 0px;
@@ -12,8 +22,18 @@ html {
 body {
   margin: 0px;
   padding: 0px;
-  font-family: "pretendard", sans-serif;
-  min-height: 100vh;
+  font-family:
+    "Pretendard",
+    -apple-system,
+    BlinkMacSystemFont,
+    system-ui,
+    Roboto,
+    "Helvetica Neue",
+    "Segoe UI",
+    "Apple SD Gothic Neo",
+    "Noto Sans KR",
+    sans-serif;
+  min-height: 100dvh;
   height: auto;
   overflow-x: hidden;
   -ms-overflow-style: none;
@@ -23,4 +43,74 @@ body {
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 10+ */
   background-color: #fafafa;
+}
+
+@layer utilities {
+  /* Header */
+  .typo-h1_bold32 {
+    @apply text-h1_32 font-bold;
+  }
+  .typo-h2_bold24 {
+    @apply text-h2_24 font-semibold;
+  }
+
+  /* body-20 */
+  .typo-body_bold20 {
+    @apply text-body_20 font-semibold;
+  }
+  .typo-body_med20 {
+    @apply text-body_20 font-medium;
+  }
+
+  /* body-18 */
+  .typo-body_bold18 {
+    @apply text-body_18 font-semibold;
+  }
+  .typo-body_med18 {
+    @apply text-body_18 font-medium;
+  }
+  .typo-body_thin18 {
+    @apply text-body_18 font-extralight;
+  }
+
+  /* body-16 */
+  .typo-body_bold16 {
+    @apply text-body_16 font-semibold;
+  }
+  .typo-body_med16 {
+    @apply text-body_16 font-medium;
+  }
+  .typo-body_thin16 {
+    @apply text-body_16 font-extralight;
+  }
+
+  /* body-14 */
+  .typo-body_bold14 {
+    @apply text-body_14 font-semibold;
+  }
+  .typo-body_med14 {
+    @apply text-body_14 font-medium;
+  }
+
+  /* body-12 */
+  .typo-body_bold12 {
+    @apply text-body_12 font-semibold;
+  }
+  .typo-body_med12 {
+    @apply text-body_12 font-medium;
+  }
+}
+
+@theme {
+  --color-gray-900: #222222;
+  --color-gray-800: #444444;
+  --color-gray-700: #666666;
+  --color-gray-600: #888888;
+  --color-gray-500: #cccccc;
+  --color-gray-100: #e5e5e5;
+  --color-gray-50: #f1f2f4;
+  --color-gray-0: #ffffff;
+
+  --shadow-header-shadow: 0px 1px 10px rgba(0, 0, 0, 0.1);
+  --shadow-card-shadow: 0px 1px 8px rgba(0, 0, 0, 0.25);
 }
