@@ -3,9 +3,7 @@ version: '3.8'
 services:
   app:
     container_name: dalum-app
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: yuhyun1116/dalum-server:latest
     ports:
       - "8080:8080"
     depends_on:
@@ -15,6 +13,9 @@ services:
       - .env
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_AUTO: update
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
       SERVER_IP: ${EC2_PUBLIC_IP}
 
