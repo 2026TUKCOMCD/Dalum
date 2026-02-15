@@ -48,7 +48,7 @@ const SearchPage = () => {
 
       {/* 조건 설정 영역 */}
       <div className="w-full h-full flex flex-col items-start justify-between">
-        <div className="flex flex-col gap-7.5">
+        <div className="w-full flex flex-col gap-7.5">
           {/* 제목 */}
           <div className="flex flex-col items-start justify-center gap-3 text-gray-900">
             <span className="typo-h2_bold24">| 세부사항</span>
@@ -60,7 +60,7 @@ const SearchPage = () => {
             </span>
           </div>
           {/* 브랜드 명 입력 */}
-          <div className="flex flex-col gap-3">
+          <div className="w-full flex flex-col gap-3">
             <span className="typo-body_bold18">| 제품 브랜드 (선택)</span>
             <input
               className="w-full bg-gray-50 text-base placeholder:font-extralight font-medium text-gray-900 px-5 py-4 rounded-lg outline-none"
