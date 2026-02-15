@@ -13,7 +13,7 @@ const Logo: React.FC<LogoProps> = ({
   return (
     <svg
       width={width}
-      height={(width * 89) / 150}
+      // height={(width * 89) / 150}
       viewBox="0 0 150 89"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
