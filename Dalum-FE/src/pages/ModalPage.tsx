@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import useBaseModal from "../stores/modals/baseModal";
 import ModalBackground from "../components/modals/ModalBackground";
 import LikeInfoModal from "../components/modals/LikeInfoModal";
+import DupeResearchModal from "../components/modals/DupeResarchModal";
 
 const ModalPage = () => {
   const { isModalOpen, modalType } = useBaseModal();
@@ -24,6 +25,7 @@ const ModalPage = () => {
     <>
       <ModalBackground>
         {modalType === "likeInfoModal" && <LikeInfoModal />}
+        {modalType === "dupeResearchModal" && <DupeResearchModal />}
       </ModalBackground>
     </>
   );

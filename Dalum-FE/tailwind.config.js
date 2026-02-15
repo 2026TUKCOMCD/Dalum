@@ -68,8 +68,6 @@ export default {
       borderColor: (theme) => ({
         ...theme("colors"),
       }),
-      boxShadow: {},
-      backgroundImage: {},
     },
   },
   plugins: [],

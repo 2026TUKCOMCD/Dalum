@@ -28,7 +28,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    "w-fit flex items-center justify-center transition-colors duration-200 focus:outline-none";
+    "w-fit flex items-center justify-center transition-colors duration-200 focus:outline-none cursor-pointer";
 
   const variants = {
     primary:
