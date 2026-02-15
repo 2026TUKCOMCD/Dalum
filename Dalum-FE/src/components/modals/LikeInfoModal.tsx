@@ -1,6 +1,6 @@
 const LikeInfoModal = () => {
   return (
-    <div className="flex flex-col gap-2.5 p-6 items-center justify-center w-fit h-fit bg-screen-default rounded-[14px]">
+    <div className="min-w-121.25 flex flex-col gap-2.5 p-6 items-center justify-center h-fit bg-screen-default rounded-[14px]">
       <span className="typo-body_bold20 text-gray-900">
         마음에 드는 제품은 좋아요를 눌러보세요!
       </span>
