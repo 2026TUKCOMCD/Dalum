@@ -3,6 +3,7 @@ import useBaseModal from "../stores/modals/baseModal";
 import ModalBackground from "../components/modals/ModalBackground";
 import LikeInfoModal from "../components/modals/LikeInfoModal";
 import DupeResearchModal from "../components/modals/DupeResarchModal";
+import LoginModal from "../components/modals/LoginModal";
 
 const ModalPage = () => {
   const { isModalOpen, modalType } = useBaseModal();
@@ -26,6 +27,7 @@ const ModalPage = () => {
       <ModalBackground>
         {modalType === "likeInfoModal" && <LikeInfoModal />}
         {modalType === "dupeResearchModal" && <DupeResearchModal />}
+        {modalType === "loginModal" && <LoginModal />}
       </ModalBackground>
     </>
   );

@@ -29,7 +29,7 @@ export default {
         },
         screen: {
           default: "#FAFAFA",
-          modal: "#00000033",
+          modal: "#00000050",
         },
       },
       fontSize: {
