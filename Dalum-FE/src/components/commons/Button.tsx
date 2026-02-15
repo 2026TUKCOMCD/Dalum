@@ -10,7 +10,7 @@ type ButtonProps = {
     | "social_google"
     | "modal_primary"
     | "modal_secondary";
-  size?: "sm" | "md" | "lg" | "modal" | "social";
+  size?: "sm" | "md" | "lg" | "modal" | "social" | "cta";
   disabled?: boolean;
   leftIcon?: React.ReactNode;
   fullWidth?: boolean;
@@ -50,6 +50,7 @@ export function Button({
     lg: "typo-body_bold16 p-4 rounded-sm gap-2.5",
     modal: "typo-body_bold18 h-14 px-2 py-4 rounded-lg",
     social: "typo-body_bold18 px-4 py-2.5 rounded-lg gap-1",
+    cta: "typo-body_bold20 px-4 py-2.5 rounded-sm",
   };
 
   return (

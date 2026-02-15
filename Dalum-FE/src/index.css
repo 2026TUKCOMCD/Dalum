@@ -61,6 +61,9 @@ body {
   .typo-body_med20 {
     @apply text-body_20! font-medium!;
   }
+  .typo-body_thin20 {
+    @apply text-body_20! font-extralight!;
+  }
 
   /* body-18 */
   .typo-body_bold18 {
@@ -91,6 +94,9 @@ body {
   .typo-body_med14 {
     @apply text-body_14! font-medium!;
   }
+  .typo-body_thin14 {
+    @apply text-body_14! font-extralight!;
+  }
 
   /* body-12 */
   .typo-body_bold12 {
@@ -98,6 +104,9 @@ body {
   }
   .typo-body_med12 {
     @apply text-body_12! font-medium!;
+  }
+  .typo-body_thin12 {
+    @apply text-body_12! font-extralight!;
   }
 }
 
