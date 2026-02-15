@@ -27,6 +27,10 @@ export default {
           naver: "#03C75A",
           google: "#F2F2F2",
         },
+        screen: {
+          default: "#FAFAFA",
+          modal: "#00000050",
+        },
       },
       fontSize: {
         h1_32: ["32px", { lineHeight: "140%" }],
@@ -36,6 +40,7 @@ export default {
         body_16: ["16px", { lineHeight: "140%" }],
         body_14: ["14px", { lineHeight: "140%" }],
         body_12: ["12px", { lineHeight: "140%" }],
+        body_10: ["10px", { lineHeight: "140%" }],
       },
       backgroundImage: {
         "chevron-left": "url('/icons/chevron-left.svg')",
@@ -63,8 +68,6 @@ export default {
       borderColor: (theme) => ({
         ...theme("colors"),
       }),
-      boxShadow: {},
-      backgroundImage: {},
     },
   },
   plugins: [],
