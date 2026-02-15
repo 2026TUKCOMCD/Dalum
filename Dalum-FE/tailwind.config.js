@@ -9,7 +9,7 @@ export default {
           900: "#1E3A8A",
         },
         secondary: {
-          900: "#FAE100",
+          900: "#F0F5FA",
         },
         gray: {
           900: "#222222",
