@@ -27,6 +27,10 @@ export default {
           naver: "#03C75A",
           google: "#F2F2F2",
         },
+        screen: {
+          default: "#FAFAFA",
+          modal: "#00000033",
+        },
       },
       fontSize: {
         h1_32: ["32px", { lineHeight: "140%" }],
