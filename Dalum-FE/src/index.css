@@ -51,7 +51,7 @@ body {
     @apply text-h1_32! font-bold!;
   }
   .typo-h2_bold24 {
-    @apply text-h2_24! font-semibold!;
+    @apply text-h2_24! font-bold!;
   }
 
   /* body-20 */
@@ -107,6 +107,17 @@ body {
   }
   .typo-body_thin12 {
     @apply text-body_12! font-extralight!;
+  }
+
+  /* body-10 */
+  .typo-body_bold10 {
+    @apply text-body_10! font-semibold!;
+  }
+  .typo-body_med10 {
+    @apply text-body_10! font-medium!;
+  }
+  .typo-body_thin10 {
+    @apply text-body_10! font-extralight!;
   }
 }
 
