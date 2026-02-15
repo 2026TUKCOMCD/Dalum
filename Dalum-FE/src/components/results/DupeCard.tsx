@@ -5,7 +5,7 @@ import { Button } from "../commons/Button";
 
 const DupeCard = () => {
   return (
-    <div className="h-fit flex flex-col gap-3 justify-start items-center">
+    <div className="max-w-50 h-fit flex flex-col gap-3 justify-start items-center">
       {/* 제품 사진 */}
       <div className="w-50 h-50 rounded-sm bg-secondary-900" />
 
