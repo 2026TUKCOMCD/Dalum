@@ -1,31 +1,49 @@
 import ChartIcon from "../../assets/icons/ChartIcon";
 import LikeIcon from "../../assets/icons/LikeIcon";
 import LinkIcon from "../../assets/icons/LinkIcon";
+import type { DupeItem } from "../../mocks/dupeMockData";
 import { Button } from "../commons/Button";
 
-const DupeCard = () => {
+type DupeCardProps = {
+  item: DupeItem;
+};
+
+const DupeCard = ({ item }: DupeCardProps) => {
+  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "₩";
+
   return (
     <div className="max-w-50 h-fit flex flex-col gap-3 justify-start items-center">
       {/* 제품 사진 */}
-      <div className="w-50 h-50 rounded-sm bg-secondary-900" />
-
+      {item.imageUrl ? (
+        <img
+          src={item.imageUrl}
+          alt={item.name}
+          className="w-50 h-50 rounded-sm object-cover bg-secondary-900"
+          loading="lazy"
+        />
+      ) : (
+        <div className="w-50 h-50 rounded-sm bg-secondary-900" />
+      )}
       {/* 제품 정보 & 상호작용 버튼 */}
       <div className="w-full h-full flex flex-col justify-between gap-3 px-1">
         {/* 제품 정보 */}
         <div className="flex flex-col gap-2">
           {/* 브랜드명 */}
-          <span className="typo-body_med12 text-gray-600">THE OTHER SIDE</span>
+          <span className="typo-body_med12 text-gray-600">{item.brand}</span>
           <div className="flex flex-col gap-1">
             {/* 제품명 */}
-            <span className="typo-body_bold14 text-gray-900">
-              루즈핏 기모 후드티 (5color)
-            </span>
+            <span className="typo-body_bold14 text-gray-900">{item.name}</span>
+
             {/* 제품 가격 */}
             <div className="flex items-center justify-start gap-1">
               {/* 할인율 */}
-              <span className="typo-body_bold14 text-button-like">38%</span>
+              {typeof item.discountRate === "number" && (
+                <span className="typo-body_bold14 text-button-like">
+                  {item.discountRate}%
+                </span>
+              )}
               {/* 가격 */}
-              <span className="typo-body_med14 text-gray-900">37,000₩</span>
+              <span className="typo-body_med14 text-gray-900">{priceText}</span>
             </div>
           </div>
         </div>

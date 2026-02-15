@@ -9,7 +9,13 @@ const ResultSidebar = () => {
         {/* 제목 */}
         <span className="typo-h2_bold24 text-gray-900">| 업로드 이미지</span>
         {/* 업로드 이미지 */}
-        <div className="w-60 h-60 rounded-sm bg-secondary-900" />
+        <div className="w-60 h-60 bg-secondary-900">
+          <img
+            alt="업로드 이미지"
+            src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f"
+            className="w-60 h-60 rounded-sm"
+          />
+        </div>
 
         {/* 버튼 영역 */}
         <div className="flex flex-col gap-2.5">

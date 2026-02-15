@@ -1,4 +1,5 @@
 import InfoIcon from "../../assets/icons/InfoIcon";
+import { dupeMockData } from "../../mocks/dupeMockData";
 import DupeCard from "./DupeCard";
 
 const ResultContent = () => {
@@ -12,13 +13,9 @@ const ResultContent = () => {
         </div>
         {/* 듀프 제품 리스트 */}
         <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-y-10 gap-x-5 overflow-y-auto pb-12.5 scrollbar-hide justify-items-center">
-          <DupeCard />
-          <DupeCard />
-          <DupeCard />
-          <DupeCard />
-          <DupeCard />
-          <DupeCard />
-          <DupeCard />
+          {dupeMockData.map((item) => (
+            <DupeCard key={item.id} item={item} />
+          ))}
         </div>
       </div>
     </div>
