@@ -43,7 +43,7 @@ export function Button({
 
     modal_primary: "bg-primary-900 text-gray-0",
     modal_secondary:
-      "bg-secondary-900 text-primary-900 border border-primary-900",
+      "bg-secondary-900 text-primary-900 border-[0.5px] border-primary-900",
     cta_primary:
       "bg-primary-900 text-gray-0 border border-primary-900 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-100",
   };
