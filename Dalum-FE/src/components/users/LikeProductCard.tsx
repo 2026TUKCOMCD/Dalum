@@ -1,27 +1,34 @@
 import LikeIcon from "../../assets/icons/LikeIcon";
 import LinkIcon from "../../assets/icons/LinkIcon";
 import StyleIcon from "../../assets/icons/StyleIcon";
+import type { LikedItem } from "../../types/me/Me.types";
 import { Button } from "../commons/Button";
 
-const LikeProductCard = () => {
+type Props = {
+  item: LikedItem;
+};
+
+const LikeProductCard = ({ item }: Props) => {
+  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
+
   return (
     <div className="w-100 h-45 flex items-center justify-start gap-3">
-      <div className="w-45 h-45 rounded-sm bg-secondary-900"></div>
+      <img src={item.imageUrl} className="w-45 h-45 rounded-sm bg-none" />
 
       <div className="flex-1 h-full flex flex-col justify-between py-1.5">
         <div className="flex flex-col gap-2 justify-center items-start">
           {/* 브랜드 */}
-          <span className="typo-body_med12 text-gray-600">THE OTHER SIDE</span>
+          <span className="typo-body_med12 text-gray-600">{item.brand}</span>
 
           <div className="flex flex-col gap-1 justify-center items-start">
             {/* 제품명 */}
-            <span className="typo-body_bold14 text-gray-900">
-              루즈핏 기모 후드티 (5color)
-            </span>
+            <span className="typo-body_bold14 text-gray-900">{item.name}</span>
             {/* 가격 */}
             <div className="flex justify-center items-start gap-1">
-              <span className="typo-body_bold14 text-button-like">38%</span>
-              <span className="typo-body_med14 text-gray-900">37,000₩</span>
+              <span className="typo-body_bold14 text-button-like">
+                {item.discountRate}%
+              </span>
+              <span className="typo-body_med14 text-gray-900">{priceText}</span>
             </div>
           </div>
         </div>
