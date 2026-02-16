@@ -5,6 +5,7 @@ import SearchPage from "./pages/SearchPage";
 import ResultPage from "./pages/ResultPage";
 import ModalPage from "./pages/ModalPage";
 import MyPage from "./pages/MyPage";
+import StylingPage from "./pages/StylingPage";
 
 function App() {
   return (
@@ -15,6 +16,7 @@ function App() {
           <Route path="/" element={<SearchPage />} />
           <Route path="/result" element={<ResultPage />} />
           <Route path="/my" element={<MyPage />} />
+          <Route path="/styling" element={<StylingPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
