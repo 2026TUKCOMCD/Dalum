@@ -58,7 +58,7 @@ const DupeCard = ({ item }: DupeCardProps) => {
               fullWidth
               className="flex-1"
             >
-              유사도 확인하기
+              유사도 확인
             </Button>
             <Button
               variant="like"
@@ -74,7 +74,7 @@ const DupeCard = ({ item }: DupeCardProps) => {
             fullWidth
             leftIcon={<LinkIcon className="size-3" />}
           >
-            구매처 바로가기
+            구매 링크
           </Button>
         </div>
       </div>
