@@ -41,7 +41,7 @@ const LikeProductCard = ({ item }: Props) => {
             fullWidth
             leftIcon={<StyleIcon className="size-3" />}
           >
-            스타일링 추천 받기
+            스타일링 추천
           </Button>
           <div className="w-full flex items-center justify-center gap-2">
             <Button
@@ -51,7 +51,7 @@ const LikeProductCard = ({ item }: Props) => {
               leftIcon={<LinkIcon className="size-3" />}
               className="flex-1"
             >
-              구매처 바로가기
+              구매 링크
             </Button>
             <Button
               variant="like"
