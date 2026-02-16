@@ -1,17 +1,25 @@
 import KebabIcon from "../../assets/icons/KebabIcon";
+import type { HistoryItem } from "../../types/me/Me.types";
 
-const HistoryCard = () => {
+type Props = {
+  item: HistoryItem;
+  onMenuClick?: (item: HistoryItem) => void;
+};
+
+const HistoryCard = ({ item, onMenuClick }: Props) => {
+  const label = item.type === "search" ? "검색일시" : "생성일시";
+
   return (
-    <div className="w-fit h-fit flex flex-col gap-2">
-      <div className="w-45 h-45 bg-secondary-900 rounded-sm"></div>
+    <div className="w-45 h-fit flex flex-col gap-2">
+      <img src={item.thumbnailUrl} className="w-45 h-45 bg-none rounded-sm" />
       <div className="flex flex-col gap-1 px-1 py-0.5 text-gray-900">
         <div className="w-full h-fit flex items-center justify-between">
-          <span className="typo-body_bold12">| 생성일시</span>
-          <div>
+          <span className="typo-body_bold12">| {label}</span>
+          <button type="button" onClick={() => onMenuClick?.(item)}>
             <KebabIcon />
-          </div>
+          </button>
         </div>
-        <span className="typo-body_med12">2026.01.15.(목) 05:28</span>
+        <span className="typo-body_med12">{item.createdAt}</span>
       </div>
     </div>
   );
