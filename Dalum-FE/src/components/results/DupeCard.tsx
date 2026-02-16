@@ -9,7 +9,7 @@ type DupeCardProps = {
 };
 
 const DupeCard = ({ item }: DupeCardProps) => {
-  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "₩";
+  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
 
   return (
     <div className="max-w-50 h-fit flex flex-col gap-3 justify-start items-center">

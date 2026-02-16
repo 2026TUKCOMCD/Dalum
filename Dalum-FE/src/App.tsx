@@ -4,6 +4,7 @@ import MainLayout from "./layouts/MainLayout";
 import SearchPage from "./pages/SearchPage";
 import ResultPage from "./pages/ResultPage";
 import ModalPage from "./pages/ModalPage";
+import MyPage from "./pages/MyPage";
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/" element={<SearchPage />} />
           <Route path="/result" element={<ResultPage />} />
+          <Route path="/my" element={<MyPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
