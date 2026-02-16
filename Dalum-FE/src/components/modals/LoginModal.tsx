@@ -16,7 +16,7 @@ const LoginModal = () => {
       </div>
       {/* 로고 */}
       <div className="flex flex-col items-center justify-center">
-        <Logo className="w-37.5 text-gray-900" />
+        <Logo className="w-32.5 text-gray-900" />
       </div>
       {/* 버튼 */}
       <div className="w-full flex flex-col gap-3 py-2">

@@ -56,7 +56,7 @@ const SearchPage = () => {
               세부 사항은 듀프 제품 추천의 정확도와 고객 만족도를 높이기 위한
               정보입니다. <br />
               모든 항목을 입력하지 않아도 되지만, 자세히 입력할수록 더
-              만족스러운 추천을 받을 수 있어요.
+              만족스러운 추천을 받을 수 있습니다.
             </span>
           </div>
           {/* 브랜드 명 입력 */}
@@ -113,7 +113,7 @@ const SearchPage = () => {
           </div>
         </div>
         {/* CTA */}
-        <Button variant="primary" size="cta" fullWidth disabled={!selected}>
+        <Button variant="cta_primary" size="cta" fullWidth disabled={!selected}>
           듀프 제품 찾기
         </Button>
       </div>

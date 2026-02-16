@@ -9,7 +9,8 @@ type ButtonProps = {
     | "social_naver"
     | "social_google"
     | "modal_primary"
-    | "modal_secondary";
+    | "modal_secondary"
+    | "cta_primary";
   size?: "sm" | "md" | "lg" | "modal" | "social" | "cta";
   disabled?: boolean;
   leftIcon?: React.ReactNode;
@@ -41,7 +42,10 @@ export function Button({
     social_google: "bg-button-google text-gray-900",
 
     modal_primary: "bg-primary-900 text-gray-0",
-    modal_secondary: "bg-secondary-900 text-primary-900",
+    modal_secondary:
+      "bg-secondary-900 text-primary-900 border border-primary-900",
+    cta_primary:
+      "bg-primary-900 text-gray-0 border border-primary-900 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-100",
   };
 
   const sizes = {
