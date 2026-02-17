@@ -1,5 +1,6 @@
 package dalum.dalum.global.s3;
 
+import io.awspring.cloud.s3.ObjectMetadata;
 import io.awspring.cloud.s3.S3Template;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -7,7 +8,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.UUID;
 
 @Service
@@ -24,11 +24,16 @@ public class S3Service {
         String originalFileName = file.getOriginalFilename();
         String uuidFileName = UUID.randomUUID() + "_" + originalFileName;
 
-        // 2. S3에 업로드
-        InputStream inputStream = file.getInputStream();
-        s3Template.upload(bucketName, uuidFileName, inputStream);
+        // 2. 메타데이터 설정
+        ObjectMetadata metadata = ObjectMetadata.builder()
+                .contentType(file.getContentType())
+                .contentLength(file.getSize())
+                .build();
 
-        // 3. 업로드된 파일의 URL 반환 (DB에 저장할 주소)
+        // 3. 업로드 (InputStream)
+        s3Template.upload(bucketName, uuidFileName, file.getInputStream(), metadata);
+
+        // URL 반환
         return s3Template.download(bucketName, uuidFileName).getURL().toString();
     }
 
