@@ -17,6 +17,9 @@ env/
 vit/outputs/
 outputs/
 
+# Outputs / Artifacts
+vit/preprocess/datasets/
+
 # Logs
 *.log
 
