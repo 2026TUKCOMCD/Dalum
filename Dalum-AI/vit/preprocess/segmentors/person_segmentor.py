@@ -7,8 +7,10 @@ from mediapipe.tasks.python import vision
 
 class PersonSegmentor:
     def __init__(self):
+        model_buffer = self._load_model_buffer()
+
         base_options = python.BaseOptions(
-            model_asset_path=self._download_model()
+            model_asset_buffer=model_buffer   
         )
 
         options = vision.ImageSegmenterOptions(
@@ -19,7 +21,44 @@ class PersonSegmentor:
 
         self.segmenter = vision.ImageSegmenter.create_from_options(options)
 
-    def _download_model(self):
+    # 얼굴 검증용
+    def is_real_face(
+        self,
+        image_bgr: np.ndarray,
+        face_ratio_th: float = 0.01,
+        body_ratio_th: float = 0.05
+    ) -> bool:
+
+        rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+        mp_image = mp.Image(
+            image_format=mp.ImageFormat.SRGB,
+            data=rgb
+        )
+
+        result = self.segmenter.segment(mp_image)
+
+        if result.category_mask is None:
+            return False
+
+        mask = result.category_mask.numpy_view()
+
+        total_pixels = mask.size
+        if total_pixels == 0:
+            return False
+
+        face_pixels = np.sum(mask == 3)
+        body_pixels = np.sum(mask == 2)
+
+        face_ratio = face_pixels / total_pixels
+        body_ratio = body_pixels / total_pixels
+
+        return (
+            face_ratio >= face_ratio_th
+            and body_ratio >= body_ratio_th
+        )
+
+    # 모델을 바이트로 로드
+    def _load_model_buffer(self):
         import os, urllib.request
 
         model_path = os.path.join(
@@ -35,9 +74,16 @@ class PersonSegmentor:
             )
             urllib.request.urlretrieve(url, model_path)
 
-        return model_path
+        with open(model_path, "rb") as f:
+            return f.read()
 
-    def get_person_mask(self, image_bgr: np.ndarray) -> np.ndarray:
+    # 사람 존재 비율 계산 (핵심)
+    def get_person_ratio(self, image_bgr: np.ndarray) -> float:
+        """
+        image 안에 실제 '사람(피부/머리/몸)' 픽셀이
+        얼마나 존재하는지 비율로 반환
+        """
+
         rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
         mp_image = mp.Image(
             image_format=mp.ImageFormat.SRGB,
@@ -47,13 +93,24 @@ class PersonSegmentor:
         result = self.segmenter.segment(mp_image)
 
         if result.category_mask is None:
-            return None
+            return 0.0
 
         mask = result.category_mask.numpy_view()
 
-        # label id: 0=background, 1=hair, 2=body, 3=face, 4=clothes (모델에 따라 약간 다를 수 있음)
-        person_mask = mask != 0
-        return person_mask
+        total_pixels = mask.size
+        if total_pixels == 0:
+            return 0.0
+
+        # label 의미:
+        # 1 = hair, 2 = body, 3 = face
+        person_pixels = np.sum(
+            (mask == 1) |
+            (mask == 2) |
+            (mask == 3)
+        )
+
+        return person_pixels / total_pixels
+
 
     def get_torso_mask(self, image_bgr: np.ndarray) -> np.ndarray:
         h, w, _ = image_bgr.shape

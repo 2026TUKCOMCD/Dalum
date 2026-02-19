@@ -1,17 +1,26 @@
-#이미지 URL → image 로드 유틸
+# vit/preprocess/utils/image_loader.py
+
 import requests
 import numpy as np
 import cv2
-from io import BytesIO
 
-def load_image_from_url(url):
-    resp = requests.get(url, timeout=10)
-    resp.raise_for_status()
 
-    image_bytes = np.frombuffer(resp.content, np.uint8)
-    image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
+def load_image_from_url(url: str):
+    try:
+        resp = requests.get(url, timeout=10)
+        if resp.status_code != 200:
+            print(f"[SKIP] image download failed ({resp.status_code}) | {url}")
+            return None
 
-    if image is None:
-        raise ValueError("Failed to decode image from URL")
+        image_bytes = np.frombuffer(resp.content, np.uint8)
+        image = cv2.imdecode(image_bytes, cv2.IMREAD_COLOR)
 
-    return image
+        if image is None:
+            print(f"[SKIP] image decode failed | {url}")
+            return None
+
+        return image
+
+    except requests.exceptions.RequestException as e:
+        print(f"[SKIP] request error | {url} | {e}")
+        return None

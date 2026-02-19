@@ -7,7 +7,7 @@ class FaceDetector:
     def __init__(self):
         self.detector = mp.solutions.face_detection.FaceDetection(
             model_selection=1,
-            min_detection_confidence=0.5
+            min_detection_confidence=0.3   # 🔥 0.5 → 0.3
         )
 
     def detect(self, image):

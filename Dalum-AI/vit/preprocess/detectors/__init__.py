@@ -1,1 +1,2 @@
-from .face_detector import FaceDetector
+from .pose_human_detector import PoseHumanDetector
+from .pose_hip_cutter import PoseHipCutter
