@@ -1,34 +1,148 @@
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import UploadIcon from "../assets/icons/UploadIcon";
 import { Button } from "../components/commons/Button";
+import type { SearchDupeProductsRequest } from "../types/search/Search.types";
+import { useSearchStore } from "../stores/search/searchStore";
+import { useNavigate } from "react-router-dom";
 
 const SearchPage = () => {
+  const { searchDupe, isLoading } = useSearchStore();
+  const navigate = useNavigate();
+
   const [selected, setSelected] = useState("");
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [brandInput, setBrandInput] = useState("");
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const priceOptions = [
-    "30,000원 미만",
-    "30,000원 이상 ~ 50,000원 미만",
+    "50,000원 미만",
     "50,000원 이상 ~ 100,000원 미만",
     "100,000원 이상 ~ 200,000원 미만",
     "200,000원 이상",
     "상관 없음",
   ];
+
+  type PriceRange = {
+    minPrice?: number;
+    maxPrice?: number;
+  };
+
+  const PRICE_RANGE_MAP: Record<string, PriceRange> = {
+    "50,000원 미만": { maxPrice: 49999 },
+    "50,000원 이상 ~ 100,000원 미만": { minPrice: 50000, maxPrice: 99999 },
+    "100,000원 이상 ~ 200,000원 미만": { minPrice: 100000, maxPrice: 199999 },
+    "200,000원 이상": { minPrice: 200000 },
+    "상관 없음": {},
+  };
+
+  const getPriceRange = (selected: string): PriceRange =>
+    PRICE_RANGE_MAP[selected] ?? {};
+
+  // 미리보기 URL
+  const previewUrl = useMemo(() => {
+    if (!imageFile) return "";
+    return URL.createObjectURL(imageFile);
+  }, [imageFile]);
+
+  const openFilePicker = () => {
+    fileInputRef.current?.click();
+  };
+
+  const onChangeFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 업로드할 수 있어요.");
+      e.target.value = "";
+      return;
+    }
+
+    setImageFile(file);
+
+    e.target.value = "";
+  };
+
+  const removeImage = () => {
+    setImageFile(null);
+  };
+
+  const onClickSearch = async () => {
+    if (!imageFile) return;
+
+    const priceRange = getPriceRange(selected);
+
+    const payload: SearchDupeProductsRequest = {
+      image: imageFile,
+      ...(brandInput.trim() && { brand: brandInput.trim() }),
+      ...priceRange,
+    };
+
+    try {
+      await searchDupe(payload);
+      navigate("/result");
+    } catch {
+      alert("듀프 제품 검색 실패");
+    }
+  };
+
   return (
     <div className="w-full h-full flex px-25 py-12.5 items-center justify-center gap-7.5">
       {/* 이미지 업로드 영역 */}
       <div className="w-full h-full flex flex-col gap-5">
         {/* 이미지 업로드 */}
         <div className="w-full h-full border border-gray-900 rounded-lg flex flex-col items-center justify-center gap-5">
-          <Button
-            variant="gray"
-            size="md"
-            leftIcon={<UploadIcon className="size-4" />}
-          >
-            파일 선택
-          </Button>
-          <span className="typo-body_med18 text-gray-800 opacity-50">
-            이미지를 업로드하고 듀프 제품을 찾아보세요
-          </span>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={onChangeFile}
+            className="hidden"
+          />
+          {!imageFile ? (
+            <>
+              <Button
+                variant="gray"
+                size="md"
+                leftIcon={<UploadIcon className="size-4" />}
+                onClick={openFilePicker}
+              >
+                파일 선택
+              </Button>
+              <span className="typo-body_med18 text-gray-800 opacity-50">
+                이미지를 업로드하고 듀프 제품을 찾아보세요
+              </span>
+            </>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center gap-4 p-5">
+              {/* 미리보기 */}
+              <img
+                src={previewUrl}
+                alt="업로드 미리보기"
+                className="max-h-[300px] w-auto rounded-lg object-contain border border-gray-500"
+              />
+
+              <div className="w-full flex gap-2">
+                <Button
+                  variant="gray"
+                  size="md"
+                  fullWidth
+                  onClick={openFilePicker}
+                >
+                  다른 이미지 선택
+                </Button>
+                <Button
+                  variant="gray"
+                  size="md"
+                  fullWidth
+                  onClick={removeImage}
+                >
+                  이미지 제거
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
         {/* 설명 */}
         <div className="typo-body_thin14 flex flex-col justify-center items-start">
@@ -52,12 +166,6 @@ const SearchPage = () => {
           {/* 제목 */}
           <div className="flex flex-col items-start justify-center gap-3 text-gray-900">
             <span className="typo-h2_bold24">| 세부사항</span>
-            <span className="typo-body_thin14">
-              세부 사항은 듀프 제품 추천의 정확도와 고객 만족도를 높이기 위한
-              정보입니다. <br />
-              모든 항목을 입력하지 않아도 되지만, 자세히 입력할수록 더
-              만족스러운 추천을 받을 수 있습니다.
-            </span>
           </div>
           {/* 브랜드 명 입력 */}
           <div className="w-full flex flex-col gap-3">
@@ -65,6 +173,8 @@ const SearchPage = () => {
             <input
               className="w-full bg-gray-50 text-base placeholder:font-extralight font-medium text-gray-900 px-5 py-4 rounded-lg outline-none"
               placeholder="업로드한 제품의 브랜드 명을 입력해주세요."
+              value={brandInput}
+              onChange={(e) => setBrandInput(e.target.value)}
             />
             <span className="typo-body_thin14">
               · 입력한 브랜드는 추천 결과에서 제외됩니다. <br />· 제외할
@@ -113,7 +223,13 @@ const SearchPage = () => {
           </div>
         </div>
         {/* CTA */}
-        <Button variant="cta_primary" size="cta" fullWidth disabled={!selected}>
+        <Button
+          variant="cta_primary"
+          size="cta"
+          fullWidth
+          disabled={!selected || !imageFile || isLoading}
+          onClick={onClickSearch}
+        >
           듀프 제품 찾기
         </Button>
       </div>
