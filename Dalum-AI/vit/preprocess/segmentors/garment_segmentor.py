@@ -13,7 +13,7 @@ class GarmentSegmentor:
 
         # 상단 영역 제거 (얼굴/머리 컷)
         h, w = fg.shape
-        top_cut = int(h * 0.18)   # 🔥 이 값은 나중에 같이 튜닝
+        top_cut = int(h * 0.18)   
         fg[:top_cut, :] = False
 
         # 너무 작은 컴포넌트 제거 (머리카락 찌꺼기)
