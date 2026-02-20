@@ -1,12 +1,19 @@
-import type { LikedItem } from "../../types/me/Me.types";
+import { useEffect } from "react";
+import { useMeStore } from "../../stores/me/meStore";
 import LikeProductCardList from "./LikeProductCardList";
 
-const UserLikedProduct = ({ items }: { items: LikedItem[] }) => {
+const UserLikedProduct = () => {
+  const { likeItem, fetchLikeList } = useMeStore();
+
+  useEffect(() => {
+    fetchLikeList();
+  }, [fetchLikeList]);
+
   return (
     <div className="w-full flex flex-col gap-5">
       <span className="typo-body_bold20">좋아요한 제품</span>
       <div className="w-full flex flex-col items-center justify-center gap-5 rounded-sm border-2 border-gray-500 p-5">
-        {items.length === 0 ? (
+        {likeItem.length === 0 ? (
           <div className="flex flex-col justify-center items-center gap-2.5">
             <span className="typo-body_bold18 text-gray-700">
               좋아요를 등록한 제품이 없어요!
@@ -16,7 +23,7 @@ const UserLikedProduct = ({ items }: { items: LikedItem[] }) => {
             </span>
           </div>
         ) : (
-          <LikeProductCardList items={items} />
+          <LikeProductCardList items={likeItem} />
         )}
       </div>
     </div>

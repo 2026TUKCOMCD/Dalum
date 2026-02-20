@@ -1,13 +1,3 @@
-export type LikedItem = {
-  id: string;
-  brand: string;
-  name: string;
-  discountRate: number;
-  price: number;
-  imageUrl: string;
-  productUrl: string;
-};
-
 export type GetDupeSearchListResponse = {
   code: string;
   isSuccess: boolean;
@@ -42,4 +32,28 @@ export type StylingItem = {
   stylingId: number;
   mainProductImageUrl: string;
   createdAt: string;
+};
+
+export type GetLikeListResponse = {
+  code: string;
+  isSuccess: boolean;
+  message: string;
+  result: LikeList;
+};
+
+export type LikeList = {
+  totalPage: number;
+  totalElements: number;
+  likeProducts: LikeItem[];
+};
+
+export type LikeItem = {
+  productId: number;
+  brand: string;
+  name: string;
+  discount_rate: number;
+  discount_price: number;
+  imageUrl: string;
+  purchase_link: string;
+  isLiked: boolean;
 };

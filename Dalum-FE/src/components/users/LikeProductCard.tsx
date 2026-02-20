@@ -1,15 +1,26 @@
+import { useNavigate } from "react-router-dom";
 import LikeIcon from "../../assets/icons/LikeIcon";
 import LinkIcon from "../../assets/icons/LinkIcon";
 import StyleIcon from "../../assets/icons/StyleIcon";
-import type { LikedItem } from "../../types/me/Me.types";
+import type { LikeItem } from "../../types/me/Me.types";
 import { Button } from "../commons/Button";
 
 type Props = {
-  item: LikedItem;
+  item: LikeItem;
 };
 
 const LikeProductCard = ({ item }: Props) => {
-  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
+  const navigate = useNavigate();
+
+  const priceText =
+    new Intl.NumberFormat("ko-KR").format(item.discount_price) + "원";
+
+  const purchaseLink = item.purchase_link;
+
+  // 구매 링크 버튼 클릭 핸들러
+  const handlePurchase = () => {
+    navigate(`${purchaseLink}`);
+  };
 
   return (
     <div className="w-100 h-45 flex items-center justify-start gap-3">
@@ -26,7 +37,7 @@ const LikeProductCard = ({ item }: Props) => {
             {/* 가격 */}
             <div className="flex justify-center items-start gap-1">
               <span className="typo-body_bold14 text-button-like">
-                {item.discountRate}%
+                {item.discount_rate}%
               </span>
               <span className="typo-body_med14 text-gray-900">{priceText}</span>
             </div>
@@ -50,6 +61,7 @@ const LikeProductCard = ({ item }: Props) => {
               fullWidth
               leftIcon={<LinkIcon className="size-3" />}
               className="flex-1"
+              onClick={handlePurchase}
             >
               구매 링크
             </Button>
