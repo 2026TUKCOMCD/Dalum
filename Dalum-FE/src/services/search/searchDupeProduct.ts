@@ -6,7 +6,7 @@ import type {
 } from "../../types/search/Search.types";
 
 // 듀프 제품 검색 API
-export const searchDupeProducts = async (
+const searchDupeProducts = async (
   req: SearchDupeProductsRequest,
 ): Promise<SearchDupeProductsResponse> => {
   const formData = toFormData(req);
@@ -18,3 +18,5 @@ export const searchDupeProducts = async (
 
   return data;
 };
+
+export default searchDupeProducts;

@@ -6,9 +6,10 @@ export type SearchDupeProductsRequest = {
 };
 
 export type SearchDupeProductsResponse = {
-  status: string;
+  code: string;
+  isSuccess: boolean;
   message: string;
-  data: SearchDupeProductsData;
+  result: SearchDupeProductsData;
 };
 
 export type SearchDupeProductsData = {
