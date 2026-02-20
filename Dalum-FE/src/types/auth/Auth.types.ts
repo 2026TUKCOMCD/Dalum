@@ -11,3 +11,10 @@ export type MasterTokenItem = {
   refreshToken: string;
   accessTokenExpiresIn: number;
 };
+
+export type LogoutAccountResponse = {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: string | null;
+};

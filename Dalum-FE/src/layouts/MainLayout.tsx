@@ -5,20 +5,24 @@ import { useEffect } from "react";
 
 const MainLayout = () => {
   // 임시 토큰 발급 로직 -> 소셜 로그인 연동 이후 제거 예정
-  const { masterToken, createToken } = useAuthStore();
+  const { accessToken, refreshToken, createToken } = useAuthStore();
 
   useEffect(() => {
-    try {
-      createToken();
-
-      if (masterToken) {
-        localStorage.setItem("accessToken", masterToken.accessToken);
-        localStorage.setItem("refreshToken", masterToken.refreshToken);
+    (async () => {
+      try {
+        await createToken();
+      } catch {
+        alert("마스터 토큰 생성 실패");
       }
-    } catch {
-      alert("마스터 토큰 생성 실패");
-    }
-  }, []);
+    })();
+  }, [createToken]);
+
+  useEffect(() => {
+    if (!accessToken || !refreshToken) return;
+
+    localStorage.setItem("accessToken", accessToken);
+    localStorage.setItem("refreshToken", refreshToken);
+  }, [accessToken, refreshToken]);
 
   return (
     <div className="flex h-dvh flex-col">
