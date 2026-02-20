@@ -1,4 +1,5 @@
-import type { SVGProps } from "react";
+import type React from 'react';
+import type { SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -6,13 +7,13 @@ type IconProps = SVGProps<SVGSVGElement> & {
 };
 
 const ChevronRightIcon: React.FC<IconProps> = ({
-  size = 14, // height 기준
-  color = "currentColor",
+  size = 14,
+  color = 'currentColor',
   ...props
 }) => {
   return (
     <svg
-      width={(size * 8) / 14} // 원본 비율 유지 (8:14)
+      width={(size * 8) / 14}
       height={size}
       viewBox="0 0 8 14"
       fill="none"
