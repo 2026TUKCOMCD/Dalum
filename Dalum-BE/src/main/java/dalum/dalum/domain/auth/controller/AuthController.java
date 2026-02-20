@@ -30,23 +30,6 @@ public class AuthController {
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisUtil redisUtil;
 
-    @Operation(summary = "소셜 로그인/회원가입", description = "Provider(kakao, naver, google)에 따라 소셜 로그인을 진행하고 토큰을 발급합니다.")
-    @ApiResponse(responseCode = "AUTH_200_1", description = "로그인 성공입니다.")
-    @PostMapping("/login/{provider}")
-
-    public ApiResult<AuthTokenResponse> login(
-            @PathVariable String provider,
-            @RequestBody @Valid SocialLoginRequest request
-    ) {
-        AuthTokenResponse response = authService.socialLogin(
-                provider,
-                request.authorizationCode(),
-                request.redirectUri()
-        );
-
-        return ApiResult.success(AuthSuccessCode.OK, response);
-    }
-
     @Operation(summary = "마스터 토큰 발급", description = "테스트 유저 생성")
     @ApiResponse(responseCode = "AUTH_200_1", description = "테스트 로그인 성공입니다.")
     @PostMapping("/test-login")

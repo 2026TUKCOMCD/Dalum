@@ -3,6 +3,7 @@ package dalum.dalum.global.config;
 import dalum.dalum.global.redis.RedisUtil;
 import dalum.dalum.global.security.jwt.JwtAuthenticationFilter;
 import dalum.dalum.global.security.jwt.JwtTokenProvider;
+import dalum.dalum.global.security.oauth2.OAuth2SuccessHandler;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,6 +26,7 @@ public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final RedisUtil redisUtil;
+    private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -42,6 +44,8 @@ public class SecurityConfig {
                 // 세션을 사용하지 않음 (STATELESS 설정)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2SuccessHandler))
                 // 요청에 대한 권한 설정
                 .authorizeHttpRequests(auth -> auth
                         // 인증 없이 접근 가능한 URL
