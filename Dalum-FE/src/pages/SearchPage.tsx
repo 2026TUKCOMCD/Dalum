@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import UploadIcon from "../assets/icons/UploadIcon";
 import { Button } from "../components/commons/Button";
 import type { SearchDupeProductsRequest } from "../types/search/Search.types";
