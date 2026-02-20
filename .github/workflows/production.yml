@@ -7,11 +7,19 @@ env:
 on:
   push:
     branches:
-      - main # main 브랜치에만 실행
+      - main
+    paths:
+      - "Dalum-FE/**"
+      - ".github/workflows/production.yml"
 
 jobs:
   Deploy-Production:
     runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: Dalum-FE
+
     steps:
       # 1. 코드 체크아웃
       - name: Checkout code
@@ -22,7 +30,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: "npm"
+          cache-dependency-path: Dalum-FE/package-lock.json
 
       # 3. 의존성 설치
       - name: Install dependencies
