@@ -17,11 +17,12 @@ on:
       - "Dalum-FE/**"
       - ".github/workflows/preview.yml"
 
-    push:
+  push:
     branches:
       - develop
     paths:
       - "Dalum-FE/**"
+      - ".github/workflows/preview.yml"
 
 jobs:
   Deploy-Preview:
