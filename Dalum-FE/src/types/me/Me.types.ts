@@ -1,12 +1,3 @@
-export type HistoryType = "search" | "styling";
-
-export type HistoryItem = {
-  id: string;
-  type: HistoryType;
-  createdAt: string; // "2026.01.15.(목) 05:28" or ISO
-  thumbnailUrl?: string; // 있으면 이미지로
-};
-
 export type LikedItem = {
   id: string;
   brand: string;
@@ -34,4 +25,21 @@ export type DupeSearchItem = {
   searchLogId: number;
   inputImageUrl: string;
   searchTime: string;
+};
+
+export type GetStylingListResponse = {
+  code: string;
+  isSuccess: boolean;
+  message: string;
+  result: StylingList;
+};
+
+export type StylingList = {
+  stylings: StylingItem[];
+};
+
+export type StylingItem = {
+  stylingId: number;
+  mainProductImageUrl: string;
+  createdAt: string;
 };

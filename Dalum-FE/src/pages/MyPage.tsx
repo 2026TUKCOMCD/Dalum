@@ -3,7 +3,6 @@ import UserIfno from "../components/users/UserInfo";
 import UserLikedProduct from "../components/users/UserLikedProduct";
 import UserResearchHistory from "../components/users/UserResearchHistory";
 import UserSavedStyling from "../components/users/UserSavedStyling";
-import { mockHistoryItems } from "../mocks/historyMockData";
 import { likedMockData } from "../mocks/likedMockData";
 import useBaseModal from "../stores/modals/baseModal";
 
@@ -26,7 +25,7 @@ const MyPage = () => {
         <UserLikedProduct items={likedMockData} />
 
         {/* '저장한 스타일링' 영역 */}
-        <UserSavedStyling items={mockHistoryItems} />
+        <UserSavedStyling />
       </div>
 
       <div

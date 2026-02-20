@@ -1,9 +1,10 @@
-import type { DupeSearchItem } from "../../types/me/Me.types";
+import type { DupeSearchItem, StylingItem } from "../../types/me/Me.types";
+import { isDupeSearchItem } from "../../utils";
 import HistoryCard from "./HistoryCard";
 
 type Props = {
-  items: DupeSearchItem[];
-  onMenuClick?: (item: DupeSearchItem) => void;
+  items: DupeSearchItem[] | StylingItem[];
+  onMenuClick?: (item: DupeSearchItem | StylingItem) => void;
 };
 
 const HistoryCardList = ({ items, onMenuClick }: Props) => {
@@ -12,8 +13,12 @@ const HistoryCardList = ({ items, onMenuClick }: Props) => {
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
 
+        const key = isDupeSearchItem(item)
+          ? `search-${item.searchLogId}`
+          : `styling-${item.stylingId}`;
+
         return (
-          <div key={item.searchLogId} className="flex items-center">
+          <div key={key} className="flex items-center">
             <HistoryCard item={item} onMenuClick={onMenuClick} />
 
             {!isLast && (
