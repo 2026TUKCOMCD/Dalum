@@ -9,6 +9,7 @@ import useBaseModal from "../stores/modals/baseModal";
 
 const MyPage = () => {
   const { openModal } = useBaseModal();
+
   return (
     <div className="w-full min-h-dvh flex flex-col px-25 py-12.5 items-center justify-center gap-15 overflow-y-auto scrollbar-hide">
       <div className="w-full h-full flex flex-col gap-10 items-start">
@@ -19,7 +20,7 @@ const MyPage = () => {
         <UserIfno />
 
         {/* '내가 찾은 듀프 제품' 영역 */}
-        <UserResearchHistory items={mockHistoryItems} />
+        <UserResearchHistory />
 
         {/* '좋아요한 제품' 영역 */}
         <UserLikedProduct items={likedMockData} />

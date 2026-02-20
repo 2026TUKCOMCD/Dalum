@@ -16,3 +16,22 @@ export type LikedItem = {
   imageUrl: string;
   productUrl: string;
 };
+
+export type GetDupeSearchListResponse = {
+  code: string;
+  isSuccess: boolean;
+  message: string;
+  result: DupeSearchList;
+};
+
+export type DupeSearchList = {
+  totalPage: number;
+  totalElements: number;
+  searchLogs: DupeSearchItem[];
+};
+
+export type DupeSearchItem = {
+  searchLogId: number;
+  inputImageUrl: string;
+  searchTime: string;
+};

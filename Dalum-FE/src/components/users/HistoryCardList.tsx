@@ -1,19 +1,19 @@
-import type { HistoryItem } from "../../types/me/Me.types";
+import type { DupeSearchItem } from "../../types/me/Me.types";
 import HistoryCard from "./HistoryCard";
 
 type Props = {
-  items: HistoryItem[];
-  onMenuClick?: (item: HistoryItem) => void;
+  items: DupeSearchItem[];
+  onMenuClick?: (item: DupeSearchItem) => void;
 };
 
 const HistoryCardList = ({ items, onMenuClick }: Props) => {
   return (
-    <div className="w-full flex overflow-x-auto scrollbar-hide">
+    <div className="w-full flex overflow-x-auto scrollbar-hide p-5">
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
 
         return (
-          <div key={item.id} className="flex items-center">
+          <div key={item.searchLogId} className="flex items-center">
             <HistoryCard item={item} onMenuClick={onMenuClick} />
 
             {!isLast && (
