@@ -10,12 +10,18 @@ env:
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
 on:
-  push:
+  pull_request:
     branches:
       - main
     paths:
       - "Dalum-FE/**"
       - ".github/workflows/preview.yml"
+
+    push:
+    branches:
+      - develop
+    paths:
+      - "Dalum-FE/**"
 
 jobs:
   Deploy-Preview:
