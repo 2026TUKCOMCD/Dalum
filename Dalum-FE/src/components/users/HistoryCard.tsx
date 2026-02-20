@@ -17,7 +17,7 @@ const HistoryCard = ({ item, onMenuClick }: Props) => {
     : `${item.createdAt}`;
 
   return (
-    <div className="w-45 h-fit flex flex-col gap-2">
+    <div className="w-45 h-fit flex flex-col gap-2 cursor-pointer">
       <img src={imageUrl} className="w-45 h-45 bg-none rounded-sm" />
       <div className="flex flex-col gap-1 px-1 py-0.5 text-gray-900">
         <div className="w-full h-fit flex items-center justify-between">
