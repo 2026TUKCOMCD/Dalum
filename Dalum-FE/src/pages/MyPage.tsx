@@ -27,14 +27,25 @@ const MyPage = () => {
         <UserSavedStyling />
       </div>
 
-      <div
-        className="w-full flex items-center justify-start p-4 rounded-lg bg-none text-gray-900 hover:text-primary-900 hover:bg-secondary-900 cursor-pointer gap-1"
-        onClick={() => {
-          openModal("withdrawModal");
-        }}
-      >
-        <span className="typo-body_med16">회원 탈퇴</span>
-        <ChevronRightIcon className="size-3" />
+      <div className="w-full flex flex-col justify-center items-start gap-2.5">
+        <div
+          className="w-full flex items-center justify-start p-4 rounded-lg bg-none text-gray-900 hover:text-primary-900 hover:bg-secondary-900 cursor-pointer gap-1"
+          onClick={() => {
+            openModal("logoutModal");
+          }}
+        >
+          <span className="typo-body_med16">로그아웃</span>
+          <ChevronRightIcon className="size-3" />
+        </div>
+        <div
+          className="w-full flex items-center justify-start p-4 rounded-lg bg-none text-gray-900 hover:text-button-like hover:bg-button-like/10 cursor-pointer gap-1"
+          onClick={() => {
+            openModal("withdrawModal");
+          }}
+        >
+          <span className="typo-body_med16">회원 탈퇴</span>
+          <ChevronRightIcon className="size-3" />
+        </div>
       </div>
     </div>
   );
