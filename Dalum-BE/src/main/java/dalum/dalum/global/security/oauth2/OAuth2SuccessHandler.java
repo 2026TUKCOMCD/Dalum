@@ -94,7 +94,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
         redisUtil.setDataExpire("RT: " + member.getId(), refreshToken, refreshExpiration);
 
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:5173/oauth/callback")
+        String targetUrl = UriComponentsBuilder.fromUriString(redirectUri)
                 .queryParam("accessToken", accessToken)
                 .queryParam("refreshToken", refreshToken)
                 .build().toUriString();
