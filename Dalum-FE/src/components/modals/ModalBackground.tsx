@@ -1,5 +1,6 @@
-import useBaseModal from "../../stores/modals/baseModal";
-import React, { useEffect } from "react";
+import useBaseModal from '../../stores/modals/baseModal';
+import React, { useEffect } from 'react';
+import { useOnboardingStore } from '../../stores/onboardings/onboardingStore';
 
 interface ModalBackgroundProps {
   children: React.ReactNode;
@@ -7,13 +8,14 @@ interface ModalBackgroundProps {
 
 const ModalBackground = ({ children }: ModalBackgroundProps) => {
   const { closeModal } = useBaseModal();
+  const { reset } = useOnboardingStore();
 
   const preventScroll = () => {
-    document.documentElement.style.overflow = "hidden";
+    document.documentElement.style.overflow = 'hidden';
   };
 
   const allowScroll = () => {
-    document.documentElement.style.overflow = "auto";
+    document.documentElement.style.overflow = 'auto';
   };
 
   useEffect(() => {
@@ -25,7 +27,10 @@ const ModalBackground = ({ children }: ModalBackgroundProps) => {
 
   return (
     <div
-      onClick={() => closeModal()}
+      onClick={() => {
+        closeModal();
+        reset();
+      }}
       className="w-full fixed inset-0 mx-auto bg-screen-modal z-50 overflow-hidden"
     >
       <div className={`h-full w-full flex justify-center items-center`}>

@@ -5,6 +5,7 @@ type OnboardingState = {
   nextStep: () => void;
   prevStep: () => void;
   setStep: (step: number) => void;
+  reset: () => void;
 };
 
 export const useOnboardingStore = create<OnboardingState>((set) => ({
@@ -18,4 +19,5 @@ export const useOnboardingStore = create<OnboardingState>((set) => ({
       step: Math.max(state.step - 1, 1),
     })),
   setStep: (step) => set({ step }),
+  reset: () => set({ step: 1 }),
 }));
