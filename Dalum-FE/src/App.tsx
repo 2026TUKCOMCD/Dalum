@@ -8,12 +8,14 @@ import MyPage from './pages/MyPage';
 import StylingPage from './pages/StylingPage';
 import OnboardingPage from './pages/OnboardingPage';
 import OnboardingLayout from './layouts/OnboardingLayout';
+import OAuthCallbackPage from './pages/OAuthCallbackPage';
 
 function App() {
   return (
     <BrowserRouter>
       <ModalPage />
       <Routes>
+        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route element={<OnboardingLayout />}>
           <Route path="/" element={<OnboardingPage />} />
         </Route>

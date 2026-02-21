@@ -3,6 +3,7 @@ import KakaoIcon from '../../assets/icons/KakaoIcon';
 import Logo from '../../assets/icons/Logo';
 import MiniLogo from '../../assets/icons/MiniLogo';
 import NaverIcon from '../../assets/icons/NaverIcon';
+import { redirectToSocialLogin } from '../../services/auth/socialLogin';
 import { Button } from '../commons/Button';
 
 const OnboardingFooter = () => {
@@ -24,6 +25,7 @@ const OnboardingFooter = () => {
           size="social"
           fullWidth
           leftIcon={<KakaoIcon className="size-8" />}
+          onClick={() => redirectToSocialLogin('kakao')}
         >
           카카오 회원가입 / 로그인
         </Button>
