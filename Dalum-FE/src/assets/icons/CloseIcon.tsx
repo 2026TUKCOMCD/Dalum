@@ -1,4 +1,5 @@
-import type { SVGProps } from "react";
+import type React from 'react';
+import type { SVGProps } from 'react';
 
 type IconProps = SVGProps<SVGSVGElement> & {
   size?: number;
@@ -7,7 +8,7 @@ type IconProps = SVGProps<SVGSVGElement> & {
 
 const CloseIcon: React.FC<IconProps> = ({
   size = 32,
-  color = "currentColor",
+  color = 'currentColor',
   ...props
 }) => {
   return (
