@@ -1,22 +1,28 @@
 import { useNavigate } from "react-router-dom";
 import useBaseModal from "../../stores/modals/baseModal";
 import { Button } from "../commons/Button";
+import { useAuthStore } from "../../stores/auth/authStore";
 
-const DupeResearchModal = () => {
+const LogoutModal = () => {
   const { closeModal } = useBaseModal();
+  const { logout } = useAuthStore();
   const navigate = useNavigate();
+
+  const handleLogout = () => {
+    try {
+      logout();
+      navigate("/");
+      closeModal();
+    } catch {
+      alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+    }
+  };
 
   return (
     <div className="w-112.5 flex flex-col gap-7.5 p-7.5 items-center justify-center bg-screen-default rounded-[14px]">
       {/* 본문 */}
       <div className="flex flex-col gap-2.5 items-center justify-center">
-        <span className="typo-body_bold20 text-gray-900">
-          다른 이미지로 듀프 제품을 찾아볼까요?
-        </span>
-        <span className="typo-body_thin16 text-gray-900 text-center">
-          듀프 제품 검색 기록은 마이 페이지에서 <br />
-          다시 확인할 수 있습니다.
-        </span>
+        <span className="typo-body_bold20 text-gray-900">로그아웃할까요?</span>
       </div>
       {/* 버튼 */}
       <div className="w-full flex gap-3">
@@ -33,8 +39,7 @@ const DupeResearchModal = () => {
           size="modal"
           fullWidth
           onClick={() => {
-            navigate("/research");
-            closeModal();
+            handleLogout();
           }}
         >
           확인
@@ -44,4 +49,4 @@ const DupeResearchModal = () => {
   );
 };
 
-export default DupeResearchModal;
+export default LogoutModal;

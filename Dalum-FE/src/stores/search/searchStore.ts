@@ -3,7 +3,7 @@ import type {
   DupeProductsItem,
   SearchDupeProductsRequest,
 } from "../../types/search/Search.types";
-import { searchDupeProducts } from "../../services/search/searchDupeProduct";
+import searchDupeProducts from "../../services/search/searchDupeProduct";
 
 type DupeSearchState = {
   isLoading: boolean;
@@ -32,9 +32,9 @@ export const useSearchStore = create<DupeSearchState>((set) => ({
       const res = await searchDupeProducts(req);
 
       set({
-        searchLogId: res.data.searchLogId,
-        resultCount: res.data.resultCount,
-        products: res.data.products,
+        searchLogId: res.result.searchLogId,
+        resultCount: res.result.resultCount,
+        products: res.result.products,
         isLoading: false,
       });
     } catch {

@@ -1,8 +1,8 @@
-import type { LikedItem } from "../../types/me/Me.types";
+import type { LikeItem } from "../../types/me/Me.types";
 import LikeProductCard from "./LikeProductCard";
 
 type Props = {
-  items: LikedItem[];
+  items: LikeItem[];
 };
 
 const LikeProductCardList = ({ items }: Props) => {
@@ -12,7 +12,7 @@ const LikeProductCardList = ({ items }: Props) => {
         const isLast = index === items.length - 1;
 
         return (
-          <div key={item.id} className="flex items-center">
+          <div key={item.productId} className="flex items-center">
             <LikeProductCard item={item} />
 
             {!isLast && (

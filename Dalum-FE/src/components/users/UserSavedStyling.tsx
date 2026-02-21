@@ -1,15 +1,20 @@
-import type { HistoryItem } from "../../types/me/Me.types";
+import { useEffect } from "react";
+import { useMeStore } from "../../stores/me/meStore";
 import HistoryCardList from "./HistoryCardList";
 
-const UserSavedStyling = ({ items }: { items: HistoryItem[] }) => {
-  const stylingItems = items.filter((i) => i.type === "styling");
+const UserSavedStyling = () => {
+  const { stylingItem, fetchStylingList } = useMeStore();
+
+  useEffect(() => {
+    fetchStylingList();
+  }, [fetchStylingList]);
 
   return (
     <div className="w-full flex flex-col gap-5">
       <span className="typo-body_bold20">저장한 스타일링</span>
-      <div className="w-full flex flex-col items-center justify-center gap-5 rounded-sm border-2 border-gray-500 p-5">
-        {stylingItems.length === 0 ? (
-          <div className="flex flex-col justify-center items-center gap-2.5">
+      <div className="w-full flex flex-col items-center justify-center gap-5 rounded-sm border-2 border-gray-500">
+        {stylingItem.length === 0 ? (
+          <div className="flex flex-col justify-center items-center gap-2.5 p-5">
             <span className="typo-body_bold18 text-gray-700">
               저장한 스타일링이 없어요!
             </span>
@@ -19,7 +24,7 @@ const UserSavedStyling = ({ items }: { items: HistoryItem[] }) => {
             </span>
           </div>
         ) : (
-          <HistoryCardList items={stylingItems} />
+          <HistoryCardList items={stylingItem} />
         )}
       </div>
     </div>
