@@ -54,7 +54,7 @@ export function Button({
     md: 'typo-body_bold12 px-3 py-2.5 rounded-sm gap-2',
     lg: 'typo-body_bold14 px-4 py-3 rounded-sm gap-2.5',
     modal: 'typo-body_bold18 h-14 px-2 py-4 rounded-lg',
-    social: 'typo-body_bold18 px-4 py-2.5 rounded-lg gap-1',
+    social: 'typo-body_bold16 px-4 py-2.5 rounded-lg gap-1',
     cta: 'typo-body_bold20 px-4 py-2.5 rounded-sm',
   };
 
