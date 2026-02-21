@@ -1,15 +1,20 @@
 @config "../tailwind.config.js";
 
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
-@import "tailwindcss/theme";
+@import 'tailwindcss/preflight';
+@import 'tailwindcss/utilities';
+@import 'tailwindcss/theme';
 
 @font-face {
-  font-family: "Pretendard";
-  src: url("/fonts/PretendardVariable.woff2") format("woff2");
+  font-family: 'Pretendard';
+  src: url('/fonts/PretendardVariable.woff2') format('woff2');
   font-weight: 100 900;
   font-style: normal;
   font-display: swap;
+}
+
+@font-face {
+  font-family: 'SUITE';
+  src: url('/fonts/SUITE-Regular.woff2') format('woff2');
 }
 
 html {
@@ -23,15 +28,15 @@ body {
   margin: 0px;
   padding: 0px;
   font-family:
-    "Pretendard",
+    'Pretendard',
     -apple-system,
     BlinkMacSystemFont,
     system-ui,
     Roboto,
-    "Helvetica Neue",
-    "Segoe UI",
-    "Apple SD Gothic Neo",
-    "Noto Sans KR",
+    'Helvetica Neue',
+    'Segoe UI',
+    'Apple SD Gothic Neo',
+    'Noto Sans KR',
     sans-serif;
   min-height: 100dvh;
   height: auto;
@@ -48,6 +53,24 @@ body {
 .scrollbar-hide {
   -ms-overflow-style: none; /* IE and Edge */
   scrollbar-width: none; /* Firefox */
+}
+
+/* 차트 관련 옵션 */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus,
+.recharts-surface:focus {
+  outline: none !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateX(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @layer utilities {
@@ -138,4 +161,6 @@ body {
 
   --shadow-header-shadow: 0px 1px 10px rgba(0, 0, 0, 0.1);
   --shadow-card-shadow: 0px 1px 8px rgba(0, 0, 0, 0.25);
+  --shadow-image-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+  --shadow-footer-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
 }

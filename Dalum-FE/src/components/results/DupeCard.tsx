@@ -1,15 +1,18 @@
-import ChartIcon from "../../assets/icons/ChartIcon";
-import LikeIcon from "../../assets/icons/LikeIcon";
-import LinkIcon from "../../assets/icons/LinkIcon";
-import type { DupeItem } from "../../mocks/dupeMockData";
-import { Button } from "../commons/Button";
+import ChartIcon from '../../assets/icons/ChartIcon';
+import LikeIcon from '../../assets/icons/LikeIcon';
+import LinkIcon from '../../assets/icons/LinkIcon';
+import type { DupeItem } from '../../mocks/dupeMockData';
+import useBaseModal from '../../stores/modals/baseModal';
+import { Button } from '../commons/Button';
 
 type DupeCardProps = {
   item: DupeItem;
 };
 
 const DupeCard = ({ item }: DupeCardProps) => {
-  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
+  const { openModal } = useBaseModal();
+
+  const priceText = new Intl.NumberFormat('ko-KR').format(item.price) + '원';
 
   return (
     <div className="max-w-50 h-fit flex flex-col gap-3 justify-start items-center">
@@ -37,7 +40,7 @@ const DupeCard = ({ item }: DupeCardProps) => {
             {/* 제품 가격 */}
             <div className="flex items-center justify-start gap-1">
               {/* 할인율 */}
-              {typeof item.discountRate === "number" && (
+              {typeof item.discountRate === 'number' && (
                 <span className="typo-body_bold14 text-button-like">
                   {item.discountRate}%
                 </span>
@@ -57,6 +60,7 @@ const DupeCard = ({ item }: DupeCardProps) => {
               leftIcon={<ChartIcon className="size-3" />}
               fullWidth
               className="flex-1"
+              onClick={() => openModal('similarityCheckModal')}
             >
               유사도 확인
             </Button>
