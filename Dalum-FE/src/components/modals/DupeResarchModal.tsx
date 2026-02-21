@@ -37,7 +37,7 @@ const DupeResearchModal = () => {
           size="modal"
           fullWidth
           onClick={() => {
-            navigate("/");
+            navigate("/research");
             closeModal();
           }}
         >
