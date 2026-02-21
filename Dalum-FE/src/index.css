@@ -55,6 +55,13 @@ body {
   scrollbar-width: none; /* Firefox */
 }
 
+/* 차트 관련 옵션 */
+.recharts-wrapper:focus,
+.recharts-wrapper *:focus,
+.recharts-surface:focus {
+  outline: none !important;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
