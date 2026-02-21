@@ -1,10 +1,18 @@
-import { useNavigate } from "react-router-dom";
-import useBaseModal from "../../stores/modals/baseModal";
-import { Button } from "../commons/Button";
+import { useNavigate } from 'react-router-dom';
+import useBaseModal from '../../stores/modals/baseModal';
+import { Button } from '../commons/Button';
+import { useAuthStore } from '../../stores/auth/authStore';
 
 const WithdrawModal = () => {
   const { closeModal } = useBaseModal();
+  const { withdraw } = useAuthStore();
   const navigate = useNavigate();
+
+  const handleWithdraw = () => {
+    withdraw();
+    closeModal();
+    navigate('/');
+  };
 
   return (
     <div className="w-112.5 flex flex-col gap-7.5 p-7.5 items-center justify-center bg-screen-default rounded-[14px]">
@@ -32,10 +40,7 @@ const WithdrawModal = () => {
           variant="modal_primary"
           size="modal"
           fullWidth
-          onClick={() => {
-            navigate("/");
-            closeModal();
-          }}
+          onClick={handleWithdraw}
         >
           확인
         </Button>

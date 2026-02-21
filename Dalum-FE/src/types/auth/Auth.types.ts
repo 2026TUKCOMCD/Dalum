@@ -18,3 +18,24 @@ export type LogoutAccountResponse = {
   message: string;
   result: string | null;
 };
+
+export type WithdrawAccountResponse = {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: string | null;
+};
+
+export type ReissueTokenResponse = {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: MasterTokenItem;
+};
+
+export type ReissueTokenItem = {
+  grantType: string;
+  accessToken: string;
+  refreshToken: string;
+  accessTokenExpiresIn: number;
+};
