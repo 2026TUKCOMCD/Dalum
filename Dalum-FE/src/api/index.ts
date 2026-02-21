@@ -4,11 +4,9 @@ import axios, {
   type AxiosInstance,
   type InternalAxiosRequestConfig,
 } from 'axios';
-import { useAuthStore } from '../stores/auth/authStore';
+import type { ReissueTokenResponse } from '../types/auth/Auth.types';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
-const { reissueToken, accessToken } = useAuthStore();
 
 declare module 'axios' {
   export interface InternalAxiosRequestConfig {
@@ -71,13 +69,18 @@ const requestReissue = async (): Promise<{
   const refreshToken = localStorage.getItem('refreshToken');
   if (!refreshToken) throw new Error('NO_REFRESH_TOKEN');
 
-  await reissueToken();
+  const { data } = await authApi.post<ReissueTokenResponse>(
+    '/api/v1/auth/reissue',
+    undefined
+  );
 
-  if (!accessToken) throw new Error('REISSUE_RESPONSE_INVALID');
+  const result = data.result;
+
+  if (!result.accessToken) throw new Error('REISSUE_RESPONSE_INVALID');
 
   return {
-    accessToken: accessToken,
-    refreshToken: refreshToken,
+    accessToken: result.accessToken,
+    refreshToken: result.refreshToken,
   };
 };
 
