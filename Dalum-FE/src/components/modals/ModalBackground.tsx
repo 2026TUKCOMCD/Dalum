@@ -31,7 +31,7 @@ const ModalBackground = ({ children }: ModalBackgroundProps) => {
         closeModal();
         reset();
       }}
-      className="w-full fixed inset-0 mx-auto bg-screen-modal z-50 overflow-hidden"
+      className="w-full fixed inset-0 mx-auto bg-screen-modal z-50 overflow-hidden select-none"
     >
       <div className={`h-full w-full flex justify-center items-center`}>
         <div onClick={(e) => e.stopPropagation()}>{children}</div>

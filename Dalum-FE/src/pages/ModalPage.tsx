@@ -6,6 +6,7 @@ import DupeResearchModal from '../components/modals/DupeResarchModal';
 import LoginModal from '../components/modals/LoginModal';
 import WithdrawModal from '../components/modals/WithdrawModal';
 import GuideModal from '../components/modals/GuideModal';
+import SimilarityCheckModal from '../components/modals/SimilarityCheckModal';
 
 const ModalPage = () => {
   const { isModalOpen, modalType } = useBaseModal();
@@ -32,6 +33,7 @@ const ModalPage = () => {
         {modalType === 'loginModal' && <LoginModal />}
         {modalType === 'withdrawModal' && <WithdrawModal />}
         {modalType === 'guideModal' && <GuideModal />}
+        {modalType === 'similarityCheckModal' && <SimilarityCheckModal />}
       </ModalBackground>
     </>
   );
