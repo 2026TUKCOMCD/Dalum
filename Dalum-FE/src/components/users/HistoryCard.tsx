@@ -31,7 +31,9 @@ const HistoryCard = ({ item }: Props) => {
       className="w-45 h-fit flex flex-col gap-2 cursor-pointer"
       onClick={handleClickCard}
     >
-      <img src={imageUrl} className="w-45 h-45 bg-none rounded-sm" />
+      <div className="w-45 h-45 flex items-center justify-center">
+        <img src={imageUrl} className="w-full h-auto bg-none rounded-sm" />
+      </div>
       <div className="flex flex-col gap-1 px-1 py-0.5 text-gray-900">
         <div className="w-full h-fit flex items-center justify-between">
           <span className="typo-body_bold12">| 검색일시</span>

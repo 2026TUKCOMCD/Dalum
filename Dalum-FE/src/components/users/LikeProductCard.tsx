@@ -1,30 +1,44 @@
-import { useNavigate } from "react-router-dom";
-import LikeIcon from "../../assets/icons/LikeIcon";
-import LinkIcon from "../../assets/icons/LinkIcon";
-import StyleIcon from "../../assets/icons/StyleIcon";
-import type { LikeItem } from "../../types/me/Me.types";
-import { Button } from "../commons/Button";
+import LikeIcon from '../../assets/icons/LikeIcon';
+import LinkIcon from '../../assets/icons/LinkIcon';
+import StyleIcon from '../../assets/icons/StyleIcon';
+import type { LikeItem } from '../../types/me/Me.types';
+import { Button } from '../commons/Button';
+import { useProductStore } from '../../stores/products/productStore';
 
 type Props = {
   item: LikeItem;
 };
 
 const LikeProductCard = ({ item }: Props) => {
-  const navigate = useNavigate();
+  const isLiked = useProductStore(
+    (s) => s.likeStatusById[item.productId] ?? false
+  );
+  const isLikeLoading = useProductStore(
+    (s) => s.isLoadingById[item.productId] ?? false
+  );
+  const toggleLikeStatus = useProductStore((s) => s.toggleLikeStatus);
 
   const priceText =
-    new Intl.NumberFormat("ko-KR").format(item.discount_price) + "원";
+    new Intl.NumberFormat('ko-KR').format(item.discount_price) + '원';
 
   const purchaseLink = item.purchase_link;
 
   // 구매 링크 버튼 클릭 핸들러
-  const handlePurchase = () => {
-    navigate(`${purchaseLink}`);
+  const handleClickPurchase = () => {
+    if (!purchaseLink) return;
+    window.open(purchaseLink, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleClickLike = () => {
+    if (isLikeLoading) return;
+    toggleLikeStatus(item.productId);
   };
 
   return (
     <div className="w-100 h-45 flex items-center justify-start gap-3">
-      <img src={item.imageUrl} className="w-45 h-45 rounded-sm bg-none" />
+      <div className="w-45 h-45 flex justify-center items-center">
+        <img src={item.imageUrl} className="w-full h-auto rounded-sm bg-none" />
+      </div>
 
       <div className="flex-1 h-full flex flex-col justify-between py-1.5">
         <div className="flex flex-col gap-2 justify-center items-start">
@@ -61,14 +75,17 @@ const LikeProductCard = ({ item }: Props) => {
               fullWidth
               leftIcon={<LinkIcon className="size-3" />}
               className="flex-1"
-              onClick={handlePurchase}
+              onClick={handleClickPurchase}
+              disabled={!purchaseLink}
             >
               구매 링크
             </Button>
             <Button
-              variant="like"
+              variant={isLiked ? 'active_like' : 'like'}
               size="sm"
               leftIcon={<LikeIcon className="size-3" />}
+              onClick={handleClickLike}
+              disabled={isLikeLoading}
             >
               좋아요
             </Button>
