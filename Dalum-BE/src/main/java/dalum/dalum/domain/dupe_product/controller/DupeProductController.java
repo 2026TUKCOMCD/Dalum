@@ -11,9 +11,10 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
 
 @Tag(name = "Dupe Product", description = "듀프 제품 관련 API")
 @RestController
@@ -30,13 +31,12 @@ public class DupeProductController {
     })
     @PostMapping(value = "/search/dupe", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ApiResult<DupeSearchResponse> searchDupe(
-             @ModelAttribute DupeSearchRequest request) {
+            @ModelAttribute DupeSearchRequest request) throws IOException {
 
         Long memberId = SecurityUtil.getCurrentMemberId();
 
         DupeSearchResponse response = dupeSearchService.searchDupe(memberId, request);
 
         return ApiResult.success(DupeProductSuccessCode.DUPE_CREATED, response);
-
     }
 }

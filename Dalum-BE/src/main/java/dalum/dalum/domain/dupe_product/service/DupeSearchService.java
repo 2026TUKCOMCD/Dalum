@@ -16,11 +16,13 @@ import dalum.dalum.domain.product.repository.ProductRepository;
 import dalum.dalum.domain.search_log.entity.SearchLog;
 import dalum.dalum.domain.search_log.repository.SearchLogRepository;
 import dalum.dalum.global.apipayload.exception.GeneralException;
+import dalum.dalum.global.s3.S3Service;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Set;
 
@@ -39,15 +41,16 @@ public class DupeSearchService {
     private final MemberRepository memberRepository;
     private final ProductConverter productConverter;
 
-    public DupeSearchResponse searchDupe(Long memberId, DupeSearchRequest request) {
+    private final S3Service s3Service;
+
+    public DupeSearchResponse searchDupe(Long memberId, DupeSearchRequest request) throws IOException {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(() -> new MemberException(MemberErrorCode.NOT_FOUND));
 
         // s3 사용시에 필요
         MultipartFile file = request.image();
 
-        String imageUrl = "https://via.placeholder.com/500?text=MockImage";
-        // String imageUrl = s3Service.upload(image); -> S3 코드로 변경해야함
+         String imageUrl = s3Service.uploadFile(file);
 
         // searchLog 생성
         SearchLog searchLog = getLog(request, member, imageUrl);

@@ -12,10 +12,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Search Log", description = "검색 기록 관련 API")
 @RestController
@@ -52,9 +49,9 @@ public class SearchLogController {
             @ApiResponse(responseCode = "MEMBER_404_1", description = "해당 유저를 찾지 못했습니다."),
             @ApiResponse(responseCode = "SEARCH_LOG_404_1", description = "해당 검색 기록을 찾지 못했습니다."),
     })
-    @GetMapping("/me/search-logs/{serachId}")
+    @GetMapping("/me/search-logs/{searchId}")
     public ApiResult<SearchLogDetailResponse> getSearchLogDetail(
-            @RequestParam Long searchId
+            @PathVariable("searchId") Long searchId
     ) {
         Long memberId = SecurityUtil.getCurrentMemberId();
 
