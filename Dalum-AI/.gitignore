@@ -5,6 +5,7 @@ __pycache__/
 
 # venv
 .venv/
+.venv_mp/
 venv/
 
 # env
@@ -25,3 +26,11 @@ results.csv
 
 # 모델 웨이트 (용량 커서 제외함//혹시 이상 있으면 이거 수정바람)
 models/
+
+#VIT 관련 gitignore
+
+#output
+outputs/
+
+#datasets
+datasets/

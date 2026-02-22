@@ -1,0 +1,22 @@
+name: AI CD Deploy
+
+on:
+  push:
+    branches: [ develop ]
+    paths:
+      - 'Dalum-AI/**'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: EC2 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AI_EC2_HOST }}
+          username: ${{ secrets.AI_EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/Dalum/Dalum-AI
+            git pull origin develop
