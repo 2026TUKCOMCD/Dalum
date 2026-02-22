@@ -8,6 +8,7 @@ type Props = {
 };
 const ResultContent = ({ items }: Props) => {
   const { openModal } = useBaseModal();
+
   return (
     <div className="w-full h-full px-12.5 pt-12.5">
       <div className="w-full h-full flex flex-col gap-4">

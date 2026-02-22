@@ -2,6 +2,7 @@ import ChartIcon from '../../assets/icons/ChartIcon';
 import LikeIcon from '../../assets/icons/LikeIcon';
 import LinkIcon from '../../assets/icons/LinkIcon';
 import useBaseModal from '../../stores/modals/baseModal';
+import { useProductStore } from '../../stores/products/productStore';
 import type { DetailDupeSearchItem } from '../../types/me/Me.types';
 import { Button } from '../commons/Button';
 
@@ -12,11 +13,24 @@ type DupeCardProps = {
 const DupeCard = ({ item }: DupeCardProps) => {
   const { openModal } = useBaseModal();
 
+  const isLiked = useProductStore(
+    (s) => s.likeStatusById[item.productId] ?? false
+  );
+  const isLikeLoading = useProductStore(
+    (s) => s.isLoadingById[item.productId] ?? false
+  );
+  const toggleLikeStatus = useProductStore((s) => s.toggleLikeStatus);
+
   const priceText = new Intl.NumberFormat('ko-KR').format(item.price) + '원';
 
   const handleClickPurchase = () => {
     if (!item.purchaseUrl) return;
     window.open(item.purchaseUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleClickLike = () => {
+    if (isLikeLoading) return;
+    toggleLikeStatus(item.productId);
   };
 
   return (
@@ -73,9 +87,11 @@ const DupeCard = ({ item }: DupeCardProps) => {
               유사도 확인
             </Button>
             <Button
-              variant="like"
+              variant={isLiked ? 'active_like' : 'like'}
               size="sm"
               leftIcon={<LikeIcon className="size-3" />}
+              onClick={handleClickLike}
+              disabled={isLikeLoading}
             >
               좋아요
             </Button>
