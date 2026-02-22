@@ -1,13 +1,12 @@
-import type { DupeSearchItem, StylingItem } from "../../types/me/Me.types";
-import { isDupeSearchItem } from "../../utils";
-import HistoryCard from "./HistoryCard";
+import type { DupeSearchItem, StylingItem } from '../../types/me/Me.types';
+import { isDupeSearchItem } from '../../utils';
+import HistoryCard from './HistoryCard';
 
 type Props = {
   items: DupeSearchItem[] | StylingItem[];
-  onMenuClick?: (item: DupeSearchItem | StylingItem) => void;
 };
 
-const HistoryCardList = ({ items, onMenuClick }: Props) => {
+const HistoryCardList = ({ items }: Props) => {
   return (
     <div className="w-full flex overflow-x-auto scrollbar-hide p-5">
       {items.map((item, index) => {
@@ -19,7 +18,7 @@ const HistoryCardList = ({ items, onMenuClick }: Props) => {
 
         return (
           <div key={key} className="flex items-center">
-            <HistoryCard item={item} onMenuClick={onMenuClick} />
+            <HistoryCard item={item} />
 
             {!isLast && (
               <div className="w-[0.5px] h-full mx-6.25 bg-gray-500" />

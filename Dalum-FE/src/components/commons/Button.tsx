@@ -6,6 +6,7 @@ type ButtonProps = {
     | 'primary'
     | 'gray'
     | 'like'
+    | 'active_like'
     | 'social_kakao'
     | 'social_naver'
     | 'social_google'
@@ -37,6 +38,7 @@ export function Button({
       'bg-screen-0 text-primary-900 border border-primary-900 hover:bg-primary-900 hover:text-gray-0 hover:border-primary-900 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-100',
     gray: 'bg-screen-0 text-gray-800 border border-gray-800 hover:bg-gray-800 hover:text-gray-0 hover:border-gray-800',
     like: 'bg-screen-0 text-button-like border border-button-like hover:bg-button-like hover:text-gray-0 hover:border-button-like',
+    active_like: 'bg-button-like text-gray-0 border border-button-like',
 
     social_kakao: 'bg-button-kakao text-[#371C1D]',
     social_naver: 'bg-button-naver text-gray-0',

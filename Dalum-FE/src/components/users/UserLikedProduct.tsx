@@ -1,13 +1,25 @@
-import { useEffect } from "react";
-import { useMeStore } from "../../stores/me/meStore";
-import LikeProductCardList from "./LikeProductCardList";
+import { useEffect } from 'react';
+import { useMeStore } from '../../stores/me/meStore';
+import LikeProductCardList from './LikeProductCardList';
+import { useProductStore } from '../../stores/products/productStore';
 
 const UserLikedProduct = () => {
   const { likeItem, fetchLikeList } = useMeStore();
+  const { updateLikes } = useProductStore();
 
   useEffect(() => {
     fetchLikeList();
   }, [fetchLikeList]);
+
+  useEffect(() => {
+    if (!likeItem) return;
+    updateLikes(
+      likeItem.map((it) => ({
+        id: it.productId,
+        isLiked: it.isLiked,
+      }))
+    );
+  }, [likeItem, updateLikes]);
 
   return (
     <div className="w-full flex flex-col gap-5">
