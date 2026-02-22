@@ -1,11 +1,31 @@
-import ResultContent from "../components/results/ResultContent";
-import ResultSidebar from "../components/results/ResultSidebar";
+import { useParams } from 'react-router-dom';
+import ResultContent from '../components/results/ResultContent';
+import ResultSidebar from '../components/results/ResultSidebar';
+import { useMeStore } from '../stores/me/meStore';
+import { useEffect } from 'react';
 
 const ResultPage = () => {
+  const { searchId } = useParams();
+  const isDetail = Boolean(searchId);
+
+  const { detailDupeSearchList, fetchDetailDupeSearchList } = useMeStore();
+
+  useEffect(() => {
+    if (!isDetail) return;
+
+    const id = Number(searchId);
+    if (Number.isNaN(id)) return;
+
+    fetchDetailDupeSearchList(id);
+  }, [isDetail, searchId, fetchDetailDupeSearchList]);
+
+  const imageUrl = detailDupeSearchList?.imageUrl;
+  const items = detailDupeSearchList?.results ?? [];
+
   return (
     <div className="w-full h-full flex">
-      <ResultSidebar />
-      <ResultContent />
+      <ResultSidebar imageUrl={imageUrl} />
+      <ResultContent items={items} />
     </div>
   );
 };

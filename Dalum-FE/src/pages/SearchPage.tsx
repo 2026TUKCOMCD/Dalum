@@ -1,26 +1,27 @@
-import React, { useMemo, useRef, useState } from "react";
-import UploadIcon from "../assets/icons/UploadIcon";
-import { Button } from "../components/commons/Button";
-import type { SearchDupeProductsRequest } from "../types/search/Search.types";
-import { useSearchStore } from "../stores/search/searchStore";
-import { useNavigate } from "react-router-dom";
+import React, { useMemo, useRef, useState } from 'react';
+import UploadIcon from '../assets/icons/UploadIcon';
+import { Button } from '../components/commons/Button';
+import type { SearchDupeProductsRequest } from '../types/search/Search.types';
+import { useSearchStore } from '../stores/search/searchStore';
+import { useNavigate } from 'react-router-dom';
 
 const SearchPage = () => {
   const { searchDupe, isLoading } = useSearchStore();
+  const { searchLogId } = useSearchStore();
   const navigate = useNavigate();
 
-  const [selected, setSelected] = useState("");
+  const [selected, setSelected] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [brandInput, setBrandInput] = useState("");
+  const [brandInput, setBrandInput] = useState('');
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const priceOptions = [
-    "50,000원 미만",
-    "50,000원 이상 ~ 100,000원 미만",
-    "100,000원 이상 ~ 200,000원 미만",
-    "200,000원 이상",
-    "상관 없음",
+    '50,000원 미만',
+    '50,000원 이상 ~ 100,000원 미만',
+    '100,000원 이상 ~ 200,000원 미만',
+    '200,000원 이상',
+    '상관 없음',
   ];
 
   type PriceRange = {
@@ -29,11 +30,11 @@ const SearchPage = () => {
   };
 
   const PRICE_RANGE_MAP: Record<string, PriceRange> = {
-    "50,000원 미만": { maxPrice: 49999 },
-    "50,000원 이상 ~ 100,000원 미만": { minPrice: 50000, maxPrice: 99999 },
-    "100,000원 이상 ~ 200,000원 미만": { minPrice: 100000, maxPrice: 199999 },
-    "200,000원 이상": { minPrice: 200000 },
-    "상관 없음": {},
+    '50,000원 미만': { maxPrice: 49999 },
+    '50,000원 이상 ~ 100,000원 미만': { minPrice: 50000, maxPrice: 99999 },
+    '100,000원 이상 ~ 200,000원 미만': { minPrice: 100000, maxPrice: 199999 },
+    '200,000원 이상': { minPrice: 200000 },
+    '상관 없음': {},
   };
 
   const getPriceRange = (selected: string): PriceRange =>
@@ -41,7 +42,7 @@ const SearchPage = () => {
 
   // 미리보기 URL
   const previewUrl = useMemo(() => {
-    if (!imageFile) return "";
+    if (!imageFile) return '';
     return URL.createObjectURL(imageFile);
   }, [imageFile]);
 
@@ -53,15 +54,15 @@ const SearchPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 업로드할 수 있어요.");
-      e.target.value = "";
+    if (!file.type.startsWith('image/')) {
+      alert('이미지 파일만 업로드할 수 있어요.');
+      e.target.value = '';
       return;
     }
 
     setImageFile(file);
 
-    e.target.value = "";
+    e.target.value = '';
   };
 
   const removeImage = () => {
@@ -81,9 +82,9 @@ const SearchPage = () => {
 
     try {
       await searchDupe(payload);
-      navigate("/result");
+      navigate(`/result/${searchLogId}`);
     } catch {
-      alert("듀프 제품 검색 실패");
+      alert('듀프 제품 검색 실패');
     }
   };
 
@@ -204,16 +205,16 @@ const SearchPage = () => {
 
                   {/* 커스텀 라디오 버튼 */}
                   <span
-                    className={`flex h-4 w-4 items-center justify-center rounded-full border transition-all ${isChecked ? "border-primary-900" : "border-gray-900"}`}
+                    className={`flex h-4 w-4 items-center justify-center rounded-full border transition-all ${isChecked ? 'border-primary-900' : 'border-gray-900'}`}
                   >
                     <span
-                      className={`h-2 w-2 rounded-full transition-all ${isChecked ? "bg-primary-900" : "bg-transparent"}`}
+                      className={`h-2 w-2 rounded-full transition-all ${isChecked ? 'bg-primary-900' : 'bg-transparent'}`}
                     />
                   </span>
 
                   {/* 가격 라벨 */}
                   <span
-                    className={`transition-colors ${isChecked ? "text-primary-900 typo-body_bold16" : "text-gray-900 typo-body_thin16"}`}
+                    className={`transition-colors ${isChecked ? 'text-primary-900 typo-body_bold16' : 'text-gray-900 typo-body_thin16'}`}
                   >
                     {option}
                   </span>

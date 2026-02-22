@@ -21,7 +21,7 @@ function App() {
         </Route>
         <Route element={<MainLayout />}>
           <Route path="/search" element={<SearchPage />} />
-          <Route path="/result" element={<ResultPage />} />
+          <Route path="/result/:searchId" element={<ResultPage />} />
           <Route path="/my" element={<MyPage />} />
           <Route path="/styling" element={<StylingPage />} />
         </Route>

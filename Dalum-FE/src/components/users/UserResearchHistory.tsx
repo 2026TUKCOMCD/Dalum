@@ -1,8 +1,8 @@
-import { useEffect } from "react";
-import SearchIcon from "../../assets/icons/SearchIcon";
-import { useMeStore } from "../../stores/me/meStore";
-import { Button } from "../commons/Button";
-import HistoryCardList from "./HistoryCardList";
+import { useEffect } from 'react';
+import SearchIcon from '../../assets/icons/SearchIcon';
+import { useMeStore } from '../../stores/me/meStore';
+import { Button } from '../commons/Button';
+import HistoryCardList from './HistoryCardList';
 
 const UserResearchHistory = () => {
   const { dupeSearchItem, fetchDupeSaerchHistory } = useMeStore();
@@ -10,6 +10,7 @@ const UserResearchHistory = () => {
   useEffect(() => {
     fetchDupeSaerchHistory();
   }, [fetchDupeSaerchHistory]);
+
 
   return (
     <div className="w-full flex flex-col gap-5">
