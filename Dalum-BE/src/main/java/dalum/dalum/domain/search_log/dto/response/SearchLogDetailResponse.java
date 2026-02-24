@@ -16,6 +16,9 @@ public record SearchLogDetailResponse(
         @Schema(description = "검색 날짜", example = "2024-06-15T14:30:00")
         LocalDateTime searchDate,
 
+        @Schema(description = "브랜드명", example = "나이키")
+        String brand,
+
         @Schema(description = "이미지 URL", example = "https://example.com/image.jpg")
         String imageUrl,
 
