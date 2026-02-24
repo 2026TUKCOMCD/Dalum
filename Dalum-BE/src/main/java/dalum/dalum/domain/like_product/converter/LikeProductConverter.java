@@ -20,6 +20,7 @@ public class LikeProductConverter {
         return LikeProductResponse.builder()
                 .productId(likeProduct.getId())
                 .name(likeProduct.getProduct().getProductName())
+                .brand(likeProduct.getProduct().getBrand())
                 .discountRate(likeProduct.getProduct().getDiscountRate())
                 .discountPrice(likeProduct.getProduct().getDiscountPrice())
                 .imageUrl(likeProduct.getProduct().getImageUrl())
