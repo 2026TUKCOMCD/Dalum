@@ -374,7 +374,7 @@ def check_for_captcha(page):
     try:
         content = page.content()
         if "일시적인 서비스 장애" in content or "reCAPTCHA" in content or "로봇이 아닙니다" in content:
-            print("  🚫 CAPTCHA 또는 차단 페이지 감지됨!")
+            print("CAPTCHA 또는 차단 페이지 감지됨!")
             return True
     except:
         pass
@@ -477,27 +477,27 @@ def scrape():
             return route.continue_()
         page.route("**/*", block)
 
-        print("🔄 초기 페이지 방문 중...")
+        print("초기 페이지 방문 중...")
         try:
             page.goto("https://kream.co.kr", wait_until="domcontentloaded", timeout=60000)
             time.sleep(random.uniform(5, 8))
             human_like_scroll(page)
         except Exception as e:
-            print(f"⚠️ 초기 페이지 로딩 실패: {e}")
+            print(f"초기 페이지 로딩 실패: {e}")
         
         for category_name, base_url in CATEGORIES.items():
             # URL이 비어있으면 건너뛰기
             if not base_url:
-                print(f"⚠️ '{category_name}' 카테고리의 URL이 설정되지 않았습니다. 건너뜁니다.")
+                print(f"'{category_name}' 카테고리의 URL이 설정되지 않았습니다. 건너뜁니다.")
                 continue
                 
             if category_name not in CATEGORY_MAPPING:
-                print(f"⚠️ '{category_name}' 카테고리가 CATEGORY_MAPPING에 없습니다.")
+                print(f"'{category_name}' 카테고리가 CATEGORY_MAPPING에 없습니다.")
                 continue
             
             large_cat, medium_cat, original_cat = CATEGORY_MAPPING[category_name]
             
-            print(f"\n📂 카테고리 시작: {large_cat} > {medium_cat} > {original_cat}")
+            print(f"\n카테고리 시작: {large_cat} > {medium_cat} > {original_cat}")
             category_count = 0
             cursor = 1
             max_pages = 9999
@@ -509,13 +509,13 @@ def scrape():
                 
                 # 연속 실패 시 긴 휴식
                 if consecutive_failures >= 3:
-                    print(f"  ⚠️ 연속 실패 {consecutive_failures}번, 60초 휴식...")
+                    print(f"연속 실패 {consecutive_failures}번, 60초 휴식...")
                     time.sleep(random.uniform(60, 90))
                     consecutive_failures = 0
                     
                     # 브라우저 재시작
                     if consecutive_failures >= 5:
-                        print("  🔄 브라우저 재시작...")
+                        print("  브라우저 재시작...")
                         page.close()
                         context.close()
                         browser.close()
@@ -559,12 +559,12 @@ def scrape():
                         
                         # CAPTCHA 체크
                         if check_for_captcha(page):
-                            print(f"  ⚠️ 차단됨! 60초 대기 후 재시도... (시도 {retry+1}/{MAX_RETRIES})")
+                            print(f"차단됨! 60초 대기 후 재시도... (시도 {retry+1}/{MAX_RETRIES})")
                             time.sleep(random.uniform(60, 90))
                             continue
                         
                         if not wait_for_products(page, timeout=30000):
-                            print(f"  ⚠️ 상품 로드 실패 (시도 {retry+1}/{MAX_RETRIES})")
+                            print(f"상품 로드 실패 (시도 {retry+1}/{MAX_RETRIES})")
                             time.sleep(RETRY_DELAY)
                             continue
                         
@@ -577,7 +577,7 @@ def scrape():
                         break
                         
                     except Exception as e:
-                        print(f"  ❌ 시도 {retry+1}/{MAX_RETRIES} 실패: {e}")
+                        print(f" 시도 {retry+1}/{MAX_RETRIES} 실패: {e}")
                         if retry < MAX_RETRIES - 1:
                             wait_time = RETRY_DELAY * (retry + 1)
                             print(f"  ⏳ {wait_time}초 대기 후 재시도...")
@@ -586,7 +586,7 @@ def scrape():
                             consecutive_failures += 1
 
                 if not success:
-                    print(f"  💀 모든 재시도 실패. 다음 페이지로...")
+                    print(f" 모든 재시도 실패. 다음 페이지로...")
                     continue
 
                 snapshot = page.evaluate(JS_EXTRACT)
@@ -626,7 +626,7 @@ def scrape():
                 print(f"    [{original_cat}] 누적: {category_count}개 (+{added})")
 
                 if added == 0:
-                    print(f"    ⚠️ cursor={cursor}에서 추가 0개 → 종료")
+                    print(f"cursor={cursor}에서 추가 0개 → 종료")
                     break
 
                 cursor += 1
@@ -634,10 +634,10 @@ def scrape():
                 # 페이지마다 더 긴 휴식
                 if page_num % 5 == 0:
                     rest_time = random.uniform(30, 45)
-                    print(f"  ☕ 5페이지 완료, {rest_time:.1f}초 휴식...")
+                    print(f" 5페이지 완료, {rest_time:.1f}초 휴식...")
                     time.sleep(rest_time)
 
-            print(f"✅ END: {original_cat} (수집 {category_count}개)")
+            print(f"END: {original_cat} (수집 {category_count}개)")
             
             # 카테고리 전환 시 더 긴 휴식
             time.sleep(random.uniform(15, 25))
@@ -669,13 +669,13 @@ def scrape():
         output_file = os.path.join(OUTPUT_DIR, f"{large_cat}.csv")
         with open(output_file, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
-            #writer.writeheader()
+            writer.writeheader()
             writer.writerows(rows)
         
         total_count += len(rows)
-        print(f"\n✅ {large_cat} CSV 저장 완료: {output_file} ({len(rows)}개)")
+        print(f"\n{large_cat} CSV 저장 완료: {output_file} ({len(rows)}개)")
 
-    print(f"\n✅ 전체 CSV 저장 완료: {OUTPUT_DIR}/ (총 {total_count}개)")
+    print(f"\n전체 CSV 저장 완료: {OUTPUT_DIR}/ (총 {total_count}개)")
 
 
 if __name__ == "__main__":
