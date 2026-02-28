@@ -13,7 +13,7 @@ class MaterialPredictor:
     def __init__(self, weight_path, temperature=0.7):
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.temperature = temperature  # 🔥 Temperature Scaling
+        self.temperature = temperature 
 
         self.model = timm.create_model(
             "vit_tiny_patch16_224",
