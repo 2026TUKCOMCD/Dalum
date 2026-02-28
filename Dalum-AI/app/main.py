@@ -1,13 +1,11 @@
+#서버 진입점
 from fastapi import FastAPI
-from vit.runners.run_upload_vit import process_upload_image
+from app.api.vit_router import router as vit_router
 
 app = FastAPI()
+
+app.include_router(vit_router, prefix="/api/v1/vit")
 
 @app.get("/")
 def health_check():
     return {"status": "AI server running"}
-
-@app.post("/process")
-def process_image(s3_key: str, category: str = None):
-    result = process_upload_image(s3_key, category)
-    return result
