@@ -308,10 +308,10 @@ def scrape():
 
         for (main_cat, sub_cat, original_cat), base_url in CATEGORIES.items():
             if not base_url.strip():
-                print(f"⏭ URL 없음 → 스킵: {main_cat}/{sub_cat}/{original_cat}")
+                print(f"URL 없음 → 스킵: {main_cat}/{sub_cat}/{original_cat}")
                 continue
 
-            print(f"\n📂 START: {main_cat} / {sub_cat} / {original_cat}")
+            print(f"\nSTART: {main_cat} / {sub_cat} / {original_cat}")
             empty_pages = 0
 
             for page_num in range(1, MAX_PAGES_PER_CATEGORY + 1):
@@ -361,7 +361,7 @@ def scrape():
                 else:
                     empty_pages = 0
 
-            print(f"✅ END: {main_cat}/{sub_cat}/{original_cat}")
+            print(f"END: {main_cat}/{sub_cat}/{original_cat}")
 
         browser.close()
 
@@ -387,12 +387,13 @@ def scrape():
         output_file = os.path.join(OUTPUT_DIR, f"{large_cat}.csv")
         with open(output_file, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=fieldnames)
+            writer.writeheader()
             writer.writerows(rows)
         
         total_count += len(rows)
-        print(f"\n✅ {large_cat} CSV 저장 완료: {output_file} ({len(rows):,}개)")
+        print(f"\n{large_cat} CSV 저장 완료: {output_file} ({len(rows):,}개)")
 
-    print(f"\n✅ 전체 CSV 저장 완료: {OUTPUT_DIR}/ (총 {total_count:,}개)")
+    print(f"\n전체 CSV 저장 완료: {OUTPUT_DIR}/ (총 {total_count:,}개)")
 
 
 if __name__ == "__main__":
