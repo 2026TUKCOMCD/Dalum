@@ -14,7 +14,10 @@ COPY . .
 
 RUN uv sync --frozen
 
+# 패키지 설치
+RUN pip install --no-cache-dir -r requirements.txt
+
 # playwright 브라우저 설치
-RUN playwright install --with-deps
+RUN python -m playwright install --with-deps
 
 CMD ["python", "runners/run_kream.py"]
