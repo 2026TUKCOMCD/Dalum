@@ -19,4 +19,4 @@ COPY . .
 RUN uv sync --frozen
 
 # 배치 실행
-CMD ["python", "runners/run_main.py"]
+CMD ["python", "runners/run_kream.py"]
