@@ -19,18 +19,18 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           script: |
+            # Docker Hub 로그인
             echo "${{ secrets.AI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.AI_DOCKER_USERNAME }}" --password-stdin
 
-            docker pull ${{ secrets.AI_DOCKER_USERNAME }}/dalum-ai:latest
+            # 최신 이미지 pull
+            docker pull wooyong1/dalum-ai:latest
 
-            docker stop dalum-ai || true
-            docker rm dalum-ai || true
+            # compose 파일 위치로 이동
+            cd /home/ubuntu/Dalum/Dalum-AI
 
-            docker run -d \
-              --name dalum-ai \
-              --env-file /home/ubuntu/Dalum/.env \
-              -p 8000:8000 \
-              --restart always \
-              ${{ secrets.AI_DOCKER_USERNAME }}/dalum-ai:latest
+            # 기존 컨테이너 내리고 재시작
+            docker compose down
+            docker compose up -d
 
+            # 사용하지 않는 이미지 정리
             docker image prune -f
