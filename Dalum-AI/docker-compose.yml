@@ -1,9 +1,9 @@
 services:
   dalum-ai:
-    build: .
+    image: wooyong1/dalum-ai:latest
     container_name: dalum-ai
     ports:
       - "8000:8000"
     env_file:
-      - .env
+      - ../.env   # ← 이거 중요
     restart: always
