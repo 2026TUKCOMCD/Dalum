@@ -37,4 +37,4 @@ RUN python -m playwright install chromium
 
 COPY . .
 
-CMD ["python", "runners/run_kream.py"]
+CMD ["python", "runners/run_musinsa.py"]
