@@ -395,18 +395,15 @@ def scrape():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=False,
-            slow_mo=200,
-            args=[
-                '--disable-blink-features=AutomationControlled',
-                '--disable-dev-shm-usage',
-                '--no-sandbox',
-                '--disable-web-security',
-                '--disable-features=IsolateOrigins,site-per-process',
-                '--window-size=1400,900',
-                '--start-maximized',
-            ]
-        )
+        headless=True,
+        args=[
+            "--no-sandbox",
+            "--disable-dev-shm-usage",
+            "--disable-gpu",
+            "--disable-blink-features=AutomationControlled",
+            "--single-process",
+        ]
+    )
         
         user_agent = random.choice(USER_AGENTS)
         
@@ -508,43 +505,36 @@ def scrape():
                     break
                 
                 # 연속 실패 시 긴 휴식
-                if consecutive_failures >= 3:
-                    print(f"연속 실패 {consecutive_failures}번, 60초 휴식...")
-                    time.sleep(random.uniform(60, 90))
+                if consecutive_failures >= 5:
+                    print("브라우저 재시작...")
+                    page.close()
+                    context.close()
+                    browser.close()
+                    time.sleep(10)
+
+                    browser = p.chromium.launch(
+                        headless=True,
+                        args=[
+                            "--no-sandbox",
+                            "--disable-dev-shm-usage",
+                            "--disable-gpu",
+                            "--disable-blink-features=AutomationControlled",
+                            "--single-process",
+                        ]
+                    )
+                    context = browser.new_context(
+                        viewport={"width": 1400, "height": 900},
+                        user_agent=random.choice(USER_AGENTS),
+                        locale='ko-KR',
+                        timezone_id='Asia/Seoul',
+                    )
+                    page = context.new_page()
+                    page.route("**/*", block)
                     consecutive_failures = 0
-                    
-                    # 브라우저 재시작
-                    if consecutive_failures >= 5:
-                        print("  브라우저 재시작...")
-                        page.close()
-                        context.close()
-                        browser.close()
-                        time.sleep(10)
-                        
-                        browser = p.chromium.launch(
-                            headless=False,
-                            slow_mo=200,
-                            args=[
-                                '--disable-blink-features=AutomationControlled',
-                                '--disable-dev-shm-usage',
-                                '--no-sandbox',
-                            ]
-                        )
-                        user_agent = random.choice(USER_AGENTS)
-                        context = browser.new_context(
-                            viewport={"width": 1400, "height": 900},
-                            user_agent=user_agent,
-                            locale='ko-KR',
-                            timezone_id='Asia/Seoul',
-                        )
-                        page = context.new_page()
-                        page.add_init_script("""
-                            Object.defineProperty(navigator, 'webdriver', {
-                                get: () => undefined
-                            });
-                        """)
-                        page.route("**/*", block)
-                        consecutive_failures = 0
+
+                elif consecutive_failures >= 3:
+                    print("연속 실패 3회 → 60초 휴식")
+                    time.sleep(random.uniform(60, 90))
 
                 url = set_cursor(base_url, cursor)
                 print(f"  ▶ cursor={cursor} 이동 (페이지 {page_num})")
