@@ -1,0 +1,34 @@
+name: Dalum CR CD
+
+on:
+  workflow_run:
+    workflows: ["Dalum CR CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
+
+    steps:
+      - name: EC2 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AI_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            echo "${{ secrets.AI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.AI_DOCKER_USERNAME }}" --password-stdin
+
+            docker pull ${{ secrets.AI_DOCKER_USERNAME }}/dalum-cr:latest
+
+            # 기존 컨테이너 제거 (혹시 남아있을 경우)
+            docker rm dalum-cr || true
+
+            # 배치 실행 (한번 실행 후 종료)
+            docker run --name dalum-cr \
+              --env-file /home/ubuntu/Dalum/.env \
+              ${{ secrets.AI_DOCKER_USERNAME }}/dalum-cr:latest
+
+            docker image prune -f
