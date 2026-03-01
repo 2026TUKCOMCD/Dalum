@@ -20,7 +20,11 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           script: |
             echo "${{ secrets.AI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.AI_DOCKER_USERNAME }}" --password-stdin
-
+            
+            # mono-repo 최신화
+            cd /home/ubuntu/Dalum
+            git pull origin develop
+            
             docker pull ${{ secrets.AI_DOCKER_USERNAME }}/dalum-cr:latest
 
             # 기존 컨테이너 제거 (혹시 남아있을 경우)
