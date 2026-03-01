@@ -26,14 +26,3 @@ jobs:
             git pull origin develop
 
             docker pull ${{ secrets.AI_DOCKER_USERNAME }}/dalum-cr:latest
-
-            # 기존 컨테이너 제거 (혹시 남아있을 경우)
-            docker rm dalum-cr || true
-
-            # 배치 실행 (한번 실행 후 종료)
-            docker run --name dalum-cr \
-              --env-file /home/ubuntu/Dalum/.env \
-              -v /home/ubuntu/Dalum/Dalum-CR:/app \
-              ${{ secrets.AI_DOCKER_USERNAME }}/dalum-cr:latest
-
-            docker image prune -f
