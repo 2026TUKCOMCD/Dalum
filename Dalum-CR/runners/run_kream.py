@@ -3,6 +3,7 @@ import csv
 import subprocess
 import sys
 import hashlib
+import psycopg2
 
 # 경로 설정
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -115,6 +116,55 @@ def merge_by_category():
 
         print(f"merged/{category}.csv ({len(merged_rows)}개)")
 
+def insert_to_db(rows):
+    conn = psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=int(os.getenv("DB_PORT", 5432)),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+    )
+
+    cur = conn.cursor()
+
+    query = """
+        INSERT INTO products (
+            product_id,
+            shopping_mall,
+            large_category,
+            medium_category,
+            small_category,
+            brand,
+            product_name,
+            price,
+            discount_price,
+            discount_rate,
+            purchase_link,
+            image_url
+        )
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+        ON CONFLICT (product_id) DO NOTHING;
+    """
+
+    for row in rows:
+        cur.execute(query, (
+            row["product_id"],
+            row["shopping_mall"],
+            row["large_category"],
+            row["medium_category"],
+            row["small_category"],
+            row["brand"],
+            row["product_name"],
+            row["price"],
+            row["discount_price"],
+            row["discount_rate"],
+            row["purchase_link"],
+            row["image_url"],
+        ))
+
+    conn.commit()
+    cur.close()
+    conn.close()
 
 def merge_all():
     print("\n[KREAM] merged → final")
@@ -158,6 +208,11 @@ def merge_all():
 
     print(f"kream_products.csv 생성 완료 ({len(final_rows)}개)")
 
+    try:
+        insert_to_db(final_rows)
+        print("DB insert 완료")
+    except Exception as e:
+        print("DB insert 실패:", e)
 
 def main():
     ensure_dirs()
