@@ -8,16 +8,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip
-RUN pip install uv
 
-COPY . .
-
-RUN uv sync --frozen
-
-# 패키지 설치
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# playwright 브라우저 설치
+# Playwright 브라우저 설치
 RUN python -m playwright install --with-deps
+
+COPY . .
 
 CMD ["python", "runners/run_kream.py"]
