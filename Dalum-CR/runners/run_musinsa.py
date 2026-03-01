@@ -15,11 +15,11 @@ FINAL_DIR = os.path.join(BASE_DIR, "final")
 
 # KREAM만 실행
 CRAWLERS = [
-    "kream.py",
+    "musinsa.py",
 ]
 
 SHOP_MALLS = [
-    "kream",
+    "musinsa",
 ]
 
 CATEGORIES = [
@@ -54,7 +54,7 @@ def ensure_dirs():
 
 
 def run_crawlers():
-    print("\n[KREAM 전용 크롤링 시작]")
+    print("\n[musinsa 전용 크롤링 시작]")
 
     for crawler in CRAWLERS:
         crawler_path = os.path.join(CRAWLERS_DIR, crawler)
@@ -91,7 +91,7 @@ def generate_product_id(product_url: str) -> str:
 
 
 def merge_by_category():
-    print("\n[KREAM] output → merged")
+    print("\n[musinsa] output → merged")
 
     for category in CATEGORIES:
         merged_rows = []
@@ -167,7 +167,7 @@ def insert_to_db(rows):
     conn.close()
 
 def merge_all():
-    print("\n[KREAM] merged → final")
+    print("\n[musinsa] merged → final")
 
     final_rows = []
 
@@ -200,13 +200,13 @@ def merge_all():
         print("최종 병합 데이터 없음")
         return
 
-    final_path = os.path.join(FINAL_DIR, "kream_products.csv")
+    final_path = os.path.join(FINAL_DIR, "musinsa_products.csv")
     with open(final_path, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=FINAL_HEADER)
         writer.writeheader()
         writer.writerows(final_rows)
 
-    print(f"kream_products.csv 생성 완료 ({len(final_rows)}개)")
+    print(f"musinsa_products.csv 생성 완료 ({len(final_rows)}개)")
 
     try:
         insert_to_db(final_rows)
