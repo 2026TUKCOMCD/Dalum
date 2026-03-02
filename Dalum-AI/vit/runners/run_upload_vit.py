@@ -4,6 +4,7 @@ import os
 import numpy as np
 from dotenv import load_dotenv
 import cv2
+from PIL import Image
 
 from vit.utils.s3_uploader import (
     download_image_from_s3,
@@ -24,6 +25,8 @@ from vit.preprocess.color.color_embedding import build_color_embedding
 from vit.preprocess.material.predictor import MaterialPredictor
 from vit.preprocess.material.material_postprocessor import MaterialPostProcessor
 from vit.preprocess.utils.image_enhancer import enhance_for_material
+
+from recommender.style_classifier import StyleClassifier
 
 
 load_dotenv()
@@ -61,6 +64,8 @@ material_postprocessor = MaterialPostProcessor(
     confidence_threshold=0.20,
     margin_threshold=0.03
 )
+
+style_classifier = StyleClassifier()
 
 
 def process_upload_image(s3_key: str, category_hint: str = None) -> dict:
@@ -126,9 +131,14 @@ def process_upload_image(s3_key: str, category_hint: str = None) -> dict:
         category_hint or ""
     )
 
+    # 스타일 분류
+    pil_image = Image.fromarray(cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB))
+    style = style_classifier.classify(pil_image)
+
     # JSON 반환
     return {
         "category": category_hint or "UNKNOWN",
+        "style": style,
         "embedding": {
             "color": color_embedding,
             "material": material_vector
