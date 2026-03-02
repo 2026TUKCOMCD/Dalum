@@ -259,20 +259,26 @@ def scrape():
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
+                "--disable-blink-features=AutomationControlled"
             ]
         )
         page = browser.new_page(viewport={"width": 1400, "height": 900})
-
+        
+        page.set_default_navigation_timeout(120000)
+        page.set_default_timeout(120000)
         for category_name, url in CATEGORIES.items():
             print(f"\n{category_name}")
-            page.goto(url, wait_until="domcontentloaded", timeout=60000)
-
             try:
+                page.goto(url, timeout=90000)
                 page.wait_for_selector(
-                    "div[data-testid='virtuoso-item-list']", timeout=30000
+                    "div[data-testid='virtuoso-item-list']",
+                    timeout=60000
                 )
+
+                page.wait_for_timeout(1500)
+
             except PlaywrightTimeoutError:
-                print(f"[{category_name}] 상품 리스트 로딩 실패 → skip")
+                print(f"[{category_name}] 로딩 실패 → skip")
                 continue
 
             time.sleep(1)
