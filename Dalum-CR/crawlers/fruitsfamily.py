@@ -110,7 +110,7 @@ def scrape():
     seen = set()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=30)
+        browser = p.chromium.launch(headless=True, slow_mo=30)
         page = browser.new_page(viewport={"width": 1400, "height": 900})
 
         for category_name, url in CATEGORIES.items():

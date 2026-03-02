@@ -1,8 +1,8 @@
-name: Dalum AI CD
+name: Dalum CR CD
 
 on:
   workflow_run:
-    workflows: ["Dalum AI CI"]
+    workflows: ["Dalum CR CI"]
     types:
       - completed
 
@@ -19,21 +19,10 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           script: |
-            # Docker Hub 로그인
             echo "${{ secrets.AI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.AI_DOCKER_USERNAME }}" --password-stdin
-
+            
             # mono-repo 최신화
             cd /home/ubuntu/Dalum
             git pull origin develop
 
-            # 최신 이미지 pull
-            docker pull wooyong1/dalum-ai:latest
-
-            # compose 파일 위치로 이동
-            cd /home/ubuntu/Dalum/Dalum-AI
-
-            # 기존 컨테이너 내리고 재시작
-            docker compose up -d --no-deps --force-recreate dalum-ai
-
-            # 사용하지 않는 이미지 정리
-            docker image prune -f
+            docker pull ${{ secrets.AI_DOCKER_USERNAME }}/dalum-cr:latest

@@ -41,3 +41,8 @@ datasets/
 #python version
 .python-version
 
+# datasets 전체 무시
+vit/preprocess/datasets/*
+
+# face_index.json은 예외
+!vit/preprocess/datasets/face_index.json
