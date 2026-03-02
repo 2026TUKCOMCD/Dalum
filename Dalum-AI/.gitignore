@@ -35,3 +35,9 @@ outputs/
 #datasets
 datasets/
 
+#
+.idea
+
+#python version
+.python-version
+
