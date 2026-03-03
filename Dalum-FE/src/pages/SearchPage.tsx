@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 
 const SearchPage = () => {
   const { searchDupe, isLoading } = useSearchStore();
-  const { searchLogId } = useSearchStore();
   const navigate = useNavigate();
 
   const [selected, setSelected] = useState('');
@@ -81,8 +80,8 @@ const SearchPage = () => {
     };
 
     try {
-      await searchDupe(payload);
-      navigate(`/result/${searchLogId}`);
+      const id = await searchDupe(payload);
+      navigate(`/result/${id}`);
     } catch {
       alert('듀프 제품 검색 실패');
     }
