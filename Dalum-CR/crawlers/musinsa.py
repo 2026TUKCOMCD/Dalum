@@ -254,22 +254,41 @@ def scrape():
 
     with sync_playwright() as p:
         browser = p.chromium.launch(
-            headless=True,
+            headless=False,
             args=[
                 "--no-sandbox",
                 "--disable-dev-shm-usage",
                 "--disable-gpu",
-                "--disable-blink-features=AutomationControlled"
+                "--disable-blink-features=AutomationControlled",
+                "--disable-ipv6"
             ]
         )
-        page = browser.new_page(viewport={"width": 1400, "height": 900})
+        context = browser.new_context(
+            viewport={"width": 1400, "height": 900},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36",
+            locale="ko-KR",
+            ignore_https_errors=True   # 🔥 이 줄 추가
+        )
+
+        page = context.new_page()
         
         page.set_default_navigation_timeout(120000)
         page.set_default_timeout(120000)
         for category_name, url in CATEGORIES.items():
             print(f"\n{category_name}")
             try:
-                page.goto(url, timeout=90000)
+                response = page.goto(url, timeout=90000, wait_until="domcontentloaded")
+
+                if response is None:
+                    print("응답 없음 (DNS or 차단)")
+                    continue
+                
+                if response.status >= 400:
+                    print(f"[{category_name}] HTTP 에러:", response.status)
+                    continue
+                print("상태코드:", response.status)
                 page.wait_for_selector(
                     "div[data-testid='virtuoso-item-list']",
                     timeout=60000
@@ -320,7 +339,7 @@ def scrape():
 
                 scroll_to_bottom(page)
                 time.sleep(0.8)
-
+        context.close()
         browser.close()
 
     # ===============================
