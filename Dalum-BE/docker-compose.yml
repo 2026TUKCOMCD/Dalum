@@ -62,6 +62,8 @@ services:
     networks:
       - dalum-network
 
+
+
 networks:
   dalum-network:
     driver: bridge
