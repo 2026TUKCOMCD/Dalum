@@ -13,12 +13,12 @@ const StylingCard = ({ item }: Props) => {
   return (
     <div className="relative w-fit h-fit flex flex-col gap-2.5 bg-gray-0 rounded-lg p-2.5 shadow-card-shadow group">
       {/* 이미지 영역 */}
-      <div className="relative w-50 h-50">
+      <div className="relative w-50 h-50 flex justify-center items-center">
         {item.imageUrl ? (
           <img
             src={item.imageUrl}
             alt={item.name}
-            className="max-w-45 max-h-45 rounded-sm object-cover bg-secondary-900"
+            className="max-w-50 max-h-50 rounded-sm object-cover bg-secondary-900"
             loading="lazy"
           />
         ) : (
