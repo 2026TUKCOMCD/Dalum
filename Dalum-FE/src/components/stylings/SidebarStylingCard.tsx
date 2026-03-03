@@ -1,14 +1,14 @@
-import LikeIcon from "../../assets/icons/LikeIcon";
-import LinkIcon from "../../assets/icons/LinkIcon";
-import type { StylingItem } from "../../types/stylings/Styling.types";
-import { Button } from "../commons/Button";
+import LikeIcon from '../../assets/icons/LikeIcon';
+import LinkIcon from '../../assets/icons/LinkIcon';
+import type { StylingItem } from '../../types/stylings/Styling.types';
+import { Button } from '../commons/Button';
 
 type Props = {
   item: StylingItem;
 };
 
 const SidebarStylingCard = ({ item }: Props) => {
-  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
+  const priceText = new Intl.NumberFormat('ko-KR').format(item.price) + '원';
 
   return (
     <div className="w-62.5 h-fit flex flex-col gap-2.5 justify-start items-center bg-gray-0 rounded-lg p-2.5 shadow-card-shadow">
@@ -17,7 +17,7 @@ const SidebarStylingCard = ({ item }: Props) => {
         <img
           src={item.imageUrl}
           alt={item.name}
-          className="w-57.5 h-57.5 rounded-sm object-cover bg-secondary-900"
+          className="max-w-57.5 max-h-57.5 rounded-sm object-cover bg-secondary-900"
           loading="lazy"
         />
       ) : (
@@ -34,7 +34,7 @@ const SidebarStylingCard = ({ item }: Props) => {
           {/* 제품 가격 */}
           <div className="flex items-center justify-start gap-1">
             {/* 할인율 */}
-            {typeof item.discountRate === "number" && (
+            {typeof item.discountRate === 'number' && (
               <span className="typo-body_bold14 text-button-like">
                 {item.discountRate}%
               </span>

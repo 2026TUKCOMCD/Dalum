@@ -22,7 +22,7 @@ const ResultSidebar = ({ imageUrl }: Props) => {
           <img
             alt="업로드 이미지"
             src={imageUrl}
-            className="w-full h-auto rounded-sm bg-center"
+            className="max-w-60 max-h-60 rounded-sm bg-center"
           />
         </div>
 
