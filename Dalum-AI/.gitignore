@@ -35,7 +35,7 @@ outputs/
 #datasets
 datasets/
 
-#
+#pycharm
 .idea
 
 #python version
