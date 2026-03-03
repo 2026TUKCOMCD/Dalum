@@ -5,6 +5,7 @@ import json
 import numpy as np
 import io
 from dotenv import load_dotenv
+from PIL import Image
 
 import psycopg2
 
@@ -23,6 +24,8 @@ from vit.preprocess.color.color_embedding import build_color_embedding
 from vit.preprocess.material.predictor import MaterialPredictor
 from vit.preprocess.material.material_postprocessor import MaterialPostProcessor
 from vit.preprocess.utils.image_enhancer import enhance_for_material
+
+from recommender.style_classifier import StyleClassifier
 
 
 load_dotenv()
@@ -75,6 +78,8 @@ def run():
         confidence_threshold=0.20,
         margin_threshold=0.03
     )
+
+    style_classifier = StyleClassifier()
 
     metadata_rows = [] 
     embedding_list = []
@@ -154,6 +159,10 @@ def run():
                 category_name
             )
 
+            # 스타일 분류
+            pil_image = Image.fromarray(cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB))
+            style = style_classifier.classify(pil_image)
+
             # DB 업데이트
             dominant_color_list = [
                 {"hex": hex_color, "ratio": float(round(ratio, 4))}
@@ -163,12 +172,14 @@ def run():
                 """
                 UPDATE product
                 SET material_vector = %s,
-                    dominant_colors = %s
+                    dominant_colors = %s,
+                    style = %s
                 WHERE purchase_link = %s
                 """,
                 (
                     json.dumps(material_vector),
                     json.dumps(dominant_color_list),
+                    style,
                     row["상품 URL"],
                 ),
             )
