@@ -4,12 +4,16 @@ import StyleIcon from '../../assets/icons/StyleIcon';
 import type { LikeItem } from '../../types/me/Me.types';
 import { Button } from '../commons/Button';
 import { useProductStore } from '../../stores/products/productStore';
+import { useStylingStore } from '../../stores/stylings/stylingStore';
+import { useNavigate } from 'react-router-dom';
 
 type Props = {
   item: LikeItem;
 };
 
 const LikeProductCard = ({ item }: Props) => {
+  const navigate = useNavigate();
+
   const isLiked = useProductStore(
     (s) => s.likeStatusById[item.productId] ?? false
   );
@@ -17,6 +21,8 @@ const LikeProductCard = ({ item }: Props) => {
     (s) => s.isLoadingById[item.productId] ?? false
   );
   const toggleLikeStatus = useProductStore((s) => s.toggleLikeStatus);
+
+  const { recommendStyling, isLoading } = useStylingStore();
 
   const priceText =
     new Intl.NumberFormat('ko-KR').format(item.discount_price) + '원';
@@ -32,6 +38,12 @@ const LikeProductCard = ({ item }: Props) => {
   const handleClickLike = () => {
     if (isLikeLoading) return;
     toggleLikeStatus(item.productId);
+  };
+
+  const handleClickStyling = () => {
+    if (isLoading) return;
+    recommendStyling(item.productId);
+    navigate('/styling');
   };
 
   return (
@@ -65,6 +77,7 @@ const LikeProductCard = ({ item }: Props) => {
             size="sm"
             fullWidth
             leftIcon={<StyleIcon className="size-3" />}
+            onClick={handleClickStyling}
           >
             스타일링 추천
           </Button>

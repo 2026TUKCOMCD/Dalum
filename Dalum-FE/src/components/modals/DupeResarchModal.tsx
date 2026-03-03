@@ -1,6 +1,6 @@
-import { useNavigate } from "react-router-dom";
-import useBaseModal from "../../stores/modals/baseModal";
-import { Button } from "../commons/Button";
+import { useNavigate } from 'react-router-dom';
+import useBaseModal from '../../stores/modals/baseModal';
+import { Button } from '../commons/Button';
 
 const DupeResearchModal = () => {
   const { closeModal } = useBaseModal();
@@ -33,7 +33,7 @@ const DupeResearchModal = () => {
           size="modal"
           fullWidth
           onClick={() => {
-            navigate("/research");
+            navigate('/search');
             closeModal();
           }}
         >
