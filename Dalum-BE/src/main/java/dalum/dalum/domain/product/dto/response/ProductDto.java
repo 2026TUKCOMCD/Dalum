@@ -18,6 +18,9 @@ public record ProductDto(
         @Schema(description = "대분류", example = "SHOES")
         String category,
 
+        @Schema(description = "할인율", example = "50.0")
+        Double discountRate,
+
         @Schema(description = "가격", example = "100000")
         Integer price,
 
