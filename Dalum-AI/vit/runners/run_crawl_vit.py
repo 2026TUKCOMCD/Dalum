@@ -6,6 +6,8 @@ import numpy as np
 import io
 from dotenv import load_dotenv
 
+import psycopg2
+
 from vit.utils.s3_uploader import upload_bytes_to_s3
 
 from vit.preprocess.utils.image_loader import load_image_from_url
@@ -26,6 +28,16 @@ from vit.preprocess.utils.image_enhancer import enhance_for_material
 load_dotenv()
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 
+
+def get_db_connection():
+    return psycopg2.connect(
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT", 5432),
+        dbname=os.getenv("DB_NAME"),
+        user=os.getenv("DB_USER"),
+        password=os.getenv("DB_PASSWORD"),
+    )
+
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 CSV_PATH = os.path.join(BASE_DIR, "..", "Dalum-CR", "final", "TOP.csv")
 
@@ -44,6 +56,9 @@ WEIGHT_PATH = os.path.join(
 
 
 def run():
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
     face_detector = FaceDetector()
     face_index = FaceIndex(FACE_INDEX_PATH)
@@ -139,6 +154,26 @@ def run():
                 category_name
             )
 
+            # DB 업데이트
+            dominant_color_list = [
+                {"hex": hex_color, "ratio": float(round(ratio, 4))}
+                for hex_color, ratio in dominant_colors
+            ]
+            cursor.execute(
+                """
+                UPDATE product
+                SET material_vector = %s,
+                    dominant_colors = %s
+                WHERE purchase_link = %s
+                """,
+                (
+                    json.dumps(material_vector),
+                    json.dumps(dominant_color_list),
+                    row["상품 URL"],
+                ),
+            )
+            conn.commit()
+
             # 한 줄 로그 출력
             log_type = "MODEL" if is_model else "PRODUCT"
             print(
@@ -161,6 +196,9 @@ def run():
             })
 
             total_count += 1
+    cursor.close()
+    conn.close()
+
     if len(embedding_list) == 0:
         print("처리된 이미지가 없습니다.")
         return
