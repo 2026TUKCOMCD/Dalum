@@ -37,7 +37,10 @@ const LikeProductCard = ({ item }: Props) => {
   return (
     <div className="w-100 h-45 flex items-center justify-start gap-3">
       <div className="w-45 h-45 flex justify-center items-center">
-        <img src={item.imageUrl} className="w-full h-auto rounded-sm bg-none" />
+        <img
+          src={item.imageUrl}
+          className="max-w-45 max-h-45 rounded-sm bg-none"
+        />
       </div>
 
       <div className="flex-1 h-full flex flex-col justify-between py-1.5">

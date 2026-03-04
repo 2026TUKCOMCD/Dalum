@@ -3,14 +3,19 @@ import SearchIcon from '../../assets/icons/SearchIcon';
 import { useMeStore } from '../../stores/me/meStore';
 import { Button } from '../commons/Button';
 import HistoryCardList from './HistoryCardList';
+import { useNavigate } from 'react-router-dom';
 
 const UserResearchHistory = () => {
   const { dupeSearchItem, fetchDupeSaerchHistory } = useMeStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDupeSaerchHistory();
   }, [fetchDupeSaerchHistory]);
 
+  const handelClickSearch = () => {
+    navigate('/search');
+  };
 
   return (
     <div className="w-full flex flex-col gap-5">
@@ -25,6 +30,7 @@ const UserResearchHistory = () => {
               variant="primary"
               size="md"
               leftIcon={<SearchIcon className="size-4" />}
+              onClick={handelClickSearch}
             >
               듀프 제품 검색
             </Button>

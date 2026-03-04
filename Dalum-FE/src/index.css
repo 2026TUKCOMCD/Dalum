@@ -17,6 +17,12 @@
   src: url('/fonts/SUITE-Regular.woff2') format('woff2');
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 html {
   margin: 0px;
   padding: 0px;
@@ -39,12 +45,9 @@ body {
     'Noto Sans KR',
     sans-serif;
   min-height: 100dvh;
-  height: auto;
-  overflow-x: hidden;
+  overflow: hidden;
   -ms-overflow-style: none;
-  overflow-y: auto;
   position: relative;
-  overflow-y: scroll;
   scrollbar-width: none; /* Firefox */
   -ms-overflow-style: none; /* IE 10+ */
   background-color: #fafafa;
