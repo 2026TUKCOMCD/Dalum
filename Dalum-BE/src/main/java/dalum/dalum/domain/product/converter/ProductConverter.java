@@ -18,6 +18,7 @@ public class ProductConverter {
                 .name(product.getProductName())
                 .category(product.getLargeCategory().name())
                 .brand(product.getBrand())
+                .discountRate(product.getDiscountRate())
                 .price(product.getPrice())
                 .imageUrl(product.getImageUrl())
                 .isLiked(isLiked)

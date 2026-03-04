@@ -110,7 +110,7 @@ def scrape():
     seen = set()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=30)
+        browser = p.chromium.launch(headless=True, slow_mo=30)
         page = browser.new_page(viewport={"width": 1400, "height": 900})
 
         for category_name, url in CATEGORIES.items():
@@ -168,9 +168,7 @@ def scrape():
 
         browser.close()
 
-    # ===============================
     # 대분류별 CSV 저장 (헤더 ❌)
-    # ===============================
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     grouped = {}
@@ -181,6 +179,7 @@ def scrape():
         path = os.path.join(OUTPUT_DIR, f"{major}.csv")
         with open(path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=items[0].keys())
+            writer.writeheader()
             writer.writerows(items)
 
         print(f"✅ {major}.csv 저장 ({len(items)}개)")

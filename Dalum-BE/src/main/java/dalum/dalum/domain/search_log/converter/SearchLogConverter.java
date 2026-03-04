@@ -47,6 +47,7 @@ public class SearchLogConverter {
         return SearchLogDetailResponse.builder()
                 .searchLogId(searchLog.getId())
                 .searchDate(searchLog.getCreatedAt())
+                .brand(searchLog.getBrand())
                 .imageUrl(searchLog.getInputImageUrl())
                 .conditions(conditions)
                 .results(products)

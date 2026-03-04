@@ -1,3 +1,5 @@
+import type { PriceRange } from "../types/search/Search.types";
+
 export const onboardingData = [
   {
     image: '/image/onboarding_1.png',
@@ -36,3 +38,19 @@ export const guideData = [
       '‘구매 링크’ 버튼을 눌러 듀프 제품의 판매처로 이동할 수 있습니다.\n듀프 제품의 자세한 정보는 판매처에서 확인 가능합니다.',
   },
 ];
+
+export const priceOptions = [
+  '50,000원 미만',
+  '50,000원 이상 ~ 100,000원 미만',
+  '100,000원 이상 ~ 200,000원 미만',
+  '200,000원 이상',
+  '상관 없음',
+];
+
+export const PRICE_RANGE_MAP: Record<string, PriceRange> = {
+  '50,000원 미만': { maxPrice: 49999 },
+  '50,000원 이상 ~ 100,000원 미만': { minPrice: 50000, maxPrice: 99999 },
+  '100,000원 이상 ~ 200,000원 미만': { minPrice: 100000, maxPrice: 199999 },
+  '200,000원 이상': { minPrice: 200000 },
+  '상관 없음': {},
+};

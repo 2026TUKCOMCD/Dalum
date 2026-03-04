@@ -56,16 +56,16 @@ CATEGORIES = {
     
     # [BOTTOM 카테고리]
     #DENIM
-    "데님팬츠": "https://www.musinsa.com/category/003002",
+    "데님 팬츠": "https://www.musinsa.com/category/003002",
     #SLACKS
     "슬랙스": "https://www.musinsa.com/category/003008",
     #PANTS
     "코튼 팬츠": "https://www.musinsa.com/category/003007",
     "트레이닝 팬츠": "https://www.musinsa.com/category/003004",
     #SHORT_PANTS
-    "숏팬츠": "https://www.musinsa.com/category/003009",
+    "숏 팬츠": "https://www.musinsa.com/category/003009",
     #ETC_BOTTOM
-    "기타팬츠": "https://www.musinsa.com/category/003006",
+    "기타 팬츠": "https://www.musinsa.com/category/003006",
     
     #[DRESS 카테고리]
     #ONE_PIECE
@@ -199,7 +199,7 @@ CATEGORY_MAP = {
     "샌들/슬리퍼": {"대분류": "SHOES","중분류": "SANDAL_SLIPPER"},
     
     #HAT
-    "캡모자": {"대분류": "HAT","중분류": "CAP"},
+    "볼캡": {"대분류": "HAT","중분류": "CAP"},
     "비니": {"대분류": "HAT","중분류": "BEANIE"},
     "바라클라바": {"대분류": "HAT","중분류": "BALACLAVA"},
     "트루퍼": {"대분류": "HAT","중분류": "TROOPER"},
@@ -253,19 +253,51 @@ def scrape():
     seen = set()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=30)
-        page = browser.new_page(viewport={"width": 1400, "height": 900})
+        browser = p.chromium.launch(
+            headless=False,
+            args=[
+                "--no-sandbox",
+                "--disable-dev-shm-usage",
+                "--disable-gpu",
+                "--disable-blink-features=AutomationControlled",
+                "--disable-ipv6"
+            ]
+        )
+        context = browser.new_context(
+            viewport={"width": 1400, "height": 900},
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0.0.0 Safari/537.36",
+            locale="ko-KR",
+            ignore_https_errors=True   # 🔥 이 줄 추가
+        )
 
+        page = context.new_page()
+        
+        page.set_default_navigation_timeout(120000)
+        page.set_default_timeout(120000)
         for category_name, url in CATEGORIES.items():
-            print(f"\n📂 {category_name}")
-            page.goto(url, wait_until="domcontentloaded", timeout=60000)
-
+            print(f"\n{category_name}")
             try:
+                response = page.goto(url, timeout=90000, wait_until="domcontentloaded")
+
+                if response is None:
+                    print("응답 없음 (DNS or 차단)")
+                    continue
+                
+                if response.status >= 400:
+                    print(f"[{category_name}] HTTP 에러:", response.status)
+                    continue
+                print("상태코드:", response.status)
                 page.wait_for_selector(
-                    "div[data-testid='virtuoso-item-list']", timeout=30000
+                    "div[data-testid='virtuoso-item-list']",
+                    timeout=60000
                 )
+
+                page.wait_for_timeout(1500)
+
             except PlaywrightTimeoutError:
-                print(f"⚠ [{category_name}] 상품 리스트 로딩 실패 → skip")
+                print(f"[{category_name}] 로딩 실패 → skip")
                 continue
 
             time.sleep(1)
@@ -302,12 +334,12 @@ def scrape():
 
                 stagnant = stagnant + 1 if added == 0 else 0
                 if stagnant >= 6:
-                    print(f"  ⚠ {category_name} 크롤링 종료")
+                    print(f"{category_name} 크롤링 종료")
                     break
 
                 scroll_to_bottom(page)
                 time.sleep(0.8)
-
+        context.close()
         browser.close()
 
     # ===============================
@@ -320,12 +352,15 @@ def scrape():
         grouped.setdefault(r["대분류"], []).append(r)
 
     for major, items in grouped.items():
+        if not items:
+            continue
         path = os.path.join(OUTPUT_DIR, f"{major}.csv")
         with open(path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=items[0].keys())
+            writer.writeheader()
             writer.writerows(items)  # 헤더 없음
 
-        print(f"✅ {major}.csv 저장 ({len(items)}개)")
+        print(f"{major}.csv 저장 ({len(items)}개)")
 
 # ===============================
 if __name__ == "__main__":

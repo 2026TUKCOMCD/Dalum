@@ -2,10 +2,9 @@ import os
 import csv
 import subprocess
 import sys
+import hashlib
 
-# ===============================
 # 경로 설정
-# ===============================
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 CRAWLERS_DIR = os.path.join(BASE_DIR, "crawlers")
@@ -13,9 +12,7 @@ OUTPUT_DIR = os.path.join(BASE_DIR, "output")
 MERGED_DIR = os.path.join(BASE_DIR, "merged")
 FINAL_DIR = os.path.join(BASE_DIR, "final")
 
-# ===============================
 # 실행할 크롤러 목록
-# ===============================
 CRAWLERS = [
     "musinsa.py",
     "musinsa_empty.py",
@@ -43,30 +40,26 @@ CATEGORIES = [
 ]
 
 FINAL_HEADER = [
-    "제품 식별",
-    "쇼핑몰",
-    "대분류",
-    "중분류",
-    "카테고리",
-    "브랜드",
-    "상품명",
-    "정가",
-    "판매가",
-    "할인율(%)",
-    "상품 URL",
-    "이미지 URL",
+    "product_id",
+    "shopping_mall",
+    "large_category",
+    "medium_category",
+    "small_category",
+    "brand",
+    "product_name",
+    "price",
+    "discount_price",
+    "discount_rate",
+    "purchase_link",
+    "image_url",
 ]
 
-# ===============================
 # 디렉토리 보장
-# ===============================
 def ensure_dirs():
     os.makedirs(MERGED_DIR, exist_ok=True)
     os.makedirs(FINAL_DIR, exist_ok=True)
 
-# ===============================
 # 크롤러 실행
-# ===============================
 def run_crawlers():
     print("\n[1/3] 크롤링 단계 시작")
 
@@ -90,22 +83,21 @@ def run_crawlers():
 
     print("\n크롤링 단계 종료")
 
-# ===============================
-def read_csv_no_header(path):
+def read_csv_dict(path):
     if not os.path.exists(path):
         return []
 
-    rows = []
     with open(path, "r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.reader(f)
-        for row in reader:
-            if row:
-                rows.append(row)
-    return rows
+        reader = csv.DictReader(f)
+        return list(reader)
 
-# ===============================
+def generate_product_id(product_url: str) -> str:
+    """
+    상품 URL 기반 고유 product_id 생성
+    """
+    return hashlib.md5(product_url.strip().encode()).hexdigest()
+
 # output → merged
-# ===============================
 def merge_by_category():
     print("\n[2/3] 2차 결과물 생성 (output → merged)")
 
@@ -114,10 +106,11 @@ def merge_by_category():
 
         for mall in SHOP_MALLS:
             path = os.path.join(OUTPUT_DIR, mall, f"{category}.csv")
-            rows = read_csv_no_header(path)
+            rows = read_csv_dict(path)
 
             for r in rows:
-                merged_rows.append([mall] + r)
+                r["shopping_mall"] = mall
+                merged_rows.append(r)
 
         if not merged_rows:
             print(f"⚠ {category}: 병합 데이터 없음 (skip)")
@@ -125,27 +118,45 @@ def merge_by_category():
 
         merged_path = os.path.join(MERGED_DIR, f"{category}.csv")
         with open(merged_path, "w", newline="", encoding="utf-8-sig") as f:
-            writer = csv.writer(f)
-            writer.writerows(merged_rows)
+            if merged_rows:
+                fieldnames = merged_rows[0].keys()
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                writer.writeheader()
+                writer.writerows(merged_rows)
 
         print(f"merged/{category}.csv ({len(merged_rows)}개)")
 
-# ===============================
+
 # merged → final
-# ===============================
 def merge_all():
     print("\n[3/3] 최종 결과물 생성 (merged → final)")
 
     final_rows = []
-    product_id = 1  # 제품 식별 번호 시작
 
     for category in CATEGORIES:
         path = os.path.join(MERGED_DIR, f"{category}.csv")
-        rows = read_csv_no_header(path)
+        rows = read_csv_dict(path)
 
         for row in rows:
-            final_rows.append([product_id] + row)
-            product_id += 1
+            product_url = row.get("상품 URL", "")
+            product_id = generate_product_id(product_url)
+
+            final_row = {
+                "product_id": product_id,
+                "shopping_mall": row.get("shopping_mall", ""),
+                "large_category": row.get("대분류", ""),
+                "medium_category": row.get("중분류", ""),
+                "small_category": row.get("카테고리", ""),
+                "brand": row.get("브랜드", ""),
+                "product_name": row.get("상품명", ""),
+                "price": row.get("정가", ""),
+                "discount_price": row.get("판매가", ""),
+                "discount_rate": row.get("할인율(%)", ""),
+                "purchase_link": product_url,
+                "image_url": row.get("이미지 URL", ""),
+            }
+
+            final_rows.append(final_row)
 
     if not final_rows:
         print("최종 병합 데이터 없음")
@@ -153,39 +164,18 @@ def merge_all():
 
     final_path = os.path.join(FINAL_DIR, "all_products.csv")
     with open(final_path, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f)
-        writer.writerow(FINAL_HEADER)
-        writer.writerows(final_rows)
-
-    print(f"all_products.csv 생성 완료 ({len(final_rows)}개)")
-    print("\n[3/3] 최종 결과물 생성 (merged → final)")
-
-    final_rows = []
-
-    for category in CATEGORIES:
-        path = os.path.join(MERGED_DIR, f"{category}.csv")
-        rows = read_csv_no_header(path)
-        final_rows.extend(rows)
-
-    if not final_rows:
-        print("최종 병합 데이터 없음")
-        return
-
-    final_path = os.path.join(FINAL_DIR, "all_products.csv")
-    with open(final_path, "w", newline="", encoding="utf-8-sig") as f:
-        writer = csv.writer(f)
-        writer.writerow(FINAL_HEADER)
+        writer = csv.DictWriter(f, fieldnames=FINAL_HEADER)
+        writer.writeheader()
         writer.writerows(final_rows)
 
     print(f"all_products.csv 생성 완료 ({len(final_rows)}개)")
 
-# ===============================
 def main():
     ensure_dirs()
     run_crawlers()
     merge_by_category()
     merge_all()
 
-# ===============================
+
 if __name__ == "__main__":
     main()
