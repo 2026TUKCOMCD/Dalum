@@ -78,7 +78,7 @@ def read_csv_from_s3():
         Key=S3_KEY
     )
 
-    csv_content = response["Body"].read().decode("utf-8")
+    csv_content = response["Body"].read().decode("utf-8-sig")
 
     f = StringIO(csv_content)
     reader = csv.DictReader(f)
