@@ -15,8 +15,12 @@ S3_BUCKET = os.getenv("S3_BUCKET_NAME")
 S3_KEY = "crawling/musinsa_products.csv"
 AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
 
+BATCH_SIZE = 5000
+
+
 # DB Insert
 def insert_to_db(rows):
+
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST"),
         port=int(os.getenv("DB_PORT", 5432)),
@@ -29,7 +33,6 @@ def insert_to_db(rows):
 
     insert_query = """
         INSERT INTO product (
-            product_id,
             shopping_mall,
             large_category,
             medium_category,
@@ -43,7 +46,6 @@ def insert_to_db(rows):
             image_url
         )
         VALUES (
-            %(product_id)s,
             %(shopping_mall)s,
             %(large_category)s,
             %(medium_category)s,
@@ -55,17 +57,25 @@ def insert_to_db(rows):
             %(discount_rate)s,
             %(purchase_link)s,
             %(image_url)s
-        )
-        ON CONFLICT (product_id) DO NOTHING;
+        );
     """
 
-    execute_batch(cur, insert_query, rows)
+    total = len(rows)
 
-    conn.commit()
+    for i in range(0, total, BATCH_SIZE):
+
+        batch = rows[i:i + BATCH_SIZE]
+
+        execute_batch(cur, insert_query, batch)
+
+        conn.commit()
+
+        print(f"{i + len(batch)} / {total} insert 완료")
+
     cur.close()
     conn.close()
 
-    print(f"DB insert 완료: {len(rows)}개")
+    print(f"DB insert 완료: {total}개")
 
 
 # S3에서 CSV 읽기
@@ -86,17 +96,17 @@ def read_csv_from_s3():
     rows = []
 
     for row in reader:
+
         rows.append({
-            "product_id": row["product_id"],
             "shopping_mall": row["shopping_mall"],
             "large_category": row["large_category"],
             "medium_category": row["medium_category"],
             "small_category": row["small_category"],
             "brand": row["brand"],
             "product_name": row["product_name"],
-            "price": row["price"],
-            "discount_price": row["discount_price"],
-            "discount_rate": row["discount_rate"],
+            "price": int(row["price"]) if row["price"] else 0,
+            "discount_price": int(row["discount_price"]) if row["discount_price"] else 0,
+            "discount_rate": int(row["discount_rate"]) if row["discount_rate"] else 0,
             "purchase_link": row["purchase_link"],
             "image_url": row["image_url"],
         })
