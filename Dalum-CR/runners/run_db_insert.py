@@ -28,7 +28,7 @@ def insert_to_db(rows):
     cur = conn.cursor()
 
     insert_query = """
-        INSERT INTO products (
+        INSERT INTO product (
             product_id,
             shopping_mall,
             large_category,
