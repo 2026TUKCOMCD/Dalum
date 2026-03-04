@@ -20,9 +20,7 @@ COPY requirements.txt .
 RUN pip install --upgrade pip
 
 # 의존성 설치
-RUN pip install --no-cache-dir -r requirements.txt
-
-RUN pip install --no-cache-dir torch==2.1.2 torchvision==0.16.2 --index-url https://download.pytorch.org/whl/cpu
+RUN pip install --no-cache-dir --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
 
 # 전체 프로젝트 복사
 COPY . .
