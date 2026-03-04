@@ -1,0 +1,33 @@
+name: Dalum BE CD
+
+on:
+  workflow_run:
+    workflows: ["Dalum BE CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # CI가 성공했을 때만 실행되도록 조건 추가
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
+
+    steps:
+      - name: Deploy to EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            
+            cd ~/Dalum/Dalum-BE
+            
+            docker pull ${{ secrets.DOCKER_USERNAME }}/dalum-server:latest
+            
+            docker-compose down
+            docker-compose up -d
+            
+            docker image prune -f
