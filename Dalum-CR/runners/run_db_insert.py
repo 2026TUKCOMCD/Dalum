@@ -1,22 +1,21 @@
 import os
 import csv
 import psycopg2
+import boto3
+from io import StringIO
 
 from dotenv import load_dotenv
 from psycopg2.extras import execute_batch
 
-
 # ENV 로드
 load_dotenv()
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-FINAL_DIR = os.path.join(BASE_DIR, "final")
-
-CSV_FILE = os.path.join(FINAL_DIR, "musinsa_products.csv")
-
+# S3 설정
+S3_BUCKET = os.getenv("S3_BUCKET_NAME")
+S3_KEY = "crawling/musinsa_products.csv"
+AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
 
 # DB Insert
-
 def insert_to_db(rows):
     conn = psycopg2.connect(
         host=os.getenv("DB_HOST"),
@@ -69,48 +68,54 @@ def insert_to_db(rows):
     print(f"DB insert 완료: {len(rows)}개")
 
 
-# CSV 읽기
+# S3에서 CSV 읽기
+def read_csv_from_s3():
 
-def read_csv():
-    if not os.path.exists(CSV_FILE):
-        print("CSV 파일 없음:", CSV_FILE)
-        return []
+    s3 = boto3.client("s3", region_name=AWS_REGION)
+
+    response = s3.get_object(
+        Bucket=S3_BUCKET,
+        Key=S3_KEY
+    )
+
+    csv_content = response["Body"].read().decode("utf-8")
+
+    f = StringIO(csv_content)
+    reader = csv.DictReader(f)
 
     rows = []
 
-    with open(CSV_FILE, "r", encoding="utf-8-sig", newline="") as f:
-        reader = csv.DictReader(f)
-
-        for row in reader:
-            rows.append({
-                "product_id": row["product_id"],
-                "shopping_mall": row["shopping_mall"],
-                "large_category": row["large_category"],
-                "medium_category": row["medium_category"],
-                "small_category": row["small_category"],
-                "brand": row["brand"],
-                "product_name": row["product_name"],
-                "price": row["price"],
-                "discount_price": row["discount_price"],
-                "discount_rate": row["discount_rate"],
-                "purchase_link": row["purchase_link"],
-                "image_url": row["image_url"],
-            })
+    for row in reader:
+        rows.append({
+            "product_id": row["product_id"],
+            "shopping_mall": row["shopping_mall"],
+            "large_category": row["large_category"],
+            "medium_category": row["medium_category"],
+            "small_category": row["small_category"],
+            "brand": row["brand"],
+            "product_name": row["product_name"],
+            "price": row["price"],
+            "discount_price": row["discount_price"],
+            "discount_rate": row["discount_rate"],
+            "purchase_link": row["purchase_link"],
+            "image_url": row["image_url"],
+        })
 
     return rows
 
 
 # MAIN
-
 def main():
 
-    print("DB Insert 시작")
+    print("S3 CSV 읽는 중...")
 
-    rows = read_csv()
+    rows = read_csv_from_s3()
 
     if not rows:
         print("Insert할 데이터 없음")
         return
+
+    print(f"총 {len(rows)}개 데이터 insert 시작")
 
     insert_to_db(rows)
 
