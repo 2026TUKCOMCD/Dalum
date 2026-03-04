@@ -27,7 +27,7 @@ jobs:
             git pull origin develop
 
             # 최신 이미지 pull
-            docker pull wooyong1/dalum-ai:latest
+            docker pull wooyoung1/dalum-ai:latest
 
             # compose 파일 위치로 이동
             cd /home/ubuntu/Dalum/Dalum-AI

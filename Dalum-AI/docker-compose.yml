@@ -1,6 +1,6 @@
 services:
   dalum-ai:
-    image: wooyong1/dalum-ai:latest
+    image: wooyoung1/dalum-ai:latest
     container_name: dalum-ai
     ports:
       - "8000:8000"
