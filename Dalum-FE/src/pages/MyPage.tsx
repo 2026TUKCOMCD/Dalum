@@ -1,15 +1,15 @@
-import ChevronRightIcon from "../assets/icons/ChevronRightIcon";
-import UserIfno from "../components/users/UserInfo";
-import UserLikedProduct from "../components/users/UserLikedProduct";
-import UserResearchHistory from "../components/users/UserResearchHistory";
-import UserSavedStyling from "../components/users/UserSavedStyling";
-import useBaseModal from "../stores/modals/baseModal";
+import ChevronRightIcon from '../assets/icons/ChevronRightIcon';
+import UserIfno from '../components/users/UserInfo';
+import UserLikedProduct from '../components/users/UserLikedProduct';
+import UserResearchHistory from '../components/users/UserResearchHistory';
+import UserSavedStyling from '../components/users/UserSavedStyling';
+import useBaseModal from '../stores/modals/baseModal';
 
 const MyPage = () => {
   const { openModal } = useBaseModal();
 
   return (
-    <div className="w-full min-h-dvh flex flex-col px-25 py-12.5 items-center justify-center gap-15 overflow-y-auto scrollbar-hide">
+    <div className="w-full min-h-dvh flex flex-col px-37.5 py-25 items-center justify-center gap-15">
       <div className="w-full h-full flex flex-col gap-10 items-start">
         {/* 제목 */}
         <span className="typo-h2_bold24 text-gray-900">| 마이 페이지</span>
@@ -31,7 +31,7 @@ const MyPage = () => {
         <div
           className="w-full flex items-center justify-start p-4 rounded-lg bg-none text-gray-900 hover:text-primary-900 hover:bg-secondary-900 cursor-pointer gap-1"
           onClick={() => {
-            openModal("logoutModal");
+            openModal('logoutModal');
           }}
         >
           <span className="typo-body_med16">로그아웃</span>
@@ -40,7 +40,7 @@ const MyPage = () => {
         <div
           className="w-full flex items-center justify-start p-4 rounded-lg bg-none text-gray-900 hover:text-button-like hover:bg-button-like/10 cursor-pointer gap-1"
           onClick={() => {
-            openModal("withdrawModal");
+            openModal('withdrawModal');
           }}
         >
           <span className="typo-body_med16">회원 탈퇴</span>
