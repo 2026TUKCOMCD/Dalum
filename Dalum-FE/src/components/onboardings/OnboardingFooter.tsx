@@ -8,7 +8,7 @@ import { Button } from '../commons/Button';
 
 const OnboardingFooter = () => {
   return (
-    <div className="flex justify-between items-center w-full px-10 py-10 bg-gray-0 shadow-footer-shadow">
+    <div className="flex justify-between items-center w-full px-10 py-7.5 bg-gray-0 shadow-footer-shadow">
       <div className="w-1/2 flex flex-col gap-2.5 justify-center items-center">
         <div className="flex items-center gap-1.5">
           <MiniLogo className="w-auto h-12" />

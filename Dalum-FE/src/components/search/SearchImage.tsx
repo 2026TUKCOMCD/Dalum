@@ -44,7 +44,7 @@ const SearchImage = ({
               >
                 파일 선택
               </Button>
-              <span className="typo-body_med18 text-gray-800 opacity-50">
+              <span className="typo-body_med18 text-gray-800 opacity-50 whitespace-pre-wrap break-keep text-center">
                 이미지를 업로드하고 듀프 제품을 찾아보세요
               </span>
             </>
@@ -64,7 +64,7 @@ const SearchImage = ({
           <div className="flex flex-col gap-3 typo-body_bold16">
             <span>| 유의 사항</span>
 
-            <div className="typo-body_thin14 flex flex-col justify-center items-start">
+            <div className="typo-body_thin14 flex flex-col justify-center items-start whitespace-pre-wrap break-keep">
               <span>· 제품 이미지는 최대 1장만 업로드 가능합니다.</span>
               <span>
                 · 제품 외의 영역이 적을수록 더 높은 유사도를 지닌 제품을 추천
