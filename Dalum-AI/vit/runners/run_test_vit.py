@@ -20,7 +20,7 @@ from vit.preprocess.utils.image_enhancer import enhance_for_material
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
-CSV_PATH = os.path.join(BASE_DIR, "..", "Dalum-CR", "final", "TOP.csv")
+CSV_PATH = os.path.join(BASE_DIR, "..", "Dalum-CR", "final", "BAG.csv")
 
 OUTPUT_BASE = os.path.join(BASE_DIR, "vit", "outputs")
 
