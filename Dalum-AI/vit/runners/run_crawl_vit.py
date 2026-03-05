@@ -52,8 +52,8 @@ WEIGHT_PATH = os.path.join(
 
 def run():
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # conn = get_db_connection()
+    # cursor = conn.cursor()
 
     face_detector = FaceDetector()
     face_index = FaceIndex(FACE_INDEX_PATH)
@@ -71,7 +71,7 @@ def run():
         margin_threshold=0.03
     )
 
-    style_classifier = StyleClassifier()
+    # style_classifier = StyleClassifier()
 
     metadata_rows = []
     embedding_list = []
@@ -158,14 +158,14 @@ def run():
             category_name
         )
 
-        # 스타일 분류
-        pil_image = Image.fromarray(
-            cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB)
-        )
-        style = style_classifier.classify(pil_image)
-
-        # DB 업데이트
-        update_style_color_material(cursor, conn, row["상품 URL"], material_vector, dominant_colors, style)
+        # # 스타일 분류
+        # pil_image = Image.fromarray(
+        #     cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB)
+        # )
+        # style = style_classifier.classify(pil_image)
+        #
+        # # DB 업데이트
+        # update_style_color_material(cursor, conn, row["상품 URL"], material_vector, dominant_colors, style)
 
         print(
             f"[{'MODEL' if is_model else 'PRODUCT'}] "
