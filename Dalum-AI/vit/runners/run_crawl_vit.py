@@ -1,13 +1,11 @@
 import csv
 import os
 import cv2
-import json
 import numpy as np
 import io
 import boto3
 from dotenv import load_dotenv
 from PIL import Image
-import psycopg2
 
 from vit.utils.s3_uploader import upload_bytes_to_s3
 from vit.preprocess.utils.image_loader import load_image_from_url
@@ -23,20 +21,11 @@ from vit.preprocess.material.predictor import MaterialPredictor
 from vit.preprocess.material.material_postprocessor import MaterialPostProcessor
 from vit.preprocess.utils.image_enhancer import enhance_for_material
 from recommender.style_classifier import StyleClassifier
+from vit.runners.run_db_update_vit import get_db_connection, update_style_color_material
 
 
 load_dotenv()
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
-
-
-def get_db_connection():
-    return psycopg2.connect(
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT", 5432),
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-    )
 
 
 def load_csv_from_s3(bucket, key):
@@ -176,28 +165,7 @@ def run():
         style = style_classifier.classify(pil_image)
 
         # DB 업데이트
-        dominant_color_list = [
-            {"hex": hex_color, "ratio": float(round(ratio, 4))}
-            for hex_color, ratio in dominant_colors
-        ]
-
-        cursor.execute(
-            """
-            UPDATE product
-            SET material_vector = %s,
-                dominant_colors = %s,
-                style = %s
-            WHERE purchase_link = %s
-            """,
-            (
-                json.dumps(material_vector),
-                json.dumps(dominant_color_list),
-                style,
-                row["상품 URL"],
-            ),
-        )
-
-        conn.commit()
+        update_style_color_material(cursor, conn, row["상품 URL"], material_vector, dominant_colors, style)
 
         print(
             f"[{'MODEL' if is_model else 'PRODUCT'}] "
