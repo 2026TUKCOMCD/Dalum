@@ -172,6 +172,9 @@ def run():
             f"{filename} | {category_name} → {material_label}"
         )
 
+        color_embedding = np.array(color_embedding).reshape(-1)
+        material_vector = np.array(material_vector).reshape(-1)
+
         final_embedding = np.concatenate([
             np.array(color_embedding),
             np.array(material_vector)
