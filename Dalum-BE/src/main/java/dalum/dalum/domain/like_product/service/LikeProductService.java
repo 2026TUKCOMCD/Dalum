@@ -13,6 +13,7 @@ import dalum.dalum.domain.product.entity.Product;
 import dalum.dalum.domain.product.exception.ProductException;
 import dalum.dalum.domain.product.exception.code.ProductErrorCode;
 import dalum.dalum.domain.product.repository.ProductRepository;
+import dalum.dalum.domain.styling.repository.StylingRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -27,6 +28,7 @@ public class LikeProductService {
     private final LikeProductRepository likeProductRepository;
     private final MemberRepository memberRepository;
     private final ProductRepository productRepository;
+    private final StylingRepository stylingRepository;
 
     private final LikeProductConverter likeProductConverter;
 
@@ -66,6 +68,7 @@ public class LikeProductService {
         // 좋아요가 등록되어 있다면 좋아요 취소
         return likeProductRepository.findByMemberAndProduct(member, product)
                 .map(likeProduct -> {
+                    stylingRepository.deleteByLikeProduct(likeProduct); // 스타일링에 있는 좋아요 제품 먼저 삭제
                     likeProductRepository.delete(likeProduct);
                     return false;
                 })
