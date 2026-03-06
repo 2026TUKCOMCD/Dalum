@@ -31,7 +31,7 @@ BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 def load_csv_from_s3(bucket, key):
     s3 = boto3.client("s3")
     response = s3.get_object(Bucket=bucket, Key=key)
-    return response["Body"].read().decode("utf-8")
+    return response["Body"].read().decode("utf-8-sig")
 
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
@@ -189,8 +189,8 @@ def run():
 
         total_count += 1
 
-    cursor.close()
-    conn.close()
+    # cursor.close()
+    # conn.close()
 
     if len(embedding_list) == 0:
         print("처리된 이미지가 없습니다.")
