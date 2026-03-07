@@ -4,6 +4,7 @@ import cv2
 import numpy as np
 import io
 import boto3
+import gc
 from dotenv import load_dotenv
 from PIL import Image
 
@@ -20,8 +21,8 @@ from vit.preprocess.color.color_embedding import build_color_embedding
 from vit.preprocess.material.predictor import MaterialPredictor
 from vit.preprocess.material.material_postprocessor import MaterialPostProcessor
 from vit.preprocess.utils.image_enhancer import enhance_for_material
-from recommender.style_classifier import StyleClassifier
-from vit.runners.run_db_update_vit import get_db_connection, update_style_color_material
+# from recommender.style_classifier import StyleClassifier
+# from vit.runners.run_db_update_vit import get_db_connection, update_style_color_material
 
 
 load_dotenv()
@@ -77,7 +78,7 @@ def run():
     embedding_list = []
     total_count = 0
 
-    # ✅ S3에서 CSV 읽기
+    # S3에서 CSV 읽기
     csv_content = load_csv_from_s3(
         BUCKET_NAME,
         "crawling/musinsa_products.csv"
@@ -87,12 +88,17 @@ def run():
     reader = csv.DictReader(f)
 
     for i, row in enumerate(reader, 1):
+        if i > 50:
+            print("Test limit reached (50 images)")
+            break
 
+        product_id = row["product_id"]
+        print(f"\n===== [{i}] START {product_id} =====")
+        
         image = load_image_from_url(row["image_url"])
         if image is None:
             continue
 
-        product_id = row["product_id"]
         major_category = row["large_category"]
         middle_category = row["medium_category"]
         category_name = row["small_category"]
@@ -100,7 +106,7 @@ def run():
         is_model = step1.is_model_candidate(image)
         image_type = "Model" if is_model else "Product"
 
-        filename = f"{product_id}.png"
+        filename = f"{product_id}.webp"
 
         # 원본 S3 업로드
         original_key = (
@@ -108,13 +114,13 @@ def run():
             f"{image_type}/{major_category}/{middle_category}/{filename}"
         )
 
-        success, buffer = cv2.imencode(".png", image)
+        success, buffer = cv2.imencode(".webp", image)
         if success:
             upload_bytes_to_s3(
                 buffer.tobytes(),
                 BUCKET_NAME,
                 original_key,
-                content_type="image/png"
+                content_type="image/webp"
             )
 
         # 전처리
@@ -131,13 +137,13 @@ def run():
             f"{image_type}/{major_category}/{middle_category}/{filename}"
         )
 
-        success, buffer = cv2.imencode(".png", final_img)
+        success, buffer = cv2.imencode(".webp", final_img)
         if success:
             upload_bytes_to_s3(
                 buffer.tobytes(),
                 BUCKET_NAME,
                 processed_key,
-                content_type="image/png"
+                content_type="image/webp"
             )
 
         # 색상 임베딩
@@ -172,13 +178,16 @@ def run():
             f"{filename} | {category_name} → {material_label}"
         )
 
-        color_embedding = np.array(color_embedding).reshape(-1)
-        material_vector = np.array(material_vector).reshape(-1)
+        color_embedding = np.array(color_embedding, dtype=np.float32).reshape(-1)
+        if material_vector is None:
+            print("material_vector None → skip")
+            continue
+        material_vector = np.array(material_vector, dtype=np.float32).reshape(-1)
 
-        final_embedding = np.concatenate([
-            np.array(color_embedding),
-            np.array(material_vector)
-        ])
+        final_embedding = np.concatenate(
+            [color_embedding, material_vector],
+            axis=0
+        )
 
         embedding_list.append(final_embedding)
 
@@ -191,7 +200,10 @@ def run():
         })
 
         total_count += 1
-
+        del image, rgba, final_img
+        if 'enhanced' in locals():
+            del enhanced
+        gc.collect()
     # cursor.close()
     # conn.close()
 

@@ -4,16 +4,7 @@ FROM python:3.10-slim
 # 작업 디렉토리 설정
 WORKDIR /app
 
-# 시스템 패키지 설치 (opencv용)
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    libgl1 \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    && rm -rf /var/lib/apt/lists/*
-# requirements 먼저 복사
+# requirements 먼저 복사 - 변경 사항 있을 때 실행
 COPY requirements.txt .
 
 # pip 업그레이드
