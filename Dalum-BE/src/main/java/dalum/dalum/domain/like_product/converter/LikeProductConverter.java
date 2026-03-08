@@ -18,7 +18,7 @@ public class LikeProductConverter {
 
     public LikeProductResponse toLikeProductResponse(LikeProduct likeProduct) {
         return LikeProductResponse.builder()
-                .productId(likeProduct.getId())
+                .productId(likeProduct.getProduct().getId())
                 .name(likeProduct.getProduct().getProductName())
                 .brand(likeProduct.getProduct().getBrand())
                 .discountRate(likeProduct.getProduct().getDiscountRate())
