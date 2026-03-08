@@ -56,12 +56,12 @@ public class StylingServiceImpl implements StylingService {
     private static final Map<LargeCategory, List<LargeCategory>> CATEGORY_MAP = new EnumMap<>(LargeCategory.class);
 
     static {
-        CATEGORY_MAP.put(LargeCategory.TOP,    List.of(LargeCategory.BOTTOM, LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
-        CATEGORY_MAP.put(LargeCategory.BOTTOM, List.of(LargeCategory.TOP, LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
+        CATEGORY_MAP.put(LargeCategory.TOP,    List.of(LargeCategory.BOTTOM, LargeCategory.OUTER ,LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
+        CATEGORY_MAP.put(LargeCategory.BOTTOM, List.of(LargeCategory.TOP, LargeCategory.OUTER, LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
         CATEGORY_MAP.put(LargeCategory.SHOES,  List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER));
-        CATEGORY_MAP.put(LargeCategory.OUTER,  List.of(LargeCategory.BOTTOM, LargeCategory.SHOES, LargeCategory.BAG));
+        CATEGORY_MAP.put(LargeCategory.OUTER,  List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.SHOES, LargeCategory.BAG));
         CATEGORY_MAP.put(LargeCategory.BAG,    List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER, LargeCategory.SHOES));
-        CATEGORY_MAP.put(LargeCategory.HAT,    List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER));
+        CATEGORY_MAP.put(LargeCategory.HAT,    List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER, LargeCategory.SHOES));
         CATEGORY_MAP.put(LargeCategory.DRESS,  List.of(LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
     }
 
@@ -256,7 +256,7 @@ public class StylingServiceImpl implements StylingService {
             case SHOES  -> "shoes";
             case OUTER  -> "outer";
             case BAG    -> "bag";
-            case HAT    -> "accessory";
+            case HAT    -> "hat";
             case DRESS  -> "dress";
         };
     }
