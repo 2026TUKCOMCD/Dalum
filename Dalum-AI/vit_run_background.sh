@@ -6,12 +6,12 @@ echo "==============================="
 echo "   VIT BACKGROUND START"
 echo "==============================="
 
-APP_DIR="/home/ubuntu/Dalum-AI"
+APP_DIR="/home/ubuntu/Dalum/Dalum-AI"
 LOG_FILE="vit.log"
 MAX_SIZE_MB=100
 RETENTION_DAYS=7
 
-cd $APP_DIR || exit 1
+cd "$APP_DIR" || exit 1
 
 source .venv/bin/activate
 
