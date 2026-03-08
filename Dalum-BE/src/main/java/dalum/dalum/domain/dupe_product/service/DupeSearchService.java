@@ -17,6 +17,7 @@ import dalum.dalum.domain.search_log.entity.SearchLog;
 import dalum.dalum.domain.search_log.repository.SearchLogRepository;
 import dalum.dalum.global.apipayload.exception.GeneralException;
 import dalum.dalum.global.s3.S3Service;
+import dalum.dalum.global.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -40,7 +41,7 @@ public class DupeSearchService {
     private final SearchLogRepository searchLogRepository;
     private final MemberRepository memberRepository;
     private final ProductConverter productConverter;
-
+    private final AiService aiService;
     private final S3Service s3Service;
 
     public DupeSearchResponse searchDupe(Long memberId, DupeSearchRequest request) throws IOException {
@@ -57,8 +58,7 @@ public class DupeSearchService {
         searchLogRepository.save(searchLog);
 
         // 듀프 제품 추천받기
-        List<Long> recommendProductIds = List.of(1L);
-        // List<Long> recommendProductIds = aiService.getRecommendations(imageUrl);
+        List<Long> recommendProductIds = aiService.getDupeRecommendations(imageUrl);
 
         List<Product> products = productRepository.findAllById(recommendProductIds);
 
