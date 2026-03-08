@@ -57,8 +57,7 @@ public class DupeSearchService {
         searchLogRepository.save(searchLog);
 
         // 듀프 제품 추천받기
-        List<Long> recommendProductIds = List.of(1L);
-        // List<Long> recommendProductIds = aiService.getRecommendations(imageUrl);
+        List<Long> recommendProductIds = aiService.getDupeRecommendations(imageUrl);
 
         List<Product> products = productRepository.findAllById(recommendProductIds);
 
