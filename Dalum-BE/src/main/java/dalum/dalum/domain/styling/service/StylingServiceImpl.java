@@ -176,8 +176,13 @@ public class StylingServiceImpl implements StylingService {
 
     @Override
     public StylingSaveResponse saveStyling(Long memberId, Long stylingId) {
+        getMember(memberId);
         Styling styling = stylingRepository.findById(stylingId).orElseThrow(
                 () -> new StylingException(StylingErrorCode.NOT_FOUND));
+
+        if (!styling.getMember().getId().equals(memberId)) {
+            throw new StylingException(StylingErrorCode.FORBIDDEN); // 소유권 검증
+        }
 
         styling.confirmSave();
 
@@ -207,6 +212,10 @@ public class StylingServiceImpl implements StylingService {
 
         Styling styling = stylingRepository.findById(stylingId).orElseThrow(
                 () -> new StylingException(StylingErrorCode.NOT_FOUND));
+
+        if (!styling.getMember().getId().equals(memberId)) {
+            throw new StylingException(StylingErrorCode.FORBIDDEN);
+        }
 
         if (styling.getLikeProduct() == null) {
             throw new LikeProductException(LikeProductErrorCode.NOT_FOUND);
