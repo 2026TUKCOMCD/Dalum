@@ -91,7 +91,7 @@ def run():
             print("Test limit reached (50 images)")
             break
 
-        product_id = row["product_id"]
+        product_id = int(row["product_id"])
         image_url = row["image_url"]
         major_category = row["large_category"]
         middle_category = row["medium_category"]
@@ -102,7 +102,7 @@ def run():
 
         if middle_category:
             middle_category = middle_category.replace("/", "_")
-            
+
         print(f"\n===== [{i}] START {product_id} =====")
         
         image = load_image_from_url(image_url)
@@ -125,6 +125,7 @@ def run():
             image,
             [cv2.IMWRITE_WEBP_QUALITY, 85]
         )
+
         if success:
             upload_bytes_to_s3(
                 buffer.tobytes(),
@@ -147,7 +148,12 @@ def run():
             f"{image_type}/{major_category}/{middle_category}/{filename}"
         )
 
-        success, buffer = cv2.imencode(".webp", final_img)
+        success, buffer = cv2.imencode(
+            ".webp",
+            final_img,
+            [cv2.IMWRITE_WEBP_QUALITY, 85]
+        )
+        
         if success:
             upload_bytes_to_s3(
                 buffer.tobytes(),
