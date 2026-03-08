@@ -17,6 +17,7 @@ import dalum.dalum.domain.search_log.entity.SearchLog;
 import dalum.dalum.domain.search_log.repository.SearchLogRepository;
 import dalum.dalum.global.apipayload.exception.GeneralException;
 import dalum.dalum.global.s3.S3Service;
+import dalum.dalum.global.AiService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
