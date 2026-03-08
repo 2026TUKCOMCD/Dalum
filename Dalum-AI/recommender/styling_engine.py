@@ -11,18 +11,18 @@ logger = logging.getLogger(__name__)
 MATERIAL_DIM = len(IDX_TO_CLASS)
 
 CATEGORY_MAP: Dict[str, List[str]] = {
-    "top":       ["bottom", "shoes", "bag", "accessory"],
-    "bottom":    ["top", "shoes", "bag", "accessory"],
+    "top":       ["bottom", "outer", "shoes", "bag", "hat"],
+    "bottom":    ["top", "outer", "shoes", "bag", "hat"],
     "shoes":     ["top", "bottom", "outer"],
-    "outer":     ["bottom", "shoes", "bag"],
+    "outer":     ["top" ,"bottom", "shoes", "bag"],
     "bag":       ["top", "bottom", "outer", "shoes"],
-    "accessory": ["top", "bottom", "outer"],
-    "dress":     ["shoes", "bag", "accessory"],
+    "hat":       ["top", "bottom", "outer", "shoes"],
+    "dress":     ["shoes", "bag", "hat"],
 }
 
 STYLE_COMPATIBILITY: Dict[str, Dict[str, float]] = {
     "casual":          {"casual": 1.0, "american_casual": 0.9, "street": 0.7, "vintage": 0.6, "sporty": 0.5, "formal": 0.2},
-    "formal":          {"formal": 1.0, "casual": 0.2, "american_casual": 0.3, "street": 0.1, "vintage": 0.2, "sporty": 0.1},
+    "formal":          {"formal": 1.0, "casual": 0.3, "american_casual": 0.3, "street": 0.1, "vintage": 0.2, "sporty": 0.1},
     "sporty":          {"sporty": 1.0, "casual": 0.7, "street": 0.5, "american_casual": 0.5, "vintage": 0.3, "formal": 0.1},
     "street":          {"street": 1.0, "vintage": 0.8, "sporty": 0.7, "casual": 0.7, "american_casual": 0.2, "formal": 0.1},
     "vintage":         {"vintage": 1.0, "street": 0.8, "american_casual": 0.7, "casual": 0.6, "sporty": 0.3, "formal": 0.3},
@@ -31,6 +31,10 @@ STYLE_COMPATIBILITY: Dict[str, Dict[str, float]] = {
 
 DEFAULT_SCORE_THRESHOLD = 0.1
 ACHROMATIC_SATURATION   = 0.15
+OPTIONAL_THRESHOLDS: Dict[str, float] = {
+    "hat": 0.5,
+    "bag": 0.6,
+}
 
 
 class StylingRecommender:
@@ -200,7 +204,7 @@ class StylingRecommender:
                 sty_score = self._style_score(input_style, item.get("style"))
                 score     = self._final_score(float(mat_scores[i]), col_score, sty_score, has_color, has_style)
 
-                if score < score_threshold:
+                if score < OPTIONAL_THRESHOLDS.get(cat, score_threshold):
                     continue
 
                 cat_results.append({
