@@ -52,3 +52,7 @@ vit/preprocess/datasets/*
 
 *.npy
 
+# runtime logs
+*.log
+vit.log
+vit_*.log
