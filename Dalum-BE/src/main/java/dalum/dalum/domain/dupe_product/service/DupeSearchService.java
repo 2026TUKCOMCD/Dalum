@@ -40,7 +40,7 @@ public class DupeSearchService {
     private final SearchLogRepository searchLogRepository;
     private final MemberRepository memberRepository;
     private final ProductConverter productConverter;
-
+    private final AiService aiService;
     private final S3Service s3Service;
 
     public DupeSearchResponse searchDupe(Long memberId, DupeSearchRequest request) throws IOException {
