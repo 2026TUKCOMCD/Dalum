@@ -48,6 +48,7 @@ def run():
     # DB 연결 
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.itersize = 500
 
     cursor.execute("""
         SELECT product_id,
@@ -57,8 +58,6 @@ def run():
                small_category
         FROM product
     """)
-
-    rows = cursor.fetchall()
 
     # 모델 초기화
     face_detector = FaceDetector()
@@ -83,132 +82,170 @@ def run():
     embedding_list = []
     total_count = 0
 
+    BATCH_SIZE = 5000
+    batch_index = 0
+
     # 루프 시작
-    for i, row in enumerate(rows, 1):
-
-        # t2.small 안정 테스트
-        if i > 50:
-            print("Test limit reached (50 images)")
-            break
-
-        product_id = int(row["product_id"])
-        image_url = row["image_url"]
-        major_category = row["large_category"]
-        middle_category = row["medium_category"]
-        category_name = row["small_category"]
+    for i, row in enumerate(cursor, 1):
         
-        if major_category:
-            major_category = major_category.replace("/", "_")
+        product_id = None
 
-        if middle_category:
-            middle_category = middle_category.replace("/", "_")
+        try:
+            product_id = int(row["product_id"])
+            image_url = row["image_url"]
+            major_category = row["large_category"]
+            middle_category = row["medium_category"]
+            category_name = row["small_category"]
+            
+            if major_category:
+                major_category = major_category.replace("/", "_")
 
-        print(f"\n===== [{i}] START {product_id} =====")
-        
-        image = load_image_from_url(image_url)
-        if image is None:
-            continue
+            if middle_category:
+                middle_category = middle_category.replace("/", "_")
 
-        is_model = step1.is_model_candidate(image)
-        image_type = "Model" if is_model else "Product"
+            print(f"\n===== [{i}] START {product_id} =====")
+            
+            image = load_image_from_url(image_url)
+            if image is None:
+                continue
 
-        filename = f"{product_id}.webp"
+            is_model = step1.is_model_candidate(image)
+            image_type = "Model" if is_model else "Product"
 
-        # 원본 S3 업로드
-        original_key = (
-            f"dataset/original_images/"
-            f"{image_type}/{major_category}/{middle_category}/{filename}"
-        )
+            filename = f"{product_id}.webp"
 
-        success, buffer = cv2.imencode(
-            ".webp",
-            image,
-            [cv2.IMWRITE_WEBP_QUALITY, 85]
-        )
-
-        if success:
-            upload_bytes_to_s3(
-                buffer.tobytes(),
-                BUCKET_NAME,
-                original_key,
-                content_type="image/webp"
+            # 원본 S3 업로드
+            original_key = (
+                f"dataset/original_images/"
+                f"{image_type}/{major_category}/{middle_category}/{filename}"
             )
 
-        # 전처리
-        if is_model:
-            rgba = model_processor.process(image, category_name)
-        else:
-            rgba = product_processor.process(image)
-
-        final_img = segmenter.center_and_pad(rgba)
-
-        # 전처리 이미지 S3 업로드
-        processed_key = (
-            f"dataset/processed_images/"
-            f"{image_type}/{major_category}/{middle_category}/{filename}"
-        )
-
-        success, buffer = cv2.imencode(
-            ".webp",
-            final_img,
-            [cv2.IMWRITE_WEBP_QUALITY, 85]
-        )
-        
-        if success:
-            upload_bytes_to_s3(
-                buffer.tobytes(),
-                BUCKET_NAME,
-                processed_key,
-                content_type="image/webp"
+            success, buffer = cv2.imencode(
+                ".webp",
+                image,
+                [cv2.IMWRITE_WEBP_QUALITY, 85]
             )
 
-        # 색상 & 재질 임베딩
-        dominant_colors = color_extractor.extract_dominant_colors(final_img)
-        color_embedding = np.array(
-            build_color_embedding(dominant_colors),
-            dtype=np.float32
-        ).reshape(-1)
+            if success:
+                upload_bytes_to_s3(
+                    buffer.tobytes(),
+                    BUCKET_NAME,
+                    original_key,
+                    content_type="image/webp"
+                )
 
-        enhanced = enhance_for_material(final_img[:, :, :3])
+            # 전처리
+            if is_model:
+                rgba = model_processor.process(image, category_name)
+            else:
+                rgba = product_processor.process(image)
 
-        top3_materials, material_vector = material_predictor.predict_from_array(
-            enhanced
-        )
+            final_img = segmenter.center_and_pad(rgba)
 
-        if material_vector is None:
+            # 전처리 이미지 S3 업로드
+            processed_key = (
+                f"dataset/processed_images/"
+                f"{image_type}/{major_category}/{middle_category}/{filename}"
+            )
+
+            success, buffer = cv2.imencode(
+                ".webp",
+                final_img,
+                [cv2.IMWRITE_WEBP_QUALITY, 85]
+            )
+
+            if success:
+                upload_bytes_to_s3(
+                    buffer.tobytes(),
+                    BUCKET_NAME,
+                    processed_key,
+                    content_type="image/webp"
+                )
+
+            # 색상 & 재질 임베딩
+            dominant_colors = color_extractor.extract_dominant_colors(final_img)
+            color_embedding = np.array(
+                build_color_embedding(dominant_colors),
+                dtype=np.float32
+            ).reshape(-1)
+
+            enhanced = enhance_for_material(final_img[:, :, :3])
+
+            top3_materials, material_vector = material_predictor.predict_from_array(
+                enhanced
+            )
+
+            if material_vector is None:
+                continue
+
+            if isinstance(material_vector, dict):
+                material_vector = list(material_vector.values())
+
+            material_vector = np.array(
+                material_vector,
+                dtype=np.float32
+            ).reshape(-1)
+            
+            final_embedding = np.concatenate(
+                [color_embedding, material_vector],
+                axis=0
+            )
+
+            embedding_list.append(final_embedding)
+
+            if len(embedding_list) >= BATCH_SIZE:
+
+                batch_array = np.vstack(embedding_list)
+
+                npy_buffer = io.BytesIO()
+                np.save(npy_buffer, batch_array)
+                npy_buffer.seek(0)
+
+                upload_bytes_to_s3(
+                    npy_buffer.read(),
+                    BUCKET_NAME,
+                    f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+                    content_type="application/octet-stream"
+                )
+
+                embedding_list.clear()
+                batch_index += 1
+
+            metadata_rows.append({
+                "index": total_count + 1,
+                "product_id": product_id,
+                "major_category": major_category,
+                "middle_category": middle_category
+            })
+            total_count += 1
+            
+            del image, rgba, final_img, enhanced
+            
+            if i % 20 == 0:
+                gc.collect()
+
+        except Exception as e:
+            print(f"ERROR product_id={product_id} : {e}")
             continue
 
-        material_vector = np.array(
-            material_vector,
-            dtype=np.float32
-        ).reshape(-1)
-        
-        final_embedding = np.concatenate(
-            [color_embedding, material_vector],
-            axis=0
+    if embedding_list:
+
+        batch_array = np.vstack(embedding_list)
+
+        npy_buffer = io.BytesIO()
+        np.save(npy_buffer, batch_array)
+        npy_buffer.seek(0)
+
+        upload_bytes_to_s3(
+            npy_buffer.read(),
+            BUCKET_NAME,
+            f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+            content_type="application/octet-stream"
         )
-
-        embedding_list.append(final_embedding)
-
-        metadata_rows.append({
-            "index": len(embedding_list),
-            "product_id": product_id,
-            "major_category": major_category,
-            "middle_category": middle_category
-        })
-        total_count += 1
-        
-        del image, rgba, final_img, enhanced
-        gc.collect()
 
     cursor.close()
     conn.close()
-
-    if len(embedding_list) == 0:
-        print("처리된 이미지가 없습니다.")
-        return
     
-    embedding_array = np.vstack(embedding_list)
         # # 스타일 분류
         # pil_image = Image.fromarray(
         #     cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB)
@@ -217,19 +254,6 @@ def run():
         #
         # # DB 업데이트
         # update_style_color_material(cursor, conn, row["상품 URL"], material_vector, dominant_colors, style)
-
-
-    # embedimgs.npy 저장
-    npy_buffer = io.BytesIO()
-    np.save(npy_buffer, embedding_array)
-    npy_buffer.seek(0)
-
-    upload_bytes_to_s3(
-        npy_buffer.read(),
-        BUCKET_NAME,
-        "dataset/vit_output/embeddings.npy",
-        content_type="application/octet-stream"
-    )
 
     # metadata.csv 저장
     csv_buffer = io.StringIO()
