@@ -52,17 +52,36 @@ import java.util.stream.Collectors;
 public class StylingServiceImpl implements StylingService {
 
     private static final double SCORE_THRESHOLD = 0.1;
+    private static final double STYLE_FILTER_THRESHOLD = 0.5;
 
     private static final Map<LargeCategory, List<LargeCategory>> CATEGORY_MAP = new EnumMap<>(LargeCategory.class);
 
     static {
-        CATEGORY_MAP.put(LargeCategory.TOP,    List.of(LargeCategory.BOTTOM, LargeCategory.OUTER ,LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
+        CATEGORY_MAP.put(LargeCategory.TOP, List.of(LargeCategory.BOTTOM, LargeCategory.OUTER, LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
         CATEGORY_MAP.put(LargeCategory.BOTTOM, List.of(LargeCategory.TOP, LargeCategory.OUTER, LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
-        CATEGORY_MAP.put(LargeCategory.SHOES,  List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER));
-        CATEGORY_MAP.put(LargeCategory.OUTER,  List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.SHOES, LargeCategory.BAG));
-        CATEGORY_MAP.put(LargeCategory.BAG,    List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER, LargeCategory.SHOES));
-        CATEGORY_MAP.put(LargeCategory.HAT,    List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER, LargeCategory.SHOES));
-        CATEGORY_MAP.put(LargeCategory.DRESS,  List.of(LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
+        CATEGORY_MAP.put(LargeCategory.SHOES, List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER));
+        CATEGORY_MAP.put(LargeCategory.OUTER, List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.SHOES, LargeCategory.BAG));
+        CATEGORY_MAP.put(LargeCategory.BAG, List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER, LargeCategory.SHOES));
+        CATEGORY_MAP.put(LargeCategory.HAT, List.of(LargeCategory.TOP, LargeCategory.BOTTOM, LargeCategory.OUTER, LargeCategory.SHOES));
+        CATEGORY_MAP.put(LargeCategory.DRESS, List.of(LargeCategory.SHOES, LargeCategory.BAG, LargeCategory.HAT));
+    }
+
+    private static final Map<String, Map<String, Double>> STYLE_COMPATIBILITY = Map.of(
+            "casual",          Map.of("casual", 1.0, "american_casual", 0.9, "street", 0.7, "vintage", 0.6, "sporty", 0.5, "formal", 0.2),
+            "formal",          Map.of("formal", 1.0, "casual", 0.3, "american_casual", 0.3, "street", 0.1, "vintage", 0.2, "sporty", 0.1),
+            "sporty",          Map.of("sporty", 1.0, "casual", 0.7, "street", 0.5, "american_casual", 0.5, "vintage", 0.3, "formal", 0.1),
+            "street",          Map.of("street", 1.0, "vintage", 0.8, "sporty", 0.7, "casual", 0.7, "american_casual", 0.2, "formal", 0.1),
+            "vintage",         Map.of("vintage", 1.0, "street", 0.8, "american_casual", 0.7, "casual", 0.6, "sporty", 0.3, "formal", 0.3),
+            "american_casual", Map.of("american_casual", 1.0, "casual", 0.8, "vintage", 0.7, "sporty", 0.5, "street", 0.2, "formal", 0.1)
+    );
+
+    private static List<String> getCompatibleStyles(String inputStyle) {
+        if (inputStyle == null) return List.of("casual", "formal", "sporty", "street", "vintage", "american_casual");
+        return STYLE_COMPATIBILITY.getOrDefault(inputStyle.toLowerCase(), Map.of())
+                .entrySet().stream()
+                .filter(e -> e.getValue() >= STYLE_FILTER_THRESHOLD)
+                .map(Map.Entry::getKey)
+                .toList();
     }
 
     private final MemberRepository memberRepository;
@@ -98,7 +117,8 @@ public class StylingServiceImpl implements StylingService {
         // 카테고리에 맞는 후보 상품 조회
         List<LargeCategory> candidateCategories = CATEGORY_MAP.getOrDefault(
                 targetProduct.getLargeCategory(), List.of());
-        List<Product> candidates = productRepository.findCandidates(candidateCategories, targetProductId);
+        List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
+        List<Product> candidates = productRepository.findCandidates(candidateCategories, targetProductId, compatibleStyles);
 
         // 후보 상품 → AI 요청 형태 변환
         List<AiCandidateItem> candidateItems = candidates.stream()
@@ -251,13 +271,13 @@ public class StylingServiceImpl implements StylingService {
 
     private static String toCategoryString(LargeCategory category) {
         return switch (category) {
-            case TOP    -> "top";
+            case TOP -> "top";
             case BOTTOM -> "bottom";
-            case SHOES  -> "shoes";
-            case OUTER  -> "outer";
-            case BAG    -> "bag";
-            case HAT    -> "hat";
-            case DRESS  -> "dress";
+            case SHOES -> "shoes";
+            case OUTER -> "outer";
+            case BAG -> "bag";
+            case HAT -> "hat";
+            case DRESS -> "dress";
         };
     }
 }
