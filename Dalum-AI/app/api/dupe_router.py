@@ -23,19 +23,19 @@ async def search_dupe(file: UploadFile = File(...), top_k: int = 10):
         output = []
         for item in results:
             output.append({
-                "product_id"    : item["product_id"],
-                "name"          : item.get("display_name") or item.get("name"),
-                "category"      : item["category"],
-                "shopping_mall" : item["shopping_mall"],
-                "price"         : item.get("price"),
-                "url"           : item.get("url"),
-                "image_path"    : item.get("image_path"),
-                "final_score"   : item["final_score"],
-                "lab_sim"       : item["lab_sim"],
-                "vit_sim"       : item["vit_sim"],
-                "faiss_score"   : item["faiss_score"],
-                "common_designs": item.get("common_designs", []),
-            })
+                "product_id"    : int(item["product_id"]),
+                "name"          : str(item.get("display_name") or item.get("name") or ""),
+                "category"      : str(item["category"]),
+                "shopping_mall" : str(item["shopping_mall"]),
+                "price"         : float(item["price"]) if item.get("price") is not None else None,
+                "url"           : str(item.get("url")) if item.get("url") else None,
+                "image_path"    : str(item.get("image_path")) if item.get("image_path") else None,
+                "final_score"   : float(item["final_score"]),
+                "lab_sim"       : float(item["lab_sim"]),
+                "vit_sim"       : float(item["vit_sim"]),
+                "faiss_score"   : float(item["faiss_score"]),
+                "common_designs": [(str(n), float(q), float(d)) for n, q, d in item.get("common_designs", [])],
+                })
 
         return success_response(
             message="듀프 검색 완료",

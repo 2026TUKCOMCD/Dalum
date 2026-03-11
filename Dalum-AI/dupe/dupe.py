@@ -53,12 +53,14 @@ BG_THR        = 230
 
 # ==================== 경로 ====================
 
-METADATA_PATH    = os.path.expanduser('~/final_models/embeddings_metadata.csv')
-CLIP_IMAGE_PATH  = os.path.expanduser('~/embeddings_clip_image.npy')
-CLIP_DESIGN_PATH = os.path.expanduser('~/embeddings_clip_design.npy')
-LAB_SPATIAL_PATH = os.path.expanduser('~/embeddings_lab_spatial.npy')
-VIT_SHAPE_PATH   = os.path.expanduser('~/embeddings_attention_fused.npy')
-PRODUCTS_PATH    = os.path.expanduser('~/all_products_id.csv')
+_BASE = os.path.dirname(os.path.abspath(__file__))
+
+METADATA_PATH    = os.path.join(_BASE, 'final_models', 'embeddings_metadata.csv')
+CLIP_IMAGE_PATH  = os.path.join(_BASE, 'embeddings_clip_image.npy')
+CLIP_DESIGN_PATH = os.path.join(_BASE, 'embeddings_clip_design.npy')
+LAB_SPATIAL_PATH = os.path.join(_BASE, 'embeddings_lab_spatial.npy')
+VIT_SHAPE_PATH   = os.path.join(_BASE, 'embeddings_vit.npy')
+PRODUCTS_PATH    = os.path.join(_BASE, 'all_products_id.csv')
 
 # ==================== CLIP 디자인 (37개) ====================
 
@@ -137,7 +139,8 @@ clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 clip_model.eval()
 with torch.no_grad():
     _text_inputs      = clip_processor(text=DESIGN_TEXTS, return_tensors="pt", padding=True)
-    _cached_text_embs = F.normalize(clip_model.get_text_features(**_text_inputs), dim=-1)
+    _text_features    = clip_model.text_projection(clip_model.text_model(**_text_inputs).pooler_output)
+    _cached_text_embs = F.normalize(_text_features, dim=-1)
 print(f"   ✅ 완료")
 
 print("4️⃣  메타데이터 & 상품정보 로드...")
@@ -169,10 +172,10 @@ except Exception as e:
     products_df = None
 
 print("5️⃣  임베딩 DB & FAISS 로드...")
-clip_image_db  = np.load(CLIP_IMAGE_PATH).astype('float32')
-clip_design_db = np.load(CLIP_DESIGN_PATH).astype('float32')
-lab_spatial_db = np.load(LAB_SPATIAL_PATH).astype('float32')
-vit_shape_db   = np.load(VIT_SHAPE_PATH).astype('float32')
+clip_image_db  = np.load(CLIP_IMAGE_PATH, mmap_mode='r')
+clip_design_db = np.load(CLIP_DESIGN_PATH, mmap_mode='r')
+lab_spatial_db = np.load(LAB_SPATIAL_PATH, mmap_mode='r')
+vit_shape_db   = np.load(VIT_SHAPE_PATH, mmap_mode='r')
 
 _emb = clip_image_db.copy()
 faiss.normalize_L2(_emb)
@@ -296,7 +299,10 @@ def extract_query_features(image_pil):
     # CLIP
     clip_input = clip_processor(images=image_pil, return_tensors="pt")
     with torch.no_grad():
-        img_emb = F.normalize(clip_model.get_image_features(**clip_input), dim=-1)
+        _img_feats = clip_model.get_image_features(**clip_input)
+        if hasattr(_img_feats, 'pooler_output'):
+            _img_feats = _img_feats.pooler_output
+        img_emb = F.normalize(_img_feats, dim=-1)
         logits  = (img_emb @ _cached_text_embs.T) * 100
         probs   = F.softmax(logits, dim=-1)[0].cpu().numpy()
 
