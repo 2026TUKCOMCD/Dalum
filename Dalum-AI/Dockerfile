@@ -7,6 +7,9 @@ WORKDIR /app
 # requirements 먼저 복사 - 변경 사항 있을 때 실행
 COPY requirements.txt .
 
+# OPenCV/mediapipe 시스템 의존성 (libGL)
+RUN apt-get update && apt-get install -y libgl1 libglib2.0-0 && rm -rf /var/lib/apt/lists/*
+
 # pip 업그레이드
 RUN pip install --upgrade pip
 
