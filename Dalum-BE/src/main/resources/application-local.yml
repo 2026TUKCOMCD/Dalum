@@ -79,4 +79,4 @@ app:
 
 ai:
   server:
-    url: ${AI_SERVER_URL:http://3.38.10.49:8000}
+    url: ${AI_SERVER_URL:http://localhost:8000}
