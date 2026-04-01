@@ -6,30 +6,30 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
-import java.util.Map;
+import java.util.List;
 
 @Converter
-public class MapStringDoubleConverter implements AttributeConverter<Map<String, Double>, String> {
+public class MapStringDoubleConverter implements AttributeConverter<List<Double>, String> {
 
     private static final ObjectMapper mapper = new ObjectMapper();
 
     @Override
-    public String convertToDatabaseColumn(Map<String, Double> attribute) {
+    public String convertToDatabaseColumn(List<Double> attribute) {
         if (attribute == null) return null;
         try {
             return mapper.writeValueAsString(attribute);
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Cannot convert map to JSON", e);
+            throw new IllegalArgumentException("Cannot convert list to JSON", e);
         }
     }
 
     @Override
-    public Map<String, Double> convertToEntityAttribute(String dbData) {
+    public List<Double> convertToEntityAttribute(String dbData) {
         if (dbData == null) return null;
         try {
             return mapper.readValue(dbData, new TypeReference<>() {});
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("Cannot parse JSON to map", e);
+            throw new IllegalArgumentException("Cannot parse JSON to list", e);
         }
     }
 }

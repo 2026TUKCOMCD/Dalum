@@ -60,7 +60,7 @@ public class Product extends BaseEntity {
 
     @Convert(converter = MapStringDoubleConverter.class)
     @Column(name = "material_vector", columnDefinition = "TEXT")
-    private Map<String, Double> materialVector;
+    private List<Double> materialVector;
 
     @Convert(converter = DominantColorsConverter.class)
     @Column(name = "dominant_colors", columnDefinition = "TEXT")

@@ -9,7 +9,7 @@ public record AiCandidateItem(
         @JsonProperty("id") Long id,
         @JsonProperty("category") String category,
         @JsonProperty("style") String style,
-        @JsonProperty("material_vector") Map<String, Double> materialVector,
+        @JsonProperty("material_vector") List<Double> materialVector,
         @JsonProperty("dominant_colors") List<Map<String, Object>> dominantColors
 ) {
 }
