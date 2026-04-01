@@ -6,6 +6,7 @@ import csv
 import gc
 import psycopg2.extras
 from dotenv import load_dotenv
+from PIL import Image
 
 from vit.utils.s3_uploader import upload_bytes_to_s3
 from vit.preprocess.utils.image_loader import load_image_from_url
@@ -20,10 +21,8 @@ from vit.preprocess.color.color_embedding import build_color_embedding
 from vit.preprocess.material.predictor import MaterialPredictor
 from vit.preprocess.material.material_postprocessor import MaterialPostProcessor
 from vit.preprocess.utils.image_enhancer import enhance_for_material
-# from recommender.style_classifier import StyleClassifier
-# from vit.runners.run_db_update_vit import get_db_connection, update_style_color_material
-
-from vit.runners.run_db_update_vit import get_db_connection
+from recommender.style_classifier import StyleClassifier
+from vit.runners.run_db_update_vit import get_db_connection, update_style_color_material
 
 load_dotenv()
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
@@ -45,18 +44,22 @@ WEIGHT_PATH = os.path.join(
 
 
 def run():
-    # DB 연결 
+    # DB 연결
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
     cursor.itersize = 500
 
+    write_conn = get_db_connection()
+    write_cursor = write_conn.cursor()
+
     cursor.execute("""
         SELECT product_id,
                image_url,
+               purchase_link,
                large_category,
                medium_category,
                small_category
-        FROM product
+        FROM product 
     """)
 
     # 모델 초기화
@@ -76,7 +79,7 @@ def run():
         margin_threshold=0.03
     )
 
-    # style_classifier = StyleClassifier()
+    style_classifier = StyleClassifier()
 
     metadata_rows = []
     embedding_list = []
@@ -93,6 +96,7 @@ def run():
         try:
             product_id = int(row["product_id"])
             image_url = row["image_url"]
+            purchase_link = row["purchase_link"]
             major_category = row["large_category"]
             middle_category = row["medium_category"]
             category_name = row["small_category"]
@@ -219,13 +223,24 @@ def run():
             })
             total_count += 1
             
+            # 스타일 분류
+            pil_image = Image.fromarray(
+                cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB)
+            )
+            style = style_classifier.classify(pil_image)
+
+            # DB 업데이트
+            update_style_color_material(write_cursor, write_conn, purchase_link, material_vector, dominant_colors, style)
+
             del image, rgba, final_img, enhanced
-            
+
             if i % 20 == 0:
                 gc.collect()
 
         except Exception as e:
+            import traceback
             print(f"ERROR product_id={product_id} : {e}")
+            traceback.print_exc()
             continue
 
     if embedding_list:
@@ -245,15 +260,8 @@ def run():
 
     cursor.close()
     conn.close()
-    
-        # # 스타일 분류
-        # pil_image = Image.fromarray(
-        #     cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB)
-        # )
-        # style = style_classifier.classify(pil_image)
-        #
-        # # DB 업데이트
-        # update_style_color_material(cursor, conn, row["상품 URL"], material_vector, dominant_colors, style)
+    write_cursor.close()
+    write_conn.close()
 
     # metadata.csv 저장
     csv_buffer = io.StringIO()
