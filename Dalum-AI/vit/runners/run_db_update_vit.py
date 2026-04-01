@@ -31,7 +31,7 @@ def update_style_color_material(cursor, conn, purchase_link, material_vector, do
         WHERE purchase_link = %s
         """,
         (
-            json.dumps(material_vector),
+            json.dumps(material_vector.tolist() if hasattr(material_vector, 'tolist') else material_vector),
             json.dumps(dominant_color_list),
             style,
             purchase_link,
