@@ -108,7 +108,7 @@ public class StylingServiceImpl implements StylingService {
         // AI 입력 구성
         String inputCategory = toCategoryString(targetProduct.getLargeCategory());
         AiInputItem aiInput = new AiInputItem(
-                targetProduct.getMaterialVector() != null ? targetProduct.getMaterialVector() : Map.of(),
+                targetProduct.getMaterialVector() != null ? targetProduct.getMaterialVector() : List.of(),
                 targetProduct.getDominantColors(),
                 targetProduct.getStyle(),
                 inputCategory
@@ -126,7 +126,7 @@ public class StylingServiceImpl implements StylingService {
                         p.getId(),
                         toCategoryString(p.getLargeCategory()),
                         p.getStyle(),
-                        p.getMaterialVector() != null ? p.getMaterialVector() : Map.of(),
+                        p.getMaterialVector() != null ? p.getMaterialVector() : List.of(),
                         p.getDominantColors()))
                 .toList();
 
