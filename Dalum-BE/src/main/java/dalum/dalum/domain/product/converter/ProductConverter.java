@@ -21,6 +21,7 @@ public class ProductConverter {
                 .discountRate(product.getDiscountRate())
                 .price(product.getPrice())
                 .imageUrl(product.getImageUrl())
+                .purchaseUrl(product.getPurchaseLink())
                 .isLiked(isLiked)
                 .build();
     }

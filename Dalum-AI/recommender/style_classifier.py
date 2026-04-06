@@ -74,9 +74,7 @@ class StyleClassifier:
         with torch.no_grad():
             for prompts in STYLE_PROMPTS.values():
                 text_inputs = self.processor(text=prompts, return_tensors="pt", padding=True)
-                text_features = self.model.text_projection(
-                    self.model.text_model(**text_inputs).pooler_output
-                )
+                text_features = self.model.get_text_features(**text_inputs).pooler_output
                 text_features = text_features / text_features.norm(dim=-1, keepdim=True)
                 style_embeddings.append(text_features.mean(dim=0))
         text_embeds = torch.stack(style_embeddings)
@@ -95,9 +93,7 @@ class StyleClassifier:
     def _get_probs(self, image: Image.Image) -> torch.Tensor:
         image_inputs = self.processor(images=image, return_tensors="pt")
         with torch.no_grad():
-            image_features = self.model.visual_projection(
-                self.model.vision_model(**image_inputs).pooler_output
-            )
+            image_features = self.model.get_image_features(**image_inputs).pooler_output
             image_features = image_features / image_features.norm(dim=-1, keepdim=True)
 
         logits = (image_features @ self._text_embeds.T) * self.model.logit_scale.exp()

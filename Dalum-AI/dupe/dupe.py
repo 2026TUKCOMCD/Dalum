@@ -139,8 +139,7 @@ clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 clip_model.eval()
 with torch.no_grad():
     _text_inputs      = clip_processor(text=DESIGN_TEXTS, return_tensors="pt", padding=True)
-    _text_features    = clip_model.text_projection(clip_model.text_model(**_text_inputs).pooler_output)
-    _cached_text_embs = F.normalize(_text_features, dim=-1)
+    _cached_text_embs = F.normalize(clip_model.get_text_features(**_text_inputs), dim=-1)
 print(f"   ✅ 완료")
 
 print("4️⃣  메타데이터 & 상품정보 로드...")

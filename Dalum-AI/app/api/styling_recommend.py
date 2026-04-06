@@ -11,7 +11,7 @@ recommender = StylingRecommender()
 
 
 class InputItem(BaseModel):
-    material_vector: Dict[str, float]
+    material_vector: List[float]
     dominant_colors: Optional[List[Dict[str, Any]]] = None  # [{"hex": "#RRGGBB", "ratio": 0.6}, ...]
     style:           Optional[str] = None                   # casual | formal | sporty | street | vintage | american_casual
     category:        str
@@ -21,7 +21,7 @@ class CandidateItem(BaseModel):
     id:              Any
     category:        str
     style:           Optional[str] = None
-    material_vector: Dict[str, float]
+    material_vector: List[float]
     dominant_colors: Optional[List[Dict[str, Any]]] = None
     metadata:        Optional[Dict[str, Any]] = None
 
