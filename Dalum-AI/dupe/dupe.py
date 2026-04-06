@@ -137,7 +137,7 @@ clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 clip_model.eval()
 with torch.no_grad():
     _text_inputs      = clip_processor(text=DESIGN_TEXTS, return_tensors="pt", padding=True)
-    _cached_text_embs = F.normalize(clip_model.get_text_features(**_text_inputs), dim=-1)
+    _cached_text_embs = F.normalize(clip_model.get_text_features(**_text_inputs).pooler_output, dim=-1)
 print(f"   ✅ 완료")
 
 print("4️⃣  메타데이터 & 상품정보 로드...")
@@ -296,7 +296,7 @@ def extract_query_features(image_pil):
     # CLIP
     clip_input = clip_processor(images=image_pil, return_tensors="pt")
     with torch.no_grad():
-        img_emb = F.normalize(clip_model.get_image_features(**clip_input), dim=-1)
+        img_emb = F.normalize(clip_model.get_image_features(**clip_input).pooler_output, dim=-1)
         logits  = (img_emb @ _cached_text_embs.T) * 100
         probs   = F.softmax(logits, dim=-1)[0].cpu().numpy()
 

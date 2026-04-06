@@ -47,11 +47,11 @@ class StylingRecommender:
     # 소재 유사도 (코사인)
     # ──────────────────────────────────────────
 
-    def _to_material_vec(self, material_vector: Dict[str, float]) -> np.ndarray:
-        return np.array(
-            [material_vector.get(IDX_TO_CLASS[i], 0.0) for i in range(MATERIAL_DIM)],
-            dtype=float,
-        )
+    def _to_material_vec(self, material_vector: List[float]) -> np.ndarray:
+        vec = np.zeros(MATERIAL_DIM, dtype=float)
+        for i, v in enumerate(material_vector[:MATERIAL_DIM]):
+            vec[i] = v
+        return vec
 
     def _cosine_sim(self, v1: np.ndarray, v2: np.ndarray) -> float:
         norm = np.linalg.norm(v1) * np.linalg.norm(v2)
@@ -150,7 +150,7 @@ class StylingRecommender:
 
     def get_recommendations(
         self,
-        input_material_vector: Dict[str, float],
+        input_material_vector: List[float],
         input_category: str,
         candidates: List[Dict[str, Any]],
         top_k: int = 3,
@@ -189,7 +189,7 @@ class StylingRecommender:
 
             # 소재 행렬 일괄 변환 후 배치 코사인 유사도
             mat_matrix = np.array(
-                [self._to_material_vec(item.get("material_vector", {})) for item in items]
+                [self._to_material_vec(item.get("material_vector", [])) for item in items]
             )
             norms      = np.linalg.norm(mat_matrix, axis=1) * np.linalg.norm(input_mat_vec)
             norms      = np.where(norms == 0, 1e-10, norms)

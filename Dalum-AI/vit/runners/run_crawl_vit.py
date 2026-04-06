@@ -59,7 +59,8 @@ def run():
                large_category,
                medium_category,
                small_category
-        FROM product 
+        FROM product
+        WHERE style IS NULL
     """)
 
     # 모델 초기화
