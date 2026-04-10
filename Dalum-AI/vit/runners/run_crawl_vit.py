@@ -132,12 +132,15 @@ def run():
             )
 
             if success:
-                upload_bytes_to_s3(
-                    buffer.tobytes(),
-                    BUCKET_NAME,
-                    original_key,
-                    content_type="image/webp"
-                )
+                try:
+                    upload_bytes_to_s3(
+                        buffer.tobytes(),
+                        BUCKET_NAME,
+                        original_key,
+                        content_type="image/webp"
+                    )
+                except Exception as s3_err:
+                    print(f"[S3 SKIP] original upload failed: {s3_err}")
 
             # 전처리
             if is_model:
@@ -160,12 +163,15 @@ def run():
             )
 
             if success:
-                upload_bytes_to_s3(
-                    buffer.tobytes(),
-                    BUCKET_NAME,
-                    processed_key,
-                    content_type="image/webp"
-                )
+                try:
+                    upload_bytes_to_s3(
+                        buffer.tobytes(),
+                        BUCKET_NAME,
+                        processed_key,
+                        content_type="image/webp"
+                    )
+                except Exception as s3_err:
+                    print(f"[S3 SKIP] processed upload failed: {s3_err}")
 
             # 색상 & 재질 임베딩
             dominant_colors = color_extractor.extract_dominant_colors(final_img)
@@ -206,12 +212,15 @@ def run():
                 np.save(npy_buffer, batch_array)
                 npy_buffer.seek(0)
 
-                upload_bytes_to_s3(
-                    npy_buffer.read(),
-                    BUCKET_NAME,
-                    f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
-                    content_type="application/octet-stream"
-                )
+                try:
+                    upload_bytes_to_s3(
+                        npy_buffer.read(),
+                        BUCKET_NAME,
+                        f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+                        content_type="application/octet-stream"
+                    )
+                except Exception as s3_err:
+                    print(f"[S3 SKIP] embedding batch upload failed: {s3_err}")
 
                 embedding_list.clear()
                 batch_index += 1
@@ -252,12 +261,15 @@ def run():
         np.save(npy_buffer, batch_array)
         npy_buffer.seek(0)
 
-        upload_bytes_to_s3(
-            npy_buffer.read(),
-            BUCKET_NAME,
-            f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
-            content_type="application/octet-stream"
-        )
+        try:
+            upload_bytes_to_s3(
+                npy_buffer.read(),
+                BUCKET_NAME,
+                f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+                content_type="application/octet-stream"
+            )
+        except Exception as s3_err:
+            print(f"[S3 SKIP] final embedding upload failed: {s3_err}")
 
     cursor.close()
     conn.close()
@@ -277,12 +289,15 @@ def run():
     writer.writeheader()
     writer.writerows(metadata_rows)
 
-    upload_bytes_to_s3(
-        csv_buffer.getvalue().encode("utf-8"),
-        BUCKET_NAME,
-        "dataset/vit_output/metadata.csv",
-        content_type="text/csv"
-    )
+    try:
+        upload_bytes_to_s3(
+            csv_buffer.getvalue().encode("utf-8"),
+            BUCKET_NAME,
+            "dataset/vit_output/metadata.csv",
+            content_type="text/csv"
+        )
+    except Exception as s3_err:
+        print(f"[S3 SKIP] metadata csv upload failed: {s3_err}")
 
     print("\n===================================")
     print(f"완료 | 총 처리 이미지 수: {total_count}")

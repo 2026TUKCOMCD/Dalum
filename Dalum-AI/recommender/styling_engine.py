@@ -137,7 +137,7 @@ class StylingRecommender:
         has_color: bool, has_style: bool,
     ) -> float:
         if has_color and has_style:
-            return 0.35 * mat + 0.35 * col + 0.30 * sty
+            return 0.2 * mat + 0.3 * col + 0.50 * sty
         if has_color:
             return 0.50 * mat + 0.50 * col
         if has_style:
