@@ -26,6 +26,7 @@ from vit.runners.run_db_update_vit import get_db_connection, update_style_color_
 
 load_dotenv()
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+SKIP_S3 = True
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -131,7 +132,7 @@ def run():
                 [cv2.IMWRITE_WEBP_QUALITY, 85]
             )
 
-            if success:
+            if success and not SKIP_S3:
                 try:
                     upload_bytes_to_s3(
                         buffer.tobytes(),
@@ -162,7 +163,7 @@ def run():
                 [cv2.IMWRITE_WEBP_QUALITY, 85]
             )
 
-            if success:
+            if success and not SKIP_S3:
                 try:
                     upload_bytes_to_s3(
                         buffer.tobytes(),
@@ -212,15 +213,16 @@ def run():
                 np.save(npy_buffer, batch_array)
                 npy_buffer.seek(0)
 
-                try:
-                    upload_bytes_to_s3(
-                        npy_buffer.read(),
-                        BUCKET_NAME,
-                        f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
-                        content_type="application/octet-stream"
-                    )
-                except Exception as s3_err:
-                    print(f"[S3 SKIP] embedding batch upload failed: {s3_err}")
+                if not SKIP_S3:
+                    try:
+                        upload_bytes_to_s3(
+                            npy_buffer.read(),
+                            BUCKET_NAME,
+                            f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+                            content_type="application/octet-stream"
+                        )
+                    except Exception as s3_err:
+                        print(f"[S3 SKIP] embedding batch upload failed: {s3_err}")
 
                 embedding_list.clear()
                 batch_index += 1
@@ -261,15 +263,16 @@ def run():
         np.save(npy_buffer, batch_array)
         npy_buffer.seek(0)
 
-        try:
-            upload_bytes_to_s3(
-                npy_buffer.read(),
-                BUCKET_NAME,
-                f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
-                content_type="application/octet-stream"
-            )
-        except Exception as s3_err:
-            print(f"[S3 SKIP] final embedding upload failed: {s3_err}")
+        if not SKIP_S3:
+            try:
+                upload_bytes_to_s3(
+                    npy_buffer.read(),
+                    BUCKET_NAME,
+                    f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+                    content_type="application/octet-stream"
+                )
+            except Exception as s3_err:
+                print(f"[S3 SKIP] final embedding upload failed: {s3_err}")
 
     cursor.close()
     conn.close()
@@ -289,15 +292,16 @@ def run():
     writer.writeheader()
     writer.writerows(metadata_rows)
 
-    try:
-        upload_bytes_to_s3(
-            csv_buffer.getvalue().encode("utf-8"),
-            BUCKET_NAME,
-            "dataset/vit_output/metadata.csv",
-            content_type="text/csv"
-        )
-    except Exception as s3_err:
-        print(f"[S3 SKIP] metadata csv upload failed: {s3_err}")
+    if not SKIP_S3:
+        try:
+            upload_bytes_to_s3(
+                csv_buffer.getvalue().encode("utf-8"),
+                BUCKET_NAME,
+                "dataset/vit_output/metadata.csv",
+                content_type="text/csv"
+            )
+        except Exception as s3_err:
+            print(f"[S3 SKIP] metadata csv upload failed: {s3_err}")
 
     print("\n===================================")
     print(f"완료 | 총 처리 이미지 수: {total_count}")
