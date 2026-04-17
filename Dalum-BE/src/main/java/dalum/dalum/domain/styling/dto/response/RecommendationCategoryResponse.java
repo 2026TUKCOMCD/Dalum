@@ -1,7 +1,5 @@
 package dalum.dalum.domain.styling.dto.response;
 
-import dalum.dalum.domain.product.dto.response.ProductDto;
-import dalum.dalum.domain.product.enums.LargeCategory;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
@@ -13,6 +11,6 @@ public record RecommendationCategoryResponse(
         String category,
 
         @Schema(description = "추천 상품 리스트")
-        List<ProductDto> products
+        List<MyStylingDetailResponse.RecommendedItemDetail> products
 ) {
 }

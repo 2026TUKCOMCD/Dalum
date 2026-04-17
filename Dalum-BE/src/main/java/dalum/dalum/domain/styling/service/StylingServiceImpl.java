@@ -8,8 +8,6 @@ import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.exception.MemberException;
 import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
-import dalum.dalum.domain.product.converter.ProductConverter;
-import dalum.dalum.domain.product.dto.response.ProductDto;
 import dalum.dalum.domain.product.entity.Product;
 import dalum.dalum.domain.product.enums.LargeCategory;
 import dalum.dalum.domain.product.exception.ProductException;
@@ -91,7 +89,6 @@ public class StylingServiceImpl implements StylingService {
     private final StylingProductRepository stylingProductRepository;
     private final AiStylingClient aiStylingClient;
 
-    private final ProductConverter productConverter;
     private final StylingConverter stylingConverter;
 
     @Override
@@ -167,15 +164,16 @@ public class StylingServiceImpl implements StylingService {
         Set<Long> likedIds = likeProductRepository.findLikeProductIds(memberId, allProductIds);
 
         // 메인 상품 DTO 변환
-        ProductDto mainProductDto = productConverter.toProductDto(targetProduct, likedIds.contains(targetProductId));
+        MyStylingDetailResponse.MainProductDetail mainProductDetail =
+                stylingConverter.toMainProductDetailResponse(targetProduct, likedIds.contains(targetProductId));
 
         // 카테고리별 추천 상품 DTO 변환
         List<RecommendationCategoryResponse> resultItems = aiResponse.entrySet().stream()
                 .filter(e -> !e.getValue().isEmpty())
                 .map(e -> {
-                    List<ProductDto> dtos = e.getValue().stream()
+                    List<MyStylingDetailResponse.RecommendedItemDetail> dtos = e.getValue().stream()
                             .filter(item -> productMap.containsKey(item.productId()))
-                            .map(item -> productConverter.toProductDto(
+                            .map(item -> stylingConverter.toRecommendItemDetailResponse(
                                     productMap.get(item.productId()),
                                     likedIds.contains(item.productId())))
                             .toList();
@@ -188,7 +186,7 @@ public class StylingServiceImpl implements StylingService {
 
         return StylingRecommendationResponse.builder()
                 .stylingId(styling.getId())
-                .mainItem(mainProductDto)
+                .mainItem(mainProductDetail)
                 .resultItems(resultItems)
                 .createdAt(styling.getCreatedAt())
                 .build();
