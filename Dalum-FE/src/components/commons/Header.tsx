@@ -10,8 +10,9 @@ const Header = () => {
   const navigate = useNavigate();
 
   const accessToken = localStorage.getItem('accessToken');
+
   return (
-    <div className="w-full px-7.5 py-5 bg-secondary-900 flex justify-between items-center shadow-header-shadow border-b border-primary-900">
+    <div className="w-full px-8 py-4 bg-gray-0 flex justify-between items-center shadow-header-shadow border-b border-primary-600">
       <Logo
         className="w-12.5 text-primary-900 cursor-pointer"
         onClick={() => navigate('/search')}

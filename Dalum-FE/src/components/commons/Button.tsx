@@ -52,8 +52,7 @@ export function Button({
     social_google: 'bg-button-google text-gray-900',
 
     modal_primary: 'bg-primary-900 text-gray-0',
-    modal_secondary:
-      'bg-secondary-900 text-primary-900 border-[0.5px] border-primary-900',
+    modal_secondary: 'bg-gray-0 text-gray-700 border-[0.5px] border-gray-700',
     cta_primary:
       'bg-primary-900 text-gray-0 border border-primary-900 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-100',
   };
@@ -61,11 +60,11 @@ export function Button({
   const sizes = {
     sm: 'typo-body_bold12 px-2 py-1.5 rounded-sm gap-2',
     md: 'typo-body_bold12 px-3 py-2.5 rounded-sm gap-2',
-    lg: 'typo-body_bold14 px-4 py-3 rounded-sm gap-2.5',
-    modal: 'typo-body_bold18 h-14 px-2 py-4 rounded-lg',
+    lg: 'typo-body_bold12 px-4 py-3 rounded-sm gap-2.5',
+    modal: 'typo-body_bold12 px-2 py-3 rounded-sm',
     onboarding: 'typo-body_bold16 px-5 py-2.5 rounded-full',
     social: 'typo-body_bold16 px-4 py-2.5 rounded-lg gap-1',
-    cta: 'typo-body_bold20 px-4 py-2.5 rounded-sm',
+    cta: 'typo-body_bold16 px-4 py-2.5 rounded-sm',
   };
 
   return (
