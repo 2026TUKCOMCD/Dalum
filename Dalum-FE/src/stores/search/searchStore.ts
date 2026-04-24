@@ -15,7 +15,7 @@ type DupeSearchState = {
   productsList: SearchDupeProductsData | null;
   products: DupeProductsItem[];
 
-  searchDupe: (req: SearchDupeProductsRequest) => Promise<void>;
+  searchDupe: (req: SearchDupeProductsRequest) => Promise<number>;
   reset: () => void;
 };
 
@@ -33,19 +33,23 @@ export const useSearchStore = create<DupeSearchState>((set) => ({
 
     try {
       const res = await searchDupeProducts(req);
+      const id = res.result.searchLogId;
 
       set({
+        searchLogId: id,
         productsList: res.result,
-        searchLogId: res.result.searchLogId,
         resultCount: res.result.resultCount,
         products: res.result.products,
         isLoading: false,
       });
+
+      return id;
     } catch {
       set({
         isLoading: false,
         errorMessage: '듀프 제품 검색에 실패했어요.',
       });
+      throw new Error('searchDupe failed');
     }
   },
 

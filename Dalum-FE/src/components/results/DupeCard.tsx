@@ -41,7 +41,7 @@ const DupeCard = ({ item }: DupeCardProps) => {
           <img
             src={item.imageUrl}
             alt={item.name}
-            className="w-full h-auto rounded-sm object-cover bg-secondary-900"
+            className="max-w-50 max-h-50 rounded-sm object-cover bg-secondary-900"
             loading="lazy"
           />
         ) : (

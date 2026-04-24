@@ -24,6 +24,7 @@ function App() {
           <Route path="/result/:searchId" element={<ResultPage />} />
           <Route path="/my" element={<MyPage />} />
           <Route path="/styling" element={<StylingPage />} />
+          <Route path="/styling/:stylingId" element={<StylingPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

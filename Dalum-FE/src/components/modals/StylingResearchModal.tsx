@@ -1,21 +1,27 @@
-import { useNavigate } from "react-router-dom";
-import useBaseModal from "../../stores/modals/baseModal";
-import { Button } from "../commons/Button";
+import { useNavigate } from 'react-router-dom';
+import useBaseModal from '../../stores/modals/baseModal';
+import { Button } from '../commons/Button';
+import { useStylingStore } from '../../stores/stylings/stylingStore';
 
-const DupeResearchModal = () => {
+const StylingResearchModal = () => {
   const { closeModal } = useBaseModal();
   const navigate = useNavigate();
+
+  const { recommendStyling, detailStyling } = useStylingStore();
+
+  const productId = detailStyling?.mainProduct.productId;
 
   return (
     <div className="w-112.5 flex flex-col gap-7.5 p-7.5 items-center justify-center bg-screen-default rounded-[14px]">
       {/* 본문 */}
       <div className="flex flex-col gap-2.5 items-center justify-center">
         <span className="typo-body_bold20 text-gray-900">
-          다른 이미지로 듀프 제품을 찾아볼까요?
+          다른 스타일링 제품을 추천해드릴까요?
         </span>
         <span className="typo-body_thin16 text-gray-900 text-center">
-          듀프 제품 검색 기록은 마이 페이지에서 <br />
-          다시 확인할 수 있습니다.
+          현재 스타일링 추천을 받고 있는 ‘좋아요한 제품’을 기준으로 다른
+          <br />
+          스타일링 제품을 추천해드립니다.
         </span>
       </div>
       {/* 버튼 */}
@@ -32,8 +38,15 @@ const DupeResearchModal = () => {
           variant="modal_primary"
           size="modal"
           fullWidth
-          onClick={() => {
-            navigate("/research");
+          onClick={async () => {
+            if (!productId) return;
+
+            const result = await recommendStyling(productId);
+
+            if (result) {
+              navigate(`/styling/${result.stylingId}`);
+            }
+
             closeModal();
           }}
         >
@@ -44,4 +57,4 @@ const DupeResearchModal = () => {
   );
 };
 
-export default DupeResearchModal;
+export default StylingResearchModal;

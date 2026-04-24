@@ -24,7 +24,7 @@ const UserLikedProduct = () => {
   return (
     <div className="w-full flex flex-col gap-5">
       <span className="typo-body_bold20">좋아요한 제품</span>
-      <div className="w-full flex flex-col items-center justify-center gap-5 rounded-sm border-2 border-gray-500 p-5">
+      <div className="w-full flex flex-col items-center justify-center gap-5 rounded-sm border-[1.5px] border-gray-500 p-5">
         {likeItem.length === 0 ? (
           <div className="flex flex-col justify-center items-center gap-2.5">
             <span className="typo-body_bold18 text-gray-700">
