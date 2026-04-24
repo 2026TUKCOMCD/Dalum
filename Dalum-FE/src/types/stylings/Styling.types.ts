@@ -17,32 +17,56 @@ export type RecommendStylingResponse = {
 
 export type RecommendStylingResult = {
   stylingId: number;
-  mainItem: MainStylingItem;
-  resultItems: [];
+  mainProduct: MainStylingItem;
+  items: ResultStylingItem[];
   createdAt: string;
+};
+
+export type SaveStylingResponse = {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: SaveStylingResult;
+};
+
+export type SaveStylingResult = {
+  stylingId: number;
+};
+
+export type GetDetailStylingResponse = {
+  isSuccess: boolean;
+  code: string;
+  message: string;
+  result: GetDetailStylingResult;
+};
+
+export type GetDetailStylingResult = {
+  stylingId: number;
+  createdAt: string;
+  name: string;
+  mainProduct: MainStylingItem;
+  items: ResultStylingItem[];
 };
 
 export type MainStylingItem = {
   productId: number;
   name: string;
   brand: string;
-  category: string;
-  price: number;
+  discountRate?: number;
+  discountPrice: number;
   imageUrl: string;
   purchaseUrl: string;
-  similarity: string;
   isLiked: boolean;
 };
 
-// export type StylingItemList = {
-//   category: string;
-//         categoryName: string;
-//         items: [
-//           { "productId": 102, "name": "와이드 팬츠", "price": 39000, "isLiked": false, ... },
-//           { "productId": 103, "name": "카고 팬츠", "price": 42000, "isLiked": true, ... }
-//         ]
-// }
-
-// export type StylingItem = {
-
-// }
+export type ResultStylingItem = {
+  productId: number;
+  category: string;
+  name: string;
+  brand: string;
+  discountRate?: number;
+  discountPrice: number;
+  imageUrl: string;
+  purchaseUrl: string;
+  isLiked: boolean;
+};
