@@ -1,0 +1,11 @@
+services:
+  dalum-ai:
+    image: wooyoung1/dalum-ai:latest
+    container_name: dalum-ai
+    ports:
+      - "8000:8000"
+    env_file:
+      - ../.env   # ← 이거 중요
+    volumes:
+      - ~/Dalum/Dalum-AI/dupe:/app/dupe
+    restart: always

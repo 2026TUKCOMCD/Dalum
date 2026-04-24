@@ -1,0 +1,40 @@
+name: Dalum AI CD
+
+on:
+  workflow_run:
+    workflows: ["Dalum AI CI"]
+    types:
+      - completed
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'develop' }}
+
+    steps:
+      - name: EC2 배포
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.AI_EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            # Docker Hub 로그인
+            echo "${{ secrets.AI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.AI_DOCKER_USERNAME }}" --password-stdin
+
+            # mono-repo 최신화
+            cd /home/ubuntu/Dalum
+            git pull origin develop
+
+            # 최신 이미지 pull
+            docker pull wooyoung1/dalum-ai:latest
+
+            # compose 파일 위치로 이동
+            cd /home/ubuntu/Dalum/Dalum-AI
+
+            # 기존 컨테이너 내리고 재시작
+            docker-compose down
+            docker-compose up -d
+
+            # 사용하지 않는 이미지 정리
+            docker system prune -f
