@@ -1,20 +1,26 @@
-import { useEffect } from "react";
-import SearchIcon from "../../assets/icons/SearchIcon";
-import { useMeStore } from "../../stores/me/meStore";
-import { Button } from "../commons/Button";
-import HistoryCardList from "./HistoryCardList";
+import { useEffect } from 'react';
+import SearchIcon from '../../assets/icons/SearchIcon';
+import { useMeStore } from '../../stores/me/meStore';
+import { Button } from '../commons/Button';
+import HistoryCardList from './HistoryCardList';
+import { useNavigate } from 'react-router-dom';
 
 const UserResearchHistory = () => {
+  const navigate = useNavigate();
   const { dupeSearchItem, fetchDupeSaerchHistory } = useMeStore();
 
   useEffect(() => {
     fetchDupeSaerchHistory();
   }, [fetchDupeSaerchHistory]);
 
+  const hadleClickSearch = () => {
+    navigate('/search');
+  };
+
   return (
     <div className="w-full flex flex-col gap-5">
       <span className="typo-body_bold20">내가 찾은 듀프 제품</span>
-      <div className="w-full flex flex-col items-center justify-center rounded-sm border-2 border-gray-500">
+      <div className="w-full flex flex-col items-center justify-center rounded-sm border-[1.5px] border-gray-500">
         {dupeSearchItem.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-5 p-5">
             <span className="typo-body_bold18 text-gray-700">
@@ -24,6 +30,7 @@ const UserResearchHistory = () => {
               variant="primary"
               size="md"
               leftIcon={<SearchIcon className="size-4" />}
+              onClick={hadleClickSearch}
             >
               듀프 제품 검색
             </Button>
