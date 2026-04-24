@@ -20,7 +20,7 @@ const UserResearchHistory = () => {
   return (
     <div className="w-full flex flex-col gap-5">
       <span className="typo-body_bold20">내가 찾은 듀프 제품</span>
-      <div className="w-full flex flex-col items-center justify-center rounded-sm border-2 border-gray-500">
+      <div className="w-full flex flex-col items-center justify-center rounded-sm border-[1.5px] border-gray-500">
         {dupeSearchItem.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-5 p-5">
             <span className="typo-body_bold18 text-gray-700">

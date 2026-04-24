@@ -42,20 +42,24 @@ const LikeProductCard = ({ item }: Props) => {
 
   const handleClickStyling = async () => {
     if (isLoading) return;
-    await recommendStyling(item.productId);
-    navigate('/styling');
+
+    const result = await recommendStyling(item.productId);
+
+    if (result) {
+      navigate(`/styling/${result.stylingId}`);
+    }
   };
 
   return (
-    <div className="w-100 h-45 flex items-center justify-start gap-3">
-      <div className="w-45 h-45 flex justify-center items-center">
+    <div className="w-100 h-fit flex items-center justify-start gap-3">
+      <div className="w-45 h-45 flex justify-center items-center rounded-sm border-[0.5px] border-gray-500">
         <img
           src={item.imageUrl}
-          className="max-w-45 max-h-45 rounded-sm bg-none"
+          className="w-full h-full object-contain rounded-sm"
         />
       </div>
 
-      <div className="flex-1 h-full flex flex-col justify-between py-1.5">
+      <div className="flex-1 h-45 flex flex-col justify-between py-1.5">
         <div className="flex flex-col gap-2 justify-center items-start">
           {/* 브랜드 */}
           <span className="typo-body_med12 text-gray-600">{item.brand}</span>
