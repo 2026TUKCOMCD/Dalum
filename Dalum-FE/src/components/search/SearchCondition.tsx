@@ -17,28 +17,28 @@ const SearchCondition = ({
 }: Props) => {
   return (
     <div className="w-full flex flex-col items-start">
-      <div className="w-full flex flex-col gap-7.5">
+      <div className="w-full flex flex-col gap-6">
         {/* 제목 */}
         <div className="flex flex-col items-start justify-center gap-3 text-gray-900">
           <span className="typo-h2_bold24">| 세부사항</span>
         </div>
         {/* 브랜드 명 입력 */}
         <div className="w-full flex flex-col gap-3">
-          <span className="typo-body_bold18">| 제품 브랜드 (선택)</span>
+          <span className="typo-body_bold16">| 제품 브랜드 (선택)</span>
           <input
-            className="w-full bg-gray-50 text-base placeholder:font-extralight font-medium text-gray-900 px-5 py-4 rounded-lg outline-none"
+            className="w-full bg-gray-50 text-xs placeholder:font-extralight font-medium text-gray-900 px-5 py-4 rounded-sm outline-none"
             placeholder="업로드한 제품의 브랜드 명을 입력해주세요."
             value={brandInput}
             onChange={(e) => setBrandInput(e.target.value)}
           />
-          <span className="typo-body_thin14">
+          <span className="typo-body_thin12 text-gray-900">
             · 입력한 브랜드는 추천 결과에서 제외됩니다. <br />· 제외할 브랜드가
             없다면 ‘없음’ 혹은 ‘-’을 입력해주세요
           </span>
         </div>
         {/* 희망 가격대 선택 */}
         <div className="flex flex-col gap-3">
-          <span className="typo-body_bold18">| 희망 제품 가격대</span>
+          <span className="typo-body_bold16">| 희망 제품 가격대</span>
 
           {priceOptions.map((option) => {
             const isChecked = selected === option;
@@ -68,7 +68,7 @@ const SearchCondition = ({
 
                 {/* 가격 라벨 */}
                 <span
-                  className={`transition-colors ${isChecked ? 'text-primary-900 typo-body_bold16' : 'text-gray-900 typo-body_thin16'}`}
+                  className={`transition-colors ${isChecked ? 'text-primary-900 typo-body_bold12' : 'text-gray-900 typo-body_thin12'}`}
                 >
                   {option}
                 </span>

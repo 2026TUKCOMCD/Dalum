@@ -78,8 +78,8 @@ const SearchPage = () => {
   };
 
   return (
-    <div className="w-full min-h-dvh flex flex-col px-37.5 py-25 items-center justify-center gap-12.5">
-      <div className="w-full h-full flex flex-col gap-12.5 items-start">
+    <div className="w-full min-h-dvh flex flex-col px-37.5 py-12.5 items-center justify-center gap-12.5">
+      <div className="w-full h-full flex flex-col gap-10 items-start">
         {/* 이미지 업로드 영역 */}
         <SearchImage
           fileInputRef={fileInputRef}

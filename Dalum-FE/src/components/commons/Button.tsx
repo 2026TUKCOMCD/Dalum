@@ -38,7 +38,7 @@ export function Button({
 
   const variants = {
     primary:
-      'bg-screen-0 text-primary-900 border border-primary-900 hover:bg-primary-900 hover:text-gray-0 hover:border-primary-900 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-100',
+      'bg-screen-0 text-primary-900 border border-primary-900 hover:bg-primary-900 hover:text-gray-0 hover:border-primary-900 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100',
     gray: 'bg-screen-0 text-gray-800 border border-gray-800 hover:bg-gray-800 hover:text-gray-0 hover:border-gray-800',
     like: 'bg-screen-0 text-button-like border border-button-like hover:bg-button-like hover:text-gray-0 hover:border-button-like',
     active_like: 'bg-button-like text-gray-0 border border-button-like',
@@ -54,7 +54,7 @@ export function Button({
     modal_primary: 'bg-primary-900 text-gray-0',
     modal_secondary: 'bg-gray-0 text-gray-700 border-[0.5px] border-gray-700',
     cta_primary:
-      'bg-primary-900 text-gray-0 border border-primary-900 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-100',
+      'bg-primary-900 text-gray-0 border border-primary-900 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100',
   };
 
   const sizes = {
