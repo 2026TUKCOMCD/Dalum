@@ -1,16 +1,20 @@
-import { stylingMockData } from "../../mocks/stylingMockData";
-import ServiceCard from "./ServiceCard";
-import StylingCard from "./StylingCard";
+import type { ResultStylingItem } from '../../types/stylings/Styling.types';
+import ServiceCard from './ServiceCard';
+import StylingCard from './StylingCard';
 
-const StylingCardList = () => {
-  const cards = stylingMockData.slice(0, 5);
+type Props = {
+  items: ResultStylingItem[];
+};
+
+const StylingCardList = ({ items }: Props) => {
+  const cards = items.slice(0, 5);
 
   return (
     <div className="w-full h-full grid grid-cols-3 grid-rows-2 gap-15 justify-center justify-items-center items-center">
       <ServiceCard />
 
       {cards.map((item) => (
-        <StylingCard key={item.id} item={item} />
+        <StylingCard key={item.productId} item={item} />
       ))}
 
       {Array.from({ length: Math.max(0, 5 - cards.length) }).map((_, idx) => (
