@@ -1,14 +1,16 @@
-# 📷 Dalum
-
-## 닮음
-
-<p>이미지 분석을 통해 듀프제품을 찾아주는 플랫폼 </p>
+# 👔 Dalum
 <br>
 
-## 👨 Team
+## 💭 서비스 소개
+
+<p> ViT 모델을 활용한 듀프 제품 서칭 플랫폼 </p>
+<br>
+
+## 👨‍💻 Team
 |<img width="210" height="210" alt="image" src="https://github.com/user-attachments/assets/65ec110d-3831-49d9-bd40-1018b740e84b" />|<img width="210" height="210" alt="image" src="https://github.com/user-attachments/assets/ae448386-b5d4-4db5-ad7e-634199cb7a92" />|<img width="210" height="210" alt="image" src="https://github.com/user-attachments/assets/6a7d662c-dd93-459d-99ed-6ae3735aca4b" />|<img width="210" height="210" alt="image" src="https://github.com/user-attachments/assets/9d7cef91-4c33-402d-bd83-1252a83c286b" />
 |:-:|:-:|:-:|:-:|
-|진효찬|김유현|양우영|전강
+|진효찬|김유현|양우영|전강|
+|@Hyochan02|@djeu1116|@yangwooyoung123|@jeonkang1234-star|
 <br>
 
 ## ⚙️ 시스템 구성도
