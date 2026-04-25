@@ -7,6 +7,7 @@ type ButtonProps = {
     | 'gray'
     | 'like'
     | 'active_like'
+    | 'active_primary'
     | 'onboarding_kakao'
     | 'onboarding_naver'
     | 'onboarding_google'
@@ -16,7 +17,15 @@ type ButtonProps = {
     | 'modal_primary'
     | 'modal_secondary'
     | 'cta_primary';
-  size?: 'sm' | 'md' | 'lg' | 'modal' | 'onboarding' | 'social' | 'cta';
+  size?:
+    | 'sm'
+    | 'md'
+    | 'lg'
+    | 'card'
+    | 'modal'
+    | 'onboarding'
+    | 'social'
+    | 'cta';
   disabled?: boolean;
   leftIcon?: React.ReactNode;
   fullWidth?: boolean;
@@ -34,11 +43,11 @@ export function Button({
   ...props
 }: ButtonProps) {
   const base =
-    'w-fit flex items-center justify-center transition-colors duration-200 focus:outline-none cursor-pointer';
-
+    'group overflow-hidden flex items-center justify-center transition-all duration-300 focus:outline-none cursor-pointer';
   const variants = {
     primary:
       'bg-screen-0 text-primary-900 border border-primary-900 hover:bg-primary-900 hover:text-gray-0 hover:border-primary-900 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100',
+    active_primary: 'bg-primary-900 text-gray-0 border border-primary-900',
     gray: 'bg-screen-0 text-gray-800 border border-gray-800 hover:bg-gray-800 hover:text-gray-0 hover:border-gray-800',
     like: 'bg-screen-0 text-button-like border border-button-like hover:bg-button-like hover:text-gray-0 hover:border-button-like',
     active_like: 'bg-button-like text-gray-0 border border-button-like',
@@ -61,6 +70,7 @@ export function Button({
     sm: 'typo-body_bold12 px-2 py-1.5 rounded-sm gap-2',
     md: 'typo-body_bold12 px-3 py-2.5 rounded-sm gap-2',
     lg: 'typo-body_bold12 px-4 py-3 rounded-sm gap-2.5',
+    card: 'typo-body_bold10 min-w-7 h-7 rounded-full',
     modal: 'typo-body_bold12 px-2 py-3 rounded-sm',
     onboarding: 'typo-body_bold16 px-5 py-2.5 rounded-full',
     social: 'typo-body_bold16 px-4 py-2.5 rounded-lg gap-1',

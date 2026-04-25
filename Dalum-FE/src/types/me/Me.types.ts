@@ -77,13 +77,14 @@ export type DetailDupeSearchList = {
 };
 
 export type DetailDupeSearchItem = {
-  productId: number;
-  name: string;
   brand: string;
   category: string;
-  price: number;
+  discountRate: number;
   imageUrl: string;
+  isLiked: boolean;
+  name: string;
+  price: number;
+  productId: number;
   purchaseUrl: string | null;
   similarity: string | null;
-  isLiked: boolean;
 };
