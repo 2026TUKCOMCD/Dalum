@@ -52,10 +52,10 @@ const LikeProductCard = ({ item }: Props) => {
 
   return (
     <div className="w-100 h-fit flex items-center justify-start gap-3">
-      <div className="w-45 h-45 flex justify-center items-center rounded-sm border-[0.5px] border-gray-500">
+      <div className="h-45 flex justify-center items-center rounded-sm">
         <img
           src={item.imageUrl}
-          className="w-full h-full object-contain rounded-sm"
+          className="h-full object-contain rounded-sm shadow-image-shadow"
         />
       </div>
 

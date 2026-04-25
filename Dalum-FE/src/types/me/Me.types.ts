@@ -31,6 +31,7 @@ export type StylingList = {
 export type StylingItem = {
   stylingId: number;
   mainProductImageUrl: string;
+  imageUrl?: string;
   createdAt: string;
 };
 

@@ -12,7 +12,7 @@ const HistoryCard = ({ item }: Props) => {
 
   const imageUrl = isDupeSearchItem(item)
     ? `${item.inputImageUrl}`
-    : `${item.mainProductImageUrl}`;
+    : `${item.imageUrl}`;
 
   const time = isDupeSearchItem(item)
     ? `${item.searchTime}`
@@ -31,10 +31,10 @@ const HistoryCard = ({ item }: Props) => {
       className="w-45 h-fit flex flex-col gap-2 cursor-pointer"
       onClick={handleClickCard}
     >
-      <div className="w-45 h-45 flex items-center justify-center rounded-sm border-[0.5px] border-gray-500">
+      <div className="h-45 flex items-center justify-center rounded-sm">
         <img
           src={imageUrl}
-          className="w-full h-full object-contain rounded-sm"
+          className="h-full object-contain rounded-sm shadow-image-shadow"
         />
       </div>
       <div className="flex flex-col gap-1 px-1 py-0.5 text-gray-900">
