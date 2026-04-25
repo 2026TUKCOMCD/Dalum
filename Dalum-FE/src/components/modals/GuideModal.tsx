@@ -39,7 +39,7 @@ const GuideModal = () => {
         </div>
         <span
           key={step}
-          className="w-full typo-body_thin16 text-gray-900 whitespace-pre-line animate-[fadeIn_300ms_ease-in-out]"
+          className="w-full typo-body_thin14 text-gray-900 whitespace-pre-line animate-[fadeIn_300ms_ease-in-out]"
         >
           {current.description}
         </span>
