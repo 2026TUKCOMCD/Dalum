@@ -68,7 +68,7 @@ const SearchCondition = ({
 
                 {/* 가격 라벨 */}
                 <span
-                  className={`transition-colors ${isChecked ? 'text-primary-900 typo-body_bold12' : 'text-gray-900 typo-body_thin12'}`}
+                  className={`transition-colors ${isChecked ? 'text-primary-900 typo-body_bold14' : 'text-gray-900 typo-body_thin14'}`}
                 >
                   {option}
                 </span>

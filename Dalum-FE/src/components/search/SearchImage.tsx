@@ -44,7 +44,7 @@ const SearchImage = ({
               >
                 파일 선택
               </Button>
-              <span className="typo-body_med12 text-gray-800 opacity-50 whitespace-pre-wrap break-keep text-center">
+              <span className="typo-body_med14 text-gray-800 opacity-50 whitespace-pre-wrap break-keep text-center">
                 이미지를 업로드하고 듀프 제품을 찾아보세요
               </span>
             </>
