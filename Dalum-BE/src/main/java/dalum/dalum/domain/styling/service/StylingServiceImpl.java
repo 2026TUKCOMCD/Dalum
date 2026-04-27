@@ -13,6 +13,7 @@ import dalum.dalum.domain.product.enums.LargeCategory;
 import dalum.dalum.domain.product.exception.ProductException;
 import dalum.dalum.domain.product.exception.code.ProductErrorCode;
 import dalum.dalum.domain.product.repository.ProductRepository;
+import dalum.dalum.domain.product.repository.projection.ProductCandidateProjection;
 import dalum.dalum.domain.styling.client.AiStylingClient;
 import dalum.dalum.domain.styling.client.dto.AiCandidateItem;
 import dalum.dalum.domain.styling.client.dto.AiInputItem;
@@ -115,7 +116,7 @@ public class StylingServiceImpl implements StylingService {
         List<LargeCategory> candidateCategories = CATEGORY_MAP.getOrDefault(
                 targetProduct.getLargeCategory(), List.of());
         List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
-        List<Product> candidates = productRepository.findCandidates(candidateCategories, targetProductId, compatibleStyles);
+        List<ProductCandidateProjection> candidates = productRepository.findCandidates(candidateCategories, targetProductId, compatibleStyles);
 
         // 후보 상품 → AI 요청 형태 변환
         List<AiCandidateItem> candidateItems = candidates.stream()
