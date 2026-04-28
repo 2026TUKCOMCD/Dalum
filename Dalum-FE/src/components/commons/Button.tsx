@@ -60,8 +60,10 @@ export function Button({
     social_naver: 'bg-button-naver text-gray-0',
     social_google: 'bg-button-google text-gray-900',
 
-    modal_primary: 'bg-primary-900 text-gray-0',
-    modal_secondary: 'bg-gray-0 text-gray-700 border-[0.5px] border-gray-700',
+    modal_primary:
+      'bg-primary-900 text-gray-0 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100 disabled:cursor-not-allowed',
+    modal_secondary:
+      'bg-gray-0 text-gray-700 border-[0.5px] border-gray-700 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100 disabled:cursor-not-allowed',
     cta_primary:
       'bg-primary-900 text-gray-0 border border-primary-900 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100',
   };
