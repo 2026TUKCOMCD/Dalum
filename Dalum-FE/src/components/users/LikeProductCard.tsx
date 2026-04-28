@@ -51,7 +51,7 @@ const LikeProductCard = ({ item }: Props) => {
   };
 
   return (
-    <div className="w-100 h-fit flex items-center justify-start gap-3">
+    <div className="w-87.5 h-fit flex items-center justify-start gap-3">
       <div className="h-45 flex justify-center items-center rounded-sm">
         <img
           src={item.imageUrl}
@@ -66,7 +66,9 @@ const LikeProductCard = ({ item }: Props) => {
 
           <div className="flex flex-col gap-1 justify-center items-start">
             {/* 제품명 */}
-            <span className="typo-body_bold14 text-gray-900">{item.name}</span>
+            <span className="typo-body_bold12 text-gray-900 line-clamp-2 break-keep">
+              {item.name}
+            </span>
             {/* 가격 */}
             <div className="flex justify-center items-start gap-1">
               <span className="typo-body_bold14 text-button-like">
@@ -78,38 +80,32 @@ const LikeProductCard = ({ item }: Props) => {
         </div>
 
         {/* 버튼 */}
-        <div className="w-full flex flex-col gap-2 items-center justify-center">
+        <div className="w-full flex gap-2 items-center justify-start">
           <Button
-            variant="gray"
-            size="sm"
-            fullWidth
+            variant="primary"
+            size="card"
             leftIcon={<StyleIcon className="size-3" />}
             onClick={handleClickStyling}
+            className="group w-fit px-4 gap-2 rounded-2xl"
           >
-            스타일링 추천
+            <span className="overflow-hidden whitespace-nowrap">
+              스타일링 추천
+            </span>
           </Button>
-          <div className="w-full flex items-center justify-center gap-2">
-            <Button
-              variant="primary"
-              size="sm"
-              fullWidth
-              leftIcon={<LinkIcon className="size-3" />}
-              className="flex-1"
-              onClick={handleClickPurchase}
-              disabled={!purchaseLink}
-            >
-              구매 링크
-            </Button>
-            <Button
-              variant={isLiked ? 'active_like' : 'like'}
-              size="sm"
-              leftIcon={<LikeIcon className="size-3" />}
-              onClick={handleClickLike}
-              disabled={isLikeLoading}
-            >
-              좋아요
-            </Button>
-          </div>
+          <Button
+            variant="primary"
+            size="card"
+            leftIcon={<LinkIcon className="size-3" />}
+            onClick={handleClickPurchase}
+            disabled={!purchaseLink}
+          />
+          <Button
+            variant={isLiked ? 'active_primary' : 'primary'}
+            size="card"
+            leftIcon={<LikeIcon className="size-3" />}
+            onClick={handleClickLike}
+            disabled={isLikeLoading}
+          />
         </div>
       </div>
     </div>

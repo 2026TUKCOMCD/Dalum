@@ -12,7 +12,7 @@ const StylingCard = ({ item }: Props) => {
     new Intl.NumberFormat('ko-KR').format(item.discountPrice) + '원';
 
   return (
-    <div className="relative w-fit h-fit flex flex-col gap-2.5 bg-gray-0 rounded-lg p-2.5 shadow-card-shadow group">
+    <div className="relative w-fit h-fit flex flex-col gap-2.5 bg-gray-0 rounded-lg p-2.5 group border border-primary-600">
       {/* 이미지 영역 */}
       <div className="relative w-50 h-50 flex justify-center items-center">
         {item.imageUrl ? (
@@ -31,7 +31,7 @@ const StylingCard = ({ item }: Props) => {
           <div className="flex flex-col gap-2">
             <span className="typo-body_med12 text-gray-600">{item.brand}</span>
             <div className="flex flex-col gap-1">
-              <span className="typo-body_bold14 text-gray-900">
+              <span className="typo-body_bold12 text-gray-900 line-clamp-2 break-keep">
                 {item.name}
               </span>
 

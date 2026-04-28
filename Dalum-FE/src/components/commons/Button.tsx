@@ -29,7 +29,7 @@ type ButtonProps = {
   disabled?: boolean;
   leftIcon?: React.ReactNode;
   fullWidth?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 } & React.ButtonHTMLAttributes<HTMLButtonElement>;
 
 export function Button({

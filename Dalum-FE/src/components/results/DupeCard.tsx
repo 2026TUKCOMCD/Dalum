@@ -79,12 +79,12 @@ const DupeCard = ({ item }: DupeCardProps) => {
           <Button
             variant="primary"
             size="card"
-            className="group hover:w-full hover:rounded-full"
+            className="group w-fit px-4 gap-2"
             onClick={() => openModal('similarityCheckModal')}
           >
-            <ChartIcon className="size-3 shrink-0" />
+            <ChartIcon className="size-3" />
 
-            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:ml-2 group-hover:min-w-fit group-hover:opacity-100">
+            <span className="overflow-hidden whitespace-nowrap">
               유사도 확인
             </span>
           </Button>
@@ -92,26 +92,16 @@ const DupeCard = ({ item }: DupeCardProps) => {
             variant={isLiked ? 'active_primary' : 'primary'}
             size="card"
             leftIcon={<LikeIcon className="size-3" />}
-            className="group hover:w-full hover:rounded-full"
             onClick={handleClickLike}
             disabled={isLikeLoading}
-          >
-            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:ml-2 group-hover:min-w-fit group-hover:opacity-100">
-              좋아요
-            </span>
-          </Button>
+          />
           <Button
             variant="primary"
             size="card"
-            className="group hover:w-full hover:rounded-full"
             leftIcon={<LinkIcon className="size-3" />}
             onClick={handleClickPurchase}
             disabled={!item.purchaseUrl}
-          >
-            <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:ml-2 group-hover:min-w-fit group-hover:opacity-100">
-              구매 링크
-            </span>
-          </Button>
+          />
         </div>
       </div>
     </div>
