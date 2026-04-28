@@ -1,9 +1,9 @@
-import Logo from "../../assets/icons/Logo";
-import MiniLogo from "../../assets/icons/MiniLogo";
+import Logo from '../../assets/icons/Logo';
+import MiniLogo from '../../assets/icons/MiniLogo';
 
 const ServiceCard = () => {
   return (
-    <div className="w-55 h-55 flex flex-col items-center justify-center gap-4 shadow-card-shadow bg-gray-0 rounded-lg">
+    <div className="w-55 h-55 flex flex-col items-center justify-center gap-4 bg-gray-0 rounded-lg border border-primary-600">
       <span className="typo-body_bold18 text-gray-900 text-center">
         나에게 어울리는
         <br />

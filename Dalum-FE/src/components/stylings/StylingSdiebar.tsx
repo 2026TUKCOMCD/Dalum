@@ -16,7 +16,7 @@ const StylingSidebar = ({ mainItem }: Props) => {
   const navigate = useNavigate();
 
   return (
-    <div className="h-full w-fit flex flex-col items-start justify-start px-12.5 py-12.5 border-r border-gray-600">
+    <div className="h-full w-fit flex flex-col items-start justify-start px-12.5 py-12.5 border-r border-primary-600">
       <div className="flex flex-col gap-5">
         {/* 제목 */}
         <span className="typo-h2_bold24 text-gray-900">| 좋아요한 제품</span>
