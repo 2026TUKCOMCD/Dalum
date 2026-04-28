@@ -22,7 +22,7 @@ const LikeProductCard = ({ item }: Props) => {
   );
   const toggleLikeStatus = useProductStore((s) => s.toggleLikeStatus);
 
-  const { recommendStyling, isLoading } = useStylingStore();
+  const { recommendStyling, stylingLoading } = useStylingStore();
 
   const priceText =
     new Intl.NumberFormat('ko-KR').format(item.discount_price) + '원';
@@ -41,7 +41,7 @@ const LikeProductCard = ({ item }: Props) => {
   };
 
   const handleClickStyling = async () => {
-    if (isLoading) return;
+    if (stylingLoading) return;
 
     const result = await recommendStyling(item.productId);
 
@@ -89,6 +89,7 @@ const LikeProductCard = ({ item }: Props) => {
             leftIcon={<StyleIcon className="size-3" />}
             onClick={handleClickStyling}
             className="group w-fit px-4 gap-2 rounded-2xl"
+            disabled={stylingLoading}
           >
             <span className="overflow-hidden whitespace-nowrap">
               스타일링 추천

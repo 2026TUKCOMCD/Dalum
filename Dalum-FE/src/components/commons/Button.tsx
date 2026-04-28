@@ -46,7 +46,7 @@ export function Button({
     'group overflow-hidden flex items-center justify-center transition-all duration-300 focus:outline-none cursor-pointer';
   const variants = {
     primary:
-      'bg-screen-0 text-primary-900 border border-primary-900 hover:bg-primary-900 hover:text-gray-0 hover:border-primary-900 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100',
+      'bg-screen-0 text-primary-900 border border-primary-900 hover:bg-primary-900 hover:text-gray-0 hover:border-primary-900 disabled:bg-gray-50 disabled:text-gray-600 disabled:border-gray-100 disabled:cursor-not-allowed',
     active_primary: 'bg-primary-900 text-gray-0 border border-primary-900',
     gray: 'bg-screen-0 text-gray-800 border border-gray-800 hover:bg-gray-800 hover:text-gray-0 hover:border-gray-800',
     like: 'bg-screen-0 text-button-like border border-button-like hover:bg-button-like hover:text-gray-0 hover:border-button-like',
