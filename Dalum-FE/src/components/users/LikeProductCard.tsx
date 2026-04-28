@@ -71,7 +71,9 @@ const LikeProductCard = ({ item }: Props) => {
             </span>
             {/* 가격 */}
             <div className="flex justify-center items-start gap-1">
-              <span className="typo-body_bold14 text-button-like">
+              <span
+                className={`typo-body_bold14 text-button-like ${item.discount_rate === 0 ? 'hidden' : ''}`}
+              >
                 {item.discount_rate}%
               </span>
               <span className="typo-body_med14 text-gray-900">{priceText}</span>

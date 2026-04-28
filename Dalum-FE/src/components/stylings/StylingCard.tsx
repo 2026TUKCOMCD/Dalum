@@ -36,11 +36,11 @@ const StylingCard = ({ item }: Props) => {
               </span>
 
               <div className="flex items-center gap-1">
-                {item.discountRate && (
-                  <span className="typo-body_bold14 text-button-like">
-                    {item.discountRate}%
-                  </span>
-                )}
+                <span
+                  className={`typo-body_bold14 text-button-like ${item.discountRate === 0 ? 'hidden' : ''}`}
+                >
+                  {item.discountRate}%
+                </span>
                 <span className="typo-body_med14">{priceText}</span>
               </div>
             </div>

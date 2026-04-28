@@ -63,11 +63,11 @@ const DupeCard = ({ item }: DupeCardProps) => {
             {/* 제품 가격 */}
             <div className="flex items-center justify-start gap-1">
               {/* 할인율 */}
-              {typeof item.discountRate === 'number' && (
-                <span className="typo-body_bold14 text-button-like">
-                  {item.discountRate}%
-                </span>
-              )}
+              <span
+                className={`typo-body_bold14 text-button-like ${item.discountRate === 0 ? 'hidden' : ''}`}
+              >
+                {item.discountRate}%
+              </span>
               {/* 가격 */}
               <span className="typo-body_med14 text-gray-900">{priceText}</span>
             </div>
