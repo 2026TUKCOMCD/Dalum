@@ -124,7 +124,11 @@ public class StylingServiceImpl implements StylingService {
         List<LargeCategory> candidateCategories = CATEGORY_MAP.getOrDefault(
                 targetProduct.getLargeCategory(), List.of());
         List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
-        List<ProductCandidateProjection> candidates = productRepository.findCandidates(candidateCategories, targetProductId, compatibleStyles, PageRequest.of(0, 2000));
+
+        List<ProductCandidateProjection> candidates = candidateCategories.stream()
+                .flatMap(cat -> productRepository.findCandidates(
+                        List.of(cat), targetProductId, compatibleStyles, PageRequest.of(0, 500)).stream())
+                .toList();
 
         long memAfterQuery = rt.totalMemory() - rt.freeMemory();
         logger.info("[스타일링] 후보 조회 완료 - 후보 수: {}개, 사용 메모리: {}MB (증가: {}MB)",
