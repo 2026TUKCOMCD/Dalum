@@ -1,5 +1,6 @@
 import LikeIcon from '../../assets/icons/LikeIcon';
 import LinkIcon from '../../assets/icons/LinkIcon';
+import { useProductStore } from '../../stores/products/productStore';
 import type { ResultStylingItem } from '../../types/stylings/Styling.types';
 import { Button } from '../commons/Button';
 
@@ -8,8 +9,30 @@ type Props = {
 };
 
 const StylingCard = ({ item }: Props) => {
+  const isLiked = useProductStore(
+    (s) => s.likeStatusById[item.productId] ?? false
+  );
+  const isLikeLoading = useProductStore(
+    (s) => s.isLoadingById[item.productId] ?? false
+  );
+
+  const toggleLikeStatus = useProductStore((s) => s.toggleLikeStatus);
+
   const priceText =
     new Intl.NumberFormat('ko-KR').format(item.discountPrice) + '원';
+
+  const purchaseLink = item.purchaseLink;
+
+  // 구매 링크 버튼 클릭 핸들러
+  const handleClickPurchase = () => {
+    if (!purchaseLink) return;
+    window.open(purchaseLink, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleClickLike = () => {
+    if (isLikeLoading) return;
+    toggleLikeStatus(item.productId);
+  };
 
   return (
     <div className="relative w-fit h-fit flex flex-col gap-2.5 bg-gray-0 rounded-lg p-2.5 group border border-primary-600">
@@ -54,15 +77,19 @@ const StylingCard = ({ item }: Props) => {
               leftIcon={<LinkIcon className="size-3" />}
               fullWidth
               className="flex-1"
+              onClick={handleClickPurchase}
+              disabled={!purchaseLink}
             >
               구매 링크
             </Button>
 
             <Button
-              variant="like"
+              variant={isLiked ? 'active_like' : 'like'}
               size="sm"
               leftIcon={<LikeIcon className="size-3" />}
               fullWidth
+              onClick={handleClickLike}
+              disabled={isLikeLoading}
             >
               좋아요
             </Button>

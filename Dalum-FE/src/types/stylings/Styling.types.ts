@@ -67,6 +67,6 @@ export type ResultStylingItem = {
   discountRate?: number;
   discountPrice: number;
   imageUrl: string;
-  purchaseUrl: string;
+  purchaseLink: string;
   isLiked: boolean;
 };
