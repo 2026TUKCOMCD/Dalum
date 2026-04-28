@@ -18,6 +18,8 @@ const HistoryCard = ({ item }: Props) => {
     ? `${item.searchTime}`
     : `${item.createdAt}`;
 
+  const dateText = isDupeSearchItem(item) ? `검색일시` : `저장일시`;
+
   const handleClickCard = () => {
     if (isDupeSearchItem(item)) {
       navigate(`/result/${item.searchLogId}`);
@@ -39,8 +41,13 @@ const HistoryCard = ({ item }: Props) => {
       </div>
       <div className="flex flex-col gap-1 px-1 py-0.5 text-gray-900">
         <div className="w-full h-fit flex items-center justify-between">
-          <span className="typo-body_bold12">| 검색일시</span>
-          <button type="button">
+          <span className="typo-body_bold12">| {dateText}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
             <KebabIcon />
           </button>
         </div>
