@@ -21,12 +21,12 @@ const SearchImage = ({
   removeImage,
 }: Props) => {
   return (
-    <div className="w-full items-start justify-start flex flex-col gap-7.5">
+    <div className="w-full items-start justify-start flex flex-col gap-6">
       <span className="typo-h2_bold24 text-gray-900">| 제품 이미지</span>
       {/* 이미지 업로드 영역 */}
-      <div className="w-full flex gap-12.5">
+      <div className="w-full flex gap-6">
         {/* 이미지 업로드 */}
-        <div className="w-1/2 h-100 p-5 border border-gray-900 rounded-lg flex flex-col items-center justify-center gap-5">
+        <div className="w-1/2 min-h-75 max-h-100 p-5 border border-gray-600 rounded-sm flex flex-col items-center justify-center gap-4">
           <input
             ref={fileInputRef}
             type="file"
@@ -44,7 +44,7 @@ const SearchImage = ({
               >
                 파일 선택
               </Button>
-              <span className="typo-body_med18 text-gray-800 opacity-50 whitespace-pre-wrap break-keep text-center">
+              <span className="typo-body_med14 text-gray-800 opacity-50 whitespace-pre-wrap break-keep text-center">
                 이미지를 업로드하고 듀프 제품을 찾아보세요
               </span>
             </>
@@ -54,17 +54,17 @@ const SearchImage = ({
               <img
                 src={previewUrl}
                 alt="업로드 미리보기"
-                className="h-full w-auto rounded-lg object-contain border border-gray-500"
+                className="h-full w-auto rounded-sm object-contain shadow-card-shadow"
               />
             </div>
           )}
         </div>
         {/* 설명 */}
         <div className="w-1/2 flex flex-col gap-5 item-start justify-end">
-          <div className="flex flex-col gap-3 typo-body_bold16">
+          <div className="flex flex-col gap-3 typo-body_bold16 text-gray-900">
             <span>| 유의 사항</span>
 
-            <div className="typo-body_thin14 flex flex-col justify-center items-start whitespace-pre-wrap break-keep">
+            <div className="typo-body_thin12 flex flex-col justify-center items-start whitespace-pre-wrap break-keep text-gray-900">
               <span>· 제품 이미지는 최대 1장만 업로드 가능합니다.</span>
               <span>
                 · 제품 외의 영역이 적을수록 더 높은 유사도를 지닌 제품을 추천

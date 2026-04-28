@@ -31,7 +31,7 @@ export default {
           google: '#F2F2F2',
         },
         screen: {
-          default: '#FAFAFA',
+          default: '#FCFDFF',
           modal: '#00000050',
         },
       },

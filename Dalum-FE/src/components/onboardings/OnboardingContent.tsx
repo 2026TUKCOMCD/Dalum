@@ -17,7 +17,7 @@ const OnboardingContent = () => {
       >
         <img
           src={current.image}
-          className="w-full h-auto object-fit shadow-image-shadow"
+          className="w-full max-w-150 h-auto object-fit shadow-image-shadow"
         />
       </div>
       <div className="w-1/2 h-full py-12.5 px-12.5 bg-gray-0 flex flex-col gap-10 justify-center">

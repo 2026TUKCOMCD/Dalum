@@ -12,11 +12,13 @@ const HistoryCard = ({ item }: Props) => {
 
   const imageUrl = isDupeSearchItem(item)
     ? `${item.inputImageUrl}`
-    : `${item.mainProductImageUrl}`;
+    : `${item.imageUrl}`;
 
   const time = isDupeSearchItem(item)
     ? `${item.searchTime}`
     : `${item.createdAt}`;
+
+  const dateText = isDupeSearchItem(item) ? `검색일시` : `저장일시`;
 
   const handleClickCard = () => {
     if (isDupeSearchItem(item)) {
@@ -31,16 +33,21 @@ const HistoryCard = ({ item }: Props) => {
       className="w-45 h-fit flex flex-col gap-2 cursor-pointer"
       onClick={handleClickCard}
     >
-      <div className="w-45 h-45 flex items-center justify-center rounded-sm border-[0.5px] border-gray-500">
+      <div className="h-45 flex items-center justify-center rounded-sm">
         <img
           src={imageUrl}
-          className="w-full h-full object-contain rounded-sm"
+          className="h-full object-contain rounded-sm shadow-image-shadow"
         />
       </div>
       <div className="flex flex-col gap-1 px-1 py-0.5 text-gray-900">
         <div className="w-full h-fit flex items-center justify-between">
-          <span className="typo-body_bold12">| 검색일시</span>
-          <button type="button">
+          <span className="typo-body_bold12">| {dateText}</span>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+            }}
+          >
             <KebabIcon />
           </button>
         </div>
