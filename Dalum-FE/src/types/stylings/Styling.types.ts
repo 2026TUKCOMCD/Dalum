@@ -50,6 +50,7 @@ export type GetDetailStylingResult = {
 
 export type MainStylingItem = {
   productId: number;
+  category: string;
   name: string;
   brand: string;
   discountRate?: number;

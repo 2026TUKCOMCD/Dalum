@@ -1,4 +1,4 @@
-import type { PriceRange } from "../types/search/Search.types";
+import type { PriceRange } from '../types/search/Search.types';
 
 export const onboardingData = [
   {
@@ -53,4 +53,24 @@ export const PRICE_RANGE_MAP: Record<string, PriceRange> = {
   '100,000원 이상 ~ 200,000원 미만': { minPrice: 100000, maxPrice: 199999 },
   '200,000원 이상': { minPrice: 200000 },
   '상관 없음': {},
+};
+
+export const CATEGORY_MAP: Record<string, string[]> = {
+  BAG: ['HAT', 'OUTER', 'TOP', 'BOTTOM', 'SHOES'],
+  TOP: ['HAT', 'OUTER', 'BOTTOM', 'SHOES', 'BAG'],
+  BOTTOM: ['HAT', 'OUTER', 'TOP', 'SHOES', 'BAG'],
+  OUTER: ['HAT', 'TOP', 'BOTTOM', 'SHOES', 'BAG'],
+  DRESS: ['HAT', 'SHOES', 'BAG'],
+  SHOES: ['HAT', 'OUTER', 'TOP', 'BOTTOM', 'BAG'],
+  HAT: ['OUTER', 'TOP', 'BOTTOM', 'SHOES', 'BAG'],
+};
+
+export const CATEGORY_LABEL_MAP: Record<string, string> = {
+  HAT: '모자',
+  OUTER: '아우터',
+  TOP: '상의',
+  BOTTOM: '하의',
+  SHOES: '신발',
+  BAG: '가방',
+  DRESS: '한벌옷',
 };

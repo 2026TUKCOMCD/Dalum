@@ -7,7 +7,8 @@ import { useParams } from 'react-router-dom';
 const StylingPage = () => {
   const { stylingId } = useParams();
 
-  const { detailStyling, fetchDetailStyling } = useStylingStore();
+  const { stylingResult, detailStyling, fetchDetailStyling } =
+    useStylingStore();
 
   useEffect(() => {
     if (!stylingId) return;
@@ -18,13 +19,16 @@ const StylingPage = () => {
     fetchDetailStyling(id);
   }, [stylingId, fetchDetailStyling]);
 
-  const mainItem = detailStyling?.mainProduct;
+  const mainItem = detailStyling?.mainProduct || stylingResult?.mainProduct;
   const items = detailStyling?.items ?? [];
+
+  console.log('StylingCardList items', mainItem?.category);
+  console.log('mainItem:', mainItem);
 
   return (
     <div className="w-full h-full flex">
       <StylingSidebar mainItem={mainItem} />
-      <StylingContent items={items} />
+      <StylingContent items={items} mainItem={mainItem!} />
     </div>
   );
 };

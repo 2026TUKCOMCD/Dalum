@@ -1,5 +1,6 @@
 import type { DupeSearchItem, StylingItem } from '../types/me/Me.types';
 import type { SearchDupeProductsRequest } from '../types/search/Search.types';
+import type { ResultStylingItem } from '../types/stylings/Styling.types';
 
 // 듀프 제품 검색 요청 폼 형태로 변환하는 유틸
 export const toFormData = (req: SearchDupeProductsRequest) => {
@@ -36,3 +37,18 @@ export const formatDate = (date: Date) => {
 export const isDupeSearchItem = (
   item: DupeSearchItem | StylingItem
 ): item is DupeSearchItem => 'searchLogId' in item;
+
+export const groupByCategory = (items: ResultStylingItem[]) => {
+  return items.reduce(
+    (acc, item) => {
+      if (!acc[item.category]) {
+        acc[item.category] = [];
+      }
+
+      acc[item.category].push(item);
+
+      return acc;
+    },
+    {} as Record<string, ResultStylingItem[]>
+  );
+};
