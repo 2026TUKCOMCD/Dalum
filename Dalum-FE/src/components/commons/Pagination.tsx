@@ -25,23 +25,7 @@ const Pagination = ({ total, current, onChange }: PaginationProps) => {
       >
         <ChevronLeftIcon className="size-4 text-primary-900" />
       </div>
-      {/* <div className="flex items-center justify-center gap-1 typo-body_med16">
-        <span className="flex items-center justify-center rounded-full bg-primary-900 text-gray-0 w-8 h-8">
-          1
-        </span>
-        <span className="flex items-center justify-center rounded-full bg-none text-primary-900 w-8 h-8">
-          2
-        </span>
-        <span className="flex items-center justify-center rounded-full bg-none text-primary-900 w-8 h-8">
-          3
-        </span>
-        <span className="flex items-center justify-center rounded-full bg-none text-primary-900 w-8 h-8">
-          4
-        </span>
-        <span className="flex items-center justify-center rounded-full bg-none text-primary-900 w-8 h-8">
-          5
-        </span>
-      </div> */}
+
       {/* 페이지 번호 */}
       <div className="flex items-center justify-center gap-1 typo-body_med16">
         {Array.from({ length: total }).map((_, i) => (
@@ -61,6 +45,7 @@ const Pagination = ({ total, current, onChange }: PaginationProps) => {
           </span>
         ))}
       </div>
+
       {/* 다음 */}
       <div
         className="flex items-center justify-center p-2 cursor-pointer"
