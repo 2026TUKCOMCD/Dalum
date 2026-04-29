@@ -1,11 +1,9 @@
-import LikeIcon from '../../assets/icons/LikeIcon';
-import LinkIcon from '../../assets/icons/LinkIcon';
-import StyleIcon from '../../assets/icons/StyleIcon';
-import type { LikeItem } from '../../types/me/Me.types';
-import { Button } from '../commons/Button';
-import { useProductStore } from '../../stores/products/productStore';
-import { useStylingStore } from '../../stores/stylings/stylingStore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
+import LikeIcon from "../../assets/icons/LikeIcon";
+import LinkIcon from "../../assets/icons/LinkIcon";
+import StyleIcon from "../../assets/icons/StyleIcon";
+import type { LikeItem } from "../../types/me/Me.types";
+import { Button } from "../commons/Button";
 
 type Props = {
   item: LikeItem;
@@ -14,52 +12,21 @@ type Props = {
 const LikeProductCard = ({ item }: Props) => {
   const navigate = useNavigate();
 
-  const isLiked = useProductStore(
-    (s) => s.likeStatusById[item.productId] ?? false
-  );
-  const isLikeLoading = useProductStore(
-    (s) => s.isLoadingById[item.productId] ?? false
-  );
-  const toggleLikeStatus = useProductStore((s) => s.toggleLikeStatus);
-
-  const { recommendStyling, isLoading } = useStylingStore();
-
   const priceText =
-    new Intl.NumberFormat('ko-KR').format(item.discount_price) + '원';
+    new Intl.NumberFormat("ko-KR").format(item.discount_price) + "원";
 
   const purchaseLink = item.purchase_link;
 
   // 구매 링크 버튼 클릭 핸들러
-  const handleClickPurchase = () => {
-    if (!purchaseLink) return;
-    window.open(purchaseLink, '_blank', 'noopener,noreferrer');
-  };
-
-  const handleClickLike = () => {
-    if (isLikeLoading) return;
-    toggleLikeStatus(item.productId);
-  };
-
-  const handleClickStyling = async () => {
-    if (isLoading) return;
-
-    const result = await recommendStyling(item.productId);
-
-    if (result) {
-      navigate(`/styling/${result.stylingId}`);
-    }
+  const handlePurchase = () => {
+    navigate(`${purchaseLink}`);
   };
 
   return (
-    <div className="w-100 h-fit flex items-center justify-start gap-3">
-      <div className="w-45 h-45 flex justify-center items-center rounded-sm border-[0.5px] border-gray-500">
-        <img
-          src={item.imageUrl}
-          className="w-full h-full object-contain rounded-sm"
-        />
-      </div>
+    <div className="w-100 h-45 flex items-center justify-start gap-3">
+      <img src={item.imageUrl} className="w-45 h-45 rounded-sm bg-none" />
 
-      <div className="flex-1 h-45 flex flex-col justify-between py-1.5">
+      <div className="flex-1 h-full flex flex-col justify-between py-1.5">
         <div className="flex flex-col gap-2 justify-center items-start">
           {/* 브랜드 */}
           <span className="typo-body_med12 text-gray-600">{item.brand}</span>
@@ -84,7 +51,6 @@ const LikeProductCard = ({ item }: Props) => {
             size="sm"
             fullWidth
             leftIcon={<StyleIcon className="size-3" />}
-            onClick={handleClickStyling}
           >
             스타일링 추천
           </Button>
@@ -95,17 +61,14 @@ const LikeProductCard = ({ item }: Props) => {
               fullWidth
               leftIcon={<LinkIcon className="size-3" />}
               className="flex-1"
-              onClick={handleClickPurchase}
-              disabled={!purchaseLink}
+              onClick={handlePurchase}
             >
               구매 링크
             </Button>
             <Button
-              variant={isLiked ? 'active_like' : 'like'}
+              variant="like"
               size="sm"
               leftIcon={<LikeIcon className="size-3" />}
-              onClick={handleClickLike}
-              disabled={isLikeLoading}
             >
               좋아요
             </Button>

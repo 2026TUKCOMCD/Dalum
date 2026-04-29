@@ -1,9 +1,9 @@
 import { create } from 'zustand';
 import type {
-  MasterTokenItem,
+  // MasterTokenItem,
   ReissueTokenItem,
 } from '../../types/auth/Auth.types';
-import createMasterToken from '../../services/auth/getMasterToken';
+// import createMasterToken from '../../services/auth/getMasterToken';
 import logoutAccount from '../../services/auth/logoutAccount';
 import withdrawAccount from '../../services/auth/withdrawAccount';
 import reissueToken from '../../services/auth/reissueToken';
@@ -12,12 +12,12 @@ type AuthState = {
   isLoading: boolean;
   errorMessage: string | null;
 
-  masterToken: MasterTokenItem | null;
+  // masterToken: MasterTokenItem | null;
   userToken: ReissueTokenItem | null;
   accessToken: string | null;
   refreshToken: string | null;
 
-  createToken: () => Promise<void>;
+  // createToken: () => Promise<void>;
   reissueToken: () => Promise<void>;
 
   logout: () => Promise<void>;
@@ -29,30 +29,30 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   errorMessage: null,
 
-  masterToken: null,
+  // masterToken: null,
   userToken: null,
   accessToken: null,
   refreshToken: null,
 
-  createToken: async () => {
-    set({ isLoading: true, errorMessage: null });
+  // createToken: async () => {
+  //   set({ isLoading: true, errorMessage: null });
 
-    try {
-      const res = await createMasterToken();
+  //   try {
+  //     const res = await createMasterToken();
 
-      set({
-        masterToken: res.result,
-        accessToken: res.result.accessToken,
-        refreshToken: res.result.refreshToken,
-        isLoading: false,
-      });
-    } catch {
-      set({
-        isLoading: false,
-        errorMessage: '마스터 토큰 생성에 실패했습니다.',
-      });
-    }
-  },
+  //     set({
+  //       masterToken: res.result,
+  //       accessToken: res.result.accessToken,
+  //       refreshToken: res.result.refreshToken,
+  //       isLoading: false,
+  //     });
+  //   } catch {
+  //     set({
+  //       isLoading: false,
+  //       errorMessage: '마스터 토큰 생성에 실패했습니다.',
+  //     });
+  //   }
+  // },
 
   reissueToken: async () => {
     set({ isLoading: true, errorMessage: null });

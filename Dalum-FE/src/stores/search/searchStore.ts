@@ -1,10 +1,9 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 import type {
   DupeProductsItem,
-  SearchDupeProductsData,
   SearchDupeProductsRequest,
-} from '../../types/search/Search.types';
-import searchDupeProducts from '../../services/search/searchDupeProduct';
+} from "../../types/search/Search.types";
+import searchDupeProducts from "../../services/search/searchDupeProduct";
 
 type DupeSearchState = {
   isLoading: boolean;
@@ -12,10 +11,9 @@ type DupeSearchState = {
 
   searchLogId: number | null;
   resultCount: number;
-  productsList: SearchDupeProductsData | null;
   products: DupeProductsItem[];
 
-  searchDupe: (req: SearchDupeProductsRequest) => Promise<number>;
+  searchDupe: (req: SearchDupeProductsRequest) => Promise<void>;
   reset: () => void;
 };
 
@@ -25,7 +23,6 @@ export const useSearchStore = create<DupeSearchState>((set) => ({
 
   searchLogId: null,
   resultCount: 0,
-  productsList: null,
   products: [],
 
   searchDupe: async (req) => {
@@ -33,23 +30,18 @@ export const useSearchStore = create<DupeSearchState>((set) => ({
 
     try {
       const res = await searchDupeProducts(req);
-      const id = res.result.searchLogId;
 
       set({
-        searchLogId: id,
-        productsList: res.result,
+        searchLogId: res.result.searchLogId,
         resultCount: res.result.resultCount,
         products: res.result.products,
         isLoading: false,
       });
-
-      return id;
     } catch {
       set({
         isLoading: false,
-        errorMessage: '듀프 제품 검색에 실패했어요.',
+        errorMessage: "듀프 제품 검색에 실패했어요.",
       });
-      throw new Error('searchDupe failed');
     }
   },
 

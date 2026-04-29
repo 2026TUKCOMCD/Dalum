@@ -1,8 +1,3 @@
-export type PriceRange = {
-  minPrice?: number;
-  maxPrice?: number;
-};
-
 export type SearchDupeProductsRequest = {
   image: File;
   brand?: string;

@@ -1,25 +1,24 @@
-import LikeIcon from '../../assets/icons/LikeIcon';
-import LinkIcon from '../../assets/icons/LinkIcon';
-import type { ResultStylingItem } from '../../types/stylings/Styling.types';
-import { Button } from '../commons/Button';
+import LikeIcon from "../../assets/icons/LikeIcon";
+import LinkIcon from "../../assets/icons/LinkIcon";
+import type { StylingItem } from "../../types/stylings/Styling.types";
+import { Button } from "../commons/Button";
 
 type Props = {
-  item: ResultStylingItem;
+  item: StylingItem;
 };
 
 const StylingCard = ({ item }: Props) => {
-  const priceText =
-    new Intl.NumberFormat('ko-KR').format(item.discountPrice) + '원';
+  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
 
   return (
     <div className="relative w-fit h-fit flex flex-col gap-2.5 bg-gray-0 rounded-lg p-2.5 shadow-card-shadow group">
       {/* 이미지 영역 */}
-      <div className="relative w-50 h-50 flex justify-center items-center">
+      <div className="relative w-50 h-50">
         {item.imageUrl ? (
           <img
             src={item.imageUrl}
             alt={item.name}
-            className="max-w-50 max-h-50 rounded-sm object-cover bg-secondary-900"
+            className="w-full h-full rounded-sm object-cover bg-secondary-900"
             loading="lazy"
           />
         ) : (

@@ -6,17 +6,13 @@ type ButtonProps = {
     | 'primary'
     | 'gray'
     | 'like'
-    | 'active_like'
-    | 'onboarding_kakao'
-    | 'onboarding_naver'
-    | 'onboarding_google'
     | 'social_kakao'
     | 'social_naver'
     | 'social_google'
     | 'modal_primary'
     | 'modal_secondary'
     | 'cta_primary';
-  size?: 'sm' | 'md' | 'lg' | 'modal' | 'onboarding' | 'social' | 'cta';
+  size?: 'sm' | 'md' | 'lg' | 'modal' | 'social' | 'cta';
   disabled?: boolean;
   leftIcon?: React.ReactNode;
   fullWidth?: boolean;
@@ -41,11 +37,6 @@ export function Button({
       'bg-screen-0 text-primary-900 border border-primary-900 hover:bg-primary-900 hover:text-gray-0 hover:border-primary-900 disabled:bg-gray-100 disabled:text-gray-600 disabled:border-gray-100',
     gray: 'bg-screen-0 text-gray-800 border border-gray-800 hover:bg-gray-800 hover:text-gray-0 hover:border-gray-800',
     like: 'bg-screen-0 text-button-like border border-button-like hover:bg-button-like hover:text-gray-0 hover:border-button-like',
-    active_like: 'bg-button-like text-gray-0 border border-button-like',
-
-    onboarding_kakao: 'bg-button-kakao text-[#371C1D]',
-    onboarding_naver: 'bg-button-naver text-gray-0',
-    onboarding_google: 'bg-button-google text-gray-900',
 
     social_kakao: 'bg-button-kakao text-[#371C1D]',
     social_naver: 'bg-button-naver text-gray-0',
@@ -63,7 +54,6 @@ export function Button({
     md: 'typo-body_bold12 px-3 py-2.5 rounded-sm gap-2',
     lg: 'typo-body_bold14 px-4 py-3 rounded-sm gap-2.5',
     modal: 'typo-body_bold18 h-14 px-2 py-4 rounded-lg',
-    onboarding: 'typo-body_bold16 px-5 py-2.5 rounded-full',
     social: 'typo-body_bold16 px-4 py-2.5 rounded-lg gap-1',
     cta: 'typo-body_bold20 px-4 py-2.5 rounded-sm',
   };

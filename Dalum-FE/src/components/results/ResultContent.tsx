@@ -1,14 +1,10 @@
 import InfoIcon from '../../assets/icons/InfoIcon';
+import { dupeMockData } from '../../mocks/dupeMockData';
 import useBaseModal from '../../stores/modals/baseModal';
-import type { DetailDupeSearchItem } from '../../types/me/Me.types';
 import DupeCard from './DupeCard';
 
-type Props = {
-  items: DetailDupeSearchItem[];
-};
-const ResultContent = ({ items }: Props) => {
+const ResultContent = () => {
   const { openModal } = useBaseModal();
-
   return (
     <div className="w-full h-full px-12.5 pt-12.5">
       <div className="w-full h-full flex flex-col gap-4">
@@ -22,8 +18,8 @@ const ResultContent = ({ items }: Props) => {
         </div>
         {/* 듀프 제품 리스트 */}
         <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-y-10 gap-x-5 overflow-y-auto pb-12.5 scrollbar-hide justify-items-center">
-          {items.map((item) => (
-            <DupeCard key={item.productId} item={item} />
+          {dupeMockData.map((item) => (
+            <DupeCard key={item.id} item={item} />
           ))}
         </div>
       </div>

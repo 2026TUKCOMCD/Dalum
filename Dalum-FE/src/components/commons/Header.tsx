@@ -14,7 +14,7 @@ const Header = () => {
     <div className="w-full px-7.5 py-5 bg-secondary-900 flex justify-between items-center shadow-header-shadow border-b border-primary-900">
       <Logo
         className="w-12.5 text-primary-900 cursor-pointer"
-        onClick={() => navigate('/search')}
+        onClick={() => navigate('/research')}
       />
       {accessToken ? (
         <UserIcon
