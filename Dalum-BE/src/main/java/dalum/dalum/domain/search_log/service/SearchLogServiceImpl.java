@@ -17,7 +17,6 @@ import dalum.dalum.domain.search_log.entity.SearchLog;
 import dalum.dalum.domain.search_log.exception.SearchLogException;
 import dalum.dalum.domain.search_log.exception.code.SearchLogErrorCode;
 import dalum.dalum.domain.search_log.repository.SearchLogRepository;
-import dalum.dalum.global.apipayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -87,5 +86,17 @@ public class SearchLogServiceImpl implements SearchLogService {
         return response;
     }
 
+    @Override
+    public void deleteSearchLog(Long memberId, Long searchLogId) {
+        SearchLog searchLog = searchLogRepository.findById(searchLogId).orElseThrow(
+                () -> new SearchLogException(SearchLogErrorCode.NOT_FOUND));
+
+        if (!searchLog.getMember().getId().equals(memberId)) {
+            throw new SearchLogException(SearchLogErrorCode.FORBIDDEN);
+        }
+
+        dupeProductRepository.deleteBySearchLog(searchLog);
+        searchLogRepository.delete(searchLog);
+    }
 
 }

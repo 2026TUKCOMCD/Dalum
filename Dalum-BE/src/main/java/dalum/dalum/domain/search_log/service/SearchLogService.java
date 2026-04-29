@@ -9,5 +9,6 @@ public interface SearchLogService {
 
     public SearchLogDetailResponse getSearchLogDetail(Long memberId, Long searchLogId);
 
+    public void deleteSearchLog(Long memberId, Long searchLogId);
 
 }
