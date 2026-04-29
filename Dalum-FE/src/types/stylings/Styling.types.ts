@@ -17,7 +17,7 @@ export type RecommendStylingResponse = {
 
 export type RecommendStylingResult = {
   stylingId: number;
-  mainProduct: MainStylingItem;
+  mainItem: MainStylingItem;
   items: ResultStylingItem[];
   createdAt: string;
 };

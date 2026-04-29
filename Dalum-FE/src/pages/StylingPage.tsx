@@ -19,16 +19,17 @@ const StylingPage = () => {
     fetchDetailStyling(id);
   }, [stylingId, fetchDetailStyling]);
 
-  const mainItem = detailStyling?.mainProduct || stylingResult?.mainProduct;
+  const mainItem = detailStyling?.mainProduct || stylingResult?.mainItem;
   const items = detailStyling?.items ?? [];
 
-  console.log('StylingCardList items', mainItem?.category);
-  console.log('mainItem:', mainItem);
+  if (!mainItem) {
+    return;
+  }
 
   return (
     <div className="w-full h-full flex">
       <StylingSidebar mainItem={mainItem} />
-      <StylingContent items={items} mainItem={mainItem!} />
+      <StylingContent items={items} mainItem={mainItem} />
     </div>
   );
 };
