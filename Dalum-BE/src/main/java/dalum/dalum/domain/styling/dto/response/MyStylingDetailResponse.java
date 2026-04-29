@@ -30,6 +30,7 @@ public record MyStylingDetailResponse(
     @Builder
     public record MainProductDetail(
             Long productId,
+            LargeCategory largeCategory,
             String name,
             String brand,
             double discountRate,
