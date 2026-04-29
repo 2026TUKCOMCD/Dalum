@@ -98,4 +98,21 @@ public class StylingController {
 
         return ApiResult.success(StylingSuccessCode.DETAIL_OK, response);
     }
+
+    @Operation(summary = "저장한 스타일링 삭제 API", description = "저장한 스타일링을 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "STYLING_200_4", description = "스타일링이 성공적으로 삭제되었습니다."),
+            @ApiResponse(responseCode = "STYLING_403_1", description = "해당 스타일링에 대한 권한이 없습니다."),
+            @ApiResponse(responseCode = "STYLING_404_1", description = "해당 스타일링을 찾지 못했습니다."),
+    })
+    @DeleteMapping("/me/stylings/{stylingId}")
+    public ApiResult<Void> deleteStyling(
+            @PathVariable Long stylingId
+    ) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+
+        stylingService.deleteStyling(memberId, stylingId);
+
+        return ApiResult.success(StylingSuccessCode.DELETED, null);
+    }
 }

@@ -15,4 +15,6 @@ public interface StylingService {
 
     public MyStylingDetailResponse getMyStylingDetail(Long memberId, Long stylingId);
 
+    public void deleteStyling(Long memberId, Long stylingId);
+
 }

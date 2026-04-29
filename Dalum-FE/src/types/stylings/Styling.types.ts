@@ -17,7 +17,7 @@ export type RecommendStylingResponse = {
 
 export type RecommendStylingResult = {
   stylingId: number;
-  mainProduct: MainStylingItem;
+  mainItem: MainStylingItem;
   items: ResultStylingItem[];
   createdAt: string;
 };
@@ -50,6 +50,7 @@ export type GetDetailStylingResult = {
 
 export type MainStylingItem = {
   productId: number;
+  category: string;
   name: string;
   brand: string;
   discountRate?: number;
@@ -67,6 +68,6 @@ export type ResultStylingItem = {
   discountRate?: number;
   discountPrice: number;
   imageUrl: string;
-  purchaseUrl: string;
+  purchaseLink: string;
   isLiked: boolean;
 };

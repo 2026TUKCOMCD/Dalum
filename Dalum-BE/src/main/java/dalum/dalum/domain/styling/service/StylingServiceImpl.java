@@ -13,6 +13,7 @@ import dalum.dalum.domain.product.enums.LargeCategory;
 import dalum.dalum.domain.product.exception.ProductException;
 import dalum.dalum.domain.product.exception.code.ProductErrorCode;
 import dalum.dalum.domain.product.repository.ProductRepository;
+import dalum.dalum.domain.product.repository.projection.ProductCandidateProjection;
 import dalum.dalum.domain.styling.client.AiStylingClient;
 import dalum.dalum.domain.styling.client.dto.AiCandidateItem;
 import dalum.dalum.domain.styling.client.dto.AiInputItem;
@@ -31,6 +32,8 @@ import dalum.dalum.domain.styling.repository.StylingRepository;
 import dalum.dalum.domain.styling_product.entity.StylingProduct;
 import dalum.dalum.domain.styling_product.repository.StylingProductRepository;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -48,6 +51,8 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Transactional
 public class StylingServiceImpl implements StylingService {
+
+    private static final Logger logger = LoggerFactory.getLogger(StylingServiceImpl.class);
 
     private static final double SCORE_THRESHOLD = 0.1;
     private static final double STYLE_FILTER_THRESHOLD = 0.5;
@@ -94,6 +99,10 @@ public class StylingServiceImpl implements StylingService {
     @Override
     public StylingRecommendationResponse createRecommendation(Long memberId, Long targetProductId) {
 
+        Runtime rt = Runtime.getRuntime();
+        long memBefore = rt.totalMemory() - rt.freeMemory();
+        logger.info("[스타일링] 추천 시작 - 사용 메모리: {}MB", memBefore / 1024 / 1024);
+
         Member member = getMember(memberId);
 
         Product targetProduct = productRepository.findById(targetProductId).orElseThrow(
@@ -115,7 +124,15 @@ public class StylingServiceImpl implements StylingService {
         List<LargeCategory> candidateCategories = CATEGORY_MAP.getOrDefault(
                 targetProduct.getLargeCategory(), List.of());
         List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
-        List<Product> candidates = productRepository.findCandidates(candidateCategories, targetProductId, compatibleStyles);
+
+        List<ProductCandidateProjection> candidates = candidateCategories.stream()
+                .flatMap(cat -> productRepository.findCandidates(
+                        List.of(cat), targetProductId, compatibleStyles, PageRequest.of(0, 500)).stream())
+                .toList();
+
+        long memAfterQuery = rt.totalMemory() - rt.freeMemory();
+        logger.info("[스타일링] 후보 조회 완료 - 후보 수: {}개, 사용 메모리: {}MB (증가: {}MB)",
+                candidates.size(), memAfterQuery / 1024 / 1024, (memAfterQuery - memBefore) / 1024 / 1024);
 
         // 후보 상품 → AI 요청 형태 변환
         List<AiCandidateItem> candidateItems = candidates.stream()
@@ -183,6 +200,10 @@ public class StylingServiceImpl implements StylingService {
                             .build();
                 })
                 .toList();
+
+        long memAfter = rt.totalMemory() - rt.freeMemory();
+        logger.info("[스타일링] 추천 완료 - 사용 메모리: {}MB (총 증가: {}MB)",
+                memAfter / 1024 / 1024, (memAfter - memBefore) / 1024 / 1024);
 
         return StylingRecommendationResponse.builder()
                 .stylingId(styling.getId())
@@ -260,6 +281,18 @@ public class StylingServiceImpl implements StylingService {
 
         return stylingConverter.toMyStylingDetailResponse(
                 styling, mainProduct, likedIds.contains(mainProduct.getId()), itemDetails);
+    }
+
+    @Override
+    public void deleteStyling(Long memberId, Long stylingId) {
+        Styling styling = stylingRepository.findById(stylingId).orElseThrow(
+                () -> new StylingException(StylingErrorCode.NOT_FOUND));
+
+        if (!styling.getMember().getId().equals(memberId)) {
+            throw new StylingException(StylingErrorCode.FORBIDDEN);
+        }
+
+        stylingRepository.delete(styling);
     }
 
     private Member getMember(Long memberId) {

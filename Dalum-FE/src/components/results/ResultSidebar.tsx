@@ -13,7 +13,7 @@ const ResultSidebar = ({ imageUrl }: Props) => {
   const navigate = useNavigate();
 
   return (
-    <div className="h-full w-fit flex flex-col items-start justify-start px-7.5 py-12.5 border-r border-gray-600">
+    <div className="h-full w-fit flex flex-col items-start justify-start px-7.5 py-12.5 border-r border-primary-600">
       <div className="flex flex-col gap-4">
         {/* 제목 */}
         <span className="typo-h2_bold24 text-gray-900">| 업로드 이미지</span>
@@ -22,7 +22,7 @@ const ResultSidebar = ({ imageUrl }: Props) => {
           <img
             alt="업로드 이미지"
             src={imageUrl}
-            className="max-w-60 max-h-60 rounded-sm bg-center"
+            className="w-60 h-60 rounded-sm bg-center border border-primary-600 object-contain"
           />
         </div>
 

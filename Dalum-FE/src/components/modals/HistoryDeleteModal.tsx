@@ -1,21 +1,38 @@
-import { useNavigate } from 'react-router-dom';
 import useBaseModal from '../../stores/modals/baseModal';
 import { Button } from '../commons/Button';
+import { useMeStore } from '../../stores/me/meStore';
 
-const DupeResearchModal = () => {
+const HistoryDeleteModal = () => {
   const { closeModal } = useBaseModal();
-  const navigate = useNavigate();
+  const {
+    deleteTarget,
+    deleteDupeHistory,
+    deleteStylingHistory,
+    setDeleteTarget,
+  } = useMeStore();
+
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    if ('searchLogId' in deleteTarget) {
+      await deleteDupeHistory(deleteTarget.searchLogId);
+    } else {
+      await deleteStylingHistory(deleteTarget.stylingId);
+    }
+
+    setDeleteTarget(null);
+    closeModal();
+  };
 
   return (
     <div className="w-112.5 flex flex-col gap-5 p-7.5 items-center justify-center bg-screen-default rounded-[14px]">
       {/* 본문 */}
       <div className="flex flex-col gap-2.5 items-center justify-center">
         <span className="typo-body_bold16 text-gray-900">
-          다른 이미지로 듀프 제품을 찾아볼까요?
+          기록을 삭제할까요?
         </span>
         <span className="typo-body_thin14 text-gray-900 text-center">
-          듀프 제품 검색 기록은 마이 페이지에서 <br />
-          다시 확인할 수 있습니다.
+          삭제된 기록은 복구할 수 없습니다.
         </span>
       </div>
       {/* 버튼 */}
@@ -32,10 +49,7 @@ const DupeResearchModal = () => {
           variant="modal_primary"
           size="modal"
           fullWidth
-          onClick={() => {
-            navigate('/search');
-            closeModal();
-          }}
+          onClick={handleDelete}
         >
           확인
         </Button>
@@ -44,4 +58,4 @@ const DupeResearchModal = () => {
   );
 };
 
-export default DupeResearchModal;
+export default HistoryDeleteModal;

@@ -58,6 +58,7 @@ public class StylingConverter {
         MyStylingDetailResponse.MainProductDetail mainProductDetail =
                 MyStylingDetailResponse.MainProductDetail.builder()
                         .productId(mainProduct.getId())
+                        .category(mainProduct.getLargeCategory())
                         .name(mainProduct.getProductName())
                         .brand(mainProduct.getBrand())
                         .discountRate(mainProduct.getDiscountRate())
@@ -101,6 +102,7 @@ public class StylingConverter {
     ) {
         return MyStylingDetailResponse.MainProductDetail.builder()
                 .productId(product.getId())
+                .category(product.getLargeCategory())
                 .name(product.getProductName())
                 .brand(product.getBrand())
                 .discountRate(product.getDiscountRate())

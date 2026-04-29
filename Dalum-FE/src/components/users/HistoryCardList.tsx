@@ -8,7 +8,7 @@ type Props = {
 
 const HistoryCardList = ({ items }: Props) => {
   return (
-    <div className="w-full flex overflow-x-auto scrollbar-hide p-5">
+    <div className="w-full flex overflow-x-auto scrollbar-hide p-4">
       {items.map((item, index) => {
         const isLast = index === items.length - 1;
 
@@ -21,7 +21,7 @@ const HistoryCardList = ({ items }: Props) => {
             <HistoryCard item={item} />
 
             {!isLast && (
-              <div className="w-[0.5px] h-full mx-6.25 bg-gray-500" />
+              <div className="w-[0.5px] h-full mx-6.25 bg-primary-600" />
             )}
           </div>
         );
