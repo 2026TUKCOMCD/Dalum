@@ -8,7 +8,7 @@ import type { RecommendStylingResult } from '../../types/stylings/Styling.types'
 import useBaseModal from '../../stores/modals/baseModal';
 
 type Props = {
-  mainItem?: RecommendStylingResult['mainProduct'];
+  mainItem?: RecommendStylingResult['mainItem'];
 };
 
 const StylingSidebar = ({ mainItem }: Props) => {
