@@ -1,27 +1,28 @@
-import LikeIcon from "../../assets/icons/LikeIcon";
-import LinkIcon from "../../assets/icons/LinkIcon";
-import type { StylingItem } from "../../types/stylings/Styling.types";
-import { Button } from "../commons/Button";
+import LikeIcon from '../../assets/icons/LikeIcon';
+import LinkIcon from '../../assets/icons/LinkIcon';
+import type { MainStylingItem } from '../../types/stylings/Styling.types';
+import { Button } from '../commons/Button';
 
 type Props = {
-  item: StylingItem;
+  item: MainStylingItem;
 };
 
 const SidebarStylingCard = ({ item }: Props) => {
-  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
+  const priceText =
+    new Intl.NumberFormat('ko-KR').format(item.discountPrice) + '원';
 
   return (
-    <div className="w-62.5 h-fit flex flex-col gap-2.5 justify-start items-center bg-gray-0 rounded-lg p-2.5 shadow-card-shadow">
+    <div className="w-55 h-fit flex flex-col gap-2.5 justify-start items-center bg-gray-0 rounded-lg p-2.5 shadow-card-shadow">
       {/* 제품 사진 */}
       {item.imageUrl ? (
-        <img
-          src={item.imageUrl}
-          alt={item.name}
-          className="w-57.5 h-57.5 rounded-sm object-cover bg-secondary-900"
-          loading="lazy"
-        />
+        <div className="w-50 h-50 flex justify-center items-center rounded-sm border-[0.5px] border-gray-500">
+          <img
+            src={item.imageUrl}
+            className="w-full h-full object-contain rounded-sm"
+          />
+        </div>
       ) : (
-        <div className="w-57.5 h-57.5 rounded-sm bg-secondary-900" />
+        <div className="w-50 h-50 rounded-sm bg-secondary-900" />
       )}
       {/* 제품 정보 */}
       <div className="w-full flex flex-col gap-2">
@@ -34,7 +35,7 @@ const SidebarStylingCard = ({ item }: Props) => {
           {/* 제품 가격 */}
           <div className="flex items-center justify-start gap-1">
             {/* 할인율 */}
-            {typeof item.discountRate === "number" && (
+            {typeof item.discountRate === 'number' && (
               <span className="typo-body_bold14 text-button-like">
                 {item.discountRate}%
               </span>

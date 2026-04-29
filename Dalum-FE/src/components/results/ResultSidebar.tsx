@@ -1,10 +1,14 @@
-import { useNavigate } from "react-router-dom";
-import HomeIcon from "../../assets/icons/HomeIcon";
-import ImageIcon from "../../assets/icons/ImageIcon";
-import useBaseModal from "../../stores/modals/baseModal";
-import { Button } from "../commons/Button";
+import { useNavigate } from 'react-router-dom';
+import HomeIcon from '../../assets/icons/HomeIcon';
+import ImageIcon from '../../assets/icons/ImageIcon';
+import useBaseModal from '../../stores/modals/baseModal';
+import { Button } from '../commons/Button';
 
-const ResultSidebar = () => {
+type Props = {
+  imageUrl?: string;
+};
+
+const ResultSidebar = ({ imageUrl }: Props) => {
   const { openModal } = useBaseModal();
   const navigate = useNavigate();
 
@@ -14,11 +18,11 @@ const ResultSidebar = () => {
         {/* 제목 */}
         <span className="typo-h2_bold24 text-gray-900">| 업로드 이미지</span>
         {/* 업로드 이미지 */}
-        <div className="w-60 h-60 bg-secondary-900">
+        <div className="w-60 h-60 justify-center items-center flex">
           <img
             alt="업로드 이미지"
-            src="https://images.unsplash.com/photo-1512436991641-6745cdb1723f"
-            className="w-60 h-60 rounded-sm"
+            src={imageUrl}
+            className="max-w-60 max-h-60 rounded-sm bg-center"
           />
         </div>
 
@@ -31,7 +35,7 @@ const ResultSidebar = () => {
             fullWidth
             leftIcon={<ImageIcon className="size-4" />}
             onClick={() => {
-              openModal("dupeResearchModal");
+              openModal('dupeResearchModal');
             }}
           >
             다른 이미지로 검색
@@ -41,7 +45,7 @@ const ResultSidebar = () => {
             size="lg"
             fullWidth
             leftIcon={<HomeIcon className="size-4" />}
-            onClick={() => navigate("/my")}
+            onClick={() => navigate('/my')}
           >
             마이 페이지로 이동
           </Button>

@@ -13,14 +13,14 @@ const OnboardingContent = () => {
     <div className="flex h-full min-h-0 bg-secondary-900">
       <div
         key={step}
-        className="w-2/3 h-full min-h-0 p-12.5 flex items-center justify-center animate-[fadeIn_300ms_ease-in-out]"
+        className="w-1/2 h-full min-h-0 p-12.5 flex items-center justify-center animate-[fadeIn_300ms_ease-in-out]"
       >
         <img
           src={current.image}
-          className="h-full w-auto object-contain shadow-image-shadow"
+          className="w-full h-auto object-fit shadow-image-shadow"
         />
       </div>
-      <div className="w-1/3 h-full py-12.5 px-12.5 bg-gray-0 flex flex-col gap-10 justify-center">
+      <div className="w-1/2 h-full py-12.5 px-12.5 bg-gray-0 flex flex-col gap-10 justify-center">
         {/* 스텝바 */}
         <StepBar />
         {/* 본문 */}
