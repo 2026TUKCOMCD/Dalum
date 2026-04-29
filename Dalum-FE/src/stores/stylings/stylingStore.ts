@@ -10,13 +10,13 @@ import getDetailStyling from '../../services/stylings/getDetailStyling';
 
 type StylingState = {
   isLoading: boolean;
+  stylingLoading: boolean;
   errorMessage: string | null;
 
   stylingResult: RecommendStylingResult | null;
   stylingList: SaveStylingResult | null;
   detailStyling: GetDetailStylingResult | null;
 
-  // recommendStyling: (targetProductId: number) => Promise<void>;
   recommendStyling: (
     targetProductId: number
   ) => Promise<RecommendStylingResult | null>;
@@ -27,6 +27,7 @@ type StylingState = {
 
 export const useStylingStore = create<StylingState>((set) => ({
   isLoading: false,
+  stylingLoading: false,
   errorMessage: null,
 
   stylingResult: null,
@@ -34,17 +35,17 @@ export const useStylingStore = create<StylingState>((set) => ({
   detailStyling: null,
 
   recommendStyling: async (targetProductId: number) => {
-    set({ isLoading: true, errorMessage: null });
+    set({ stylingLoading: true, errorMessage: null });
 
     try {
       const res = await recommendStyling(targetProductId);
 
-      set({ stylingResult: res.result, isLoading: false });
+      set({ stylingResult: res.result, stylingLoading: false });
 
       return res.result;
     } catch {
       set({
-        isLoading: false,
+        stylingLoading: false,
         errorMessage: '스타일링 추천에 실패했습니다.',
       });
 

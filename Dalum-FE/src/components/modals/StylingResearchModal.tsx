@@ -7,7 +7,7 @@ const StylingResearchModal = () => {
   const { closeModal } = useBaseModal();
   const navigate = useNavigate();
 
-  const { recommendStyling, detailStyling } = useStylingStore();
+  const { recommendStyling, detailStyling, stylingLoading } = useStylingStore();
 
   const productId = detailStyling?.mainProduct.productId;
 
@@ -30,6 +30,7 @@ const StylingResearchModal = () => {
           variant="modal_secondary"
           size="modal"
           fullWidth
+          disabled={stylingLoading}
           onClick={closeModal}
         >
           취소
@@ -38,6 +39,7 @@ const StylingResearchModal = () => {
           variant="modal_primary"
           size="modal"
           fullWidth
+          disabled={stylingLoading}
           onClick={async () => {
             if (!productId) return;
 
