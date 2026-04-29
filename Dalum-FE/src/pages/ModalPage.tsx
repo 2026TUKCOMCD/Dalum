@@ -10,6 +10,7 @@ import GuideModal from '../components/modals/GuideModal';
 import SimilarityCheckModal from '../components/modals/SimilarityCheckModal';
 import SaveStylingModal from '../components/modals/SaveStylingModal';
 import StylingResearchModal from '../components/modals/StylingResearchModal';
+import HistoryDeleteModal from '../components/modals/HistoryDeleteModal';
 
 const ModalPage = () => {
   const { isModalOpen, modalType } = useBaseModal();
@@ -40,6 +41,7 @@ const ModalPage = () => {
         {modalType === 'similarityCheckModal' && <SimilarityCheckModal />}
         {modalType === 'saveStylingModal' && <SaveStylingModal />}
         {modalType === 'stylingResearchModal' && <StylingResearchModal />}
+        {modalType === 'historyDeleteModal' && <HistoryDeleteModal />}
       </ModalBackground>
     </>
   );

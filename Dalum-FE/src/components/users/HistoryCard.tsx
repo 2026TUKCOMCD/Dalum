@@ -1,7 +1,10 @@
 import { useNavigate } from 'react-router-dom';
-import KebabIcon from '../../assets/icons/KebabIcon';
 import type { DupeSearchItem, StylingItem } from '../../types/me/Me.types';
 import { formatDate, isDupeSearchItem } from '../../utils';
+import { useMeStore } from '../../stores/me/meStore';
+import TrashIcon from '../../assets/icons/TrashIcon';
+import useBaseModal from '../../stores/modals/baseModal';
+import type React from 'react';
 
 type Props = {
   item: DupeSearchItem | StylingItem;
@@ -9,6 +12,8 @@ type Props = {
 
 const HistoryCard = ({ item }: Props) => {
   const navigate = useNavigate();
+  const { openModal } = useBaseModal();
+  const { setDeleteTarget } = useMeStore();
 
   const imageUrl = isDupeSearchItem(item)
     ? `${item.inputImageUrl}`
@@ -28,6 +33,13 @@ const HistoryCard = ({ item }: Props) => {
     }
   };
 
+  const handleClickDelete = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    setDeleteTarget(item);
+    openModal('historyDeleteModal');
+  };
+
   return (
     <div
       className="w-45 h-fit flex flex-col gap-2 cursor-pointer"
@@ -44,11 +56,10 @@ const HistoryCard = ({ item }: Props) => {
           <span className="typo-body_bold12">| {dateText}</span>
           <button
             type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-            }}
+            onClick={handleClickDelete}
+            className="cursor-pointer"
           >
-            <KebabIcon />
+            <TrashIcon className="size-3 text-gray-300" />
           </button>
         </div>
         <span className="typo-body_med12">{formatDate(new Date(time))}</span>

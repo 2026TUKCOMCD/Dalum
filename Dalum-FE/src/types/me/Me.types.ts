@@ -89,3 +89,10 @@ export type DetailDupeSearchItem = {
   purchaseUrl: string | null;
   similarity: string | null;
 };
+
+export type DeleteHistoryResponse = {
+  code: string;
+  isSuccess: boolean;
+  message: string;
+  result: null;
+};

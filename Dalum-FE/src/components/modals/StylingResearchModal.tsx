@@ -41,6 +41,8 @@ const StylingResearchModal = () => {
           fullWidth
           disabled={stylingLoading}
           onClick={async () => {
+            closeModal();
+
             if (!productId) return;
 
             const result = await recommendStyling(productId);
@@ -48,8 +50,6 @@ const StylingResearchModal = () => {
             if (result) {
               navigate(`/styling/${result.stylingId}`);
             }
-
-            closeModal();
           }}
         >
           확인
