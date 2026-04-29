@@ -283,6 +283,18 @@ public class StylingServiceImpl implements StylingService {
                 styling, mainProduct, likedIds.contains(mainProduct.getId()), itemDetails);
     }
 
+    @Override
+    public void deleteStyling(Long memberId, Long stylingId) {
+        Styling styling = stylingRepository.findById(stylingId).orElseThrow(
+                () -> new StylingException(StylingErrorCode.NOT_FOUND));
+
+        if (!styling.getMember().getId().equals(memberId)) {
+            throw new StylingException(StylingErrorCode.FORBIDDEN);
+        }
+
+        stylingRepository.delete(styling);
+    }
+
     private Member getMember(Long memberId) {
         return memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));

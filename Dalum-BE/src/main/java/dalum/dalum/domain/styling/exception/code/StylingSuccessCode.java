@@ -19,7 +19,10 @@ public enum StylingSuccessCode implements BaseSuccessCode {
             "스타일링 상세를 성공적으로 조회하였습니다."),
     CREATED(HttpStatus.CREATED,
             "STYLING201_1",
-            "스타일링이 성공적으로 생성되었습니다.");
+            "스타일링이 성공적으로 생성되었습니다."),
+    DELETED(HttpStatus.OK,
+            "STYLING200_4",
+            "스타일링이 성공적으로 삭제되었습니다.");
 
     private final HttpStatus status;
     private final String code;
