@@ -38,6 +38,7 @@ const OnboardingFooter = () => {
             size="onboarding"
             fullWidth
             leftIcon={<NaverIcon className="size-8" />}
+            onClick={() => redirectToSocialLogin('naver')}
           >
             네이버로 시작하기
           </Button>
@@ -46,6 +47,7 @@ const OnboardingFooter = () => {
             size="onboarding"
             fullWidth
             leftIcon={<GoogleIcon className="size-8" />}
+            onClick={() => redirectToSocialLogin('google')}
           >
             구글로 시작하기
           </Button>
