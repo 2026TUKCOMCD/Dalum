@@ -39,7 +39,7 @@ spring:
             client-id: ${KAKAO_REST_API_KEY}
             redirect-uri: "https://api.dalum.store/login/oauth2/code/kakao"
             authorization-grant-type: authorization_code
-            client-authentication-method: client_secret_post
+            client-authentication-method: none
             client-name: Kakao
             scope:
               - profile_nickname
@@ -74,7 +74,7 @@ jwt:
 
 app:
   oauth2:
-    redirect-uri: https://dalum-pi.vercel.app/oauth/callback
+    redirect-uri: https://dalum.store/oauth/callback
 
 ai:
   server:
