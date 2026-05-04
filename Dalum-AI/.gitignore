@@ -50,9 +50,14 @@ vit/preprocess/datasets/*
 # Mac OS
 .DS_Store
 
+# 로컬 전용 스크립트
+*_local.py
+
 *.npy
 
 # runtime logs
 *.log
 vit.log
 vit_*.log
+
+**/test/
