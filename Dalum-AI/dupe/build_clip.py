@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 """
-CLIP 디자인 DB 구축 - 디자인 점수(37개) + 이미지 임베딩(512차원) 동시 저장
+CLIP DB 구축 - 디자인 점수(37개) + 이미지 임베딩(512차원)
+
+metadata.csv 형식: product_id, major_category, middle_category, image_type
+이미지 경로: vit/outputs/processed_images/{image_type}/{major_category}/{middle_category}/{product_id}.webp
 
 출력:
-    embeddings_clip_design.npy   (N, 37)  - 디자인 점수
-    embeddings_clip_image.npy    (N, 512) - 이미지 임베딩 (색상+위치+디테일)
-
-사용법:
-    python build_clip_design.py
-    python build_clip_design.py --batch 256
+    dupe/embeddings_clip_design.npy   (N, 37)
+    dupe/embeddings_clip_image.npy    (N, 512)
 """
 
 import torch
@@ -17,23 +16,19 @@ from transformers import CLIPModel, CLIPProcessor
 from PIL import Image
 import numpy as np
 import pandas as pd
-import os, sys, time, json, glob
+import os, sys
+from concurrent.futures import ProcessPoolExecutor, as_completed
 
-# ==================== 설정 ====================
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+AI_BASE_DIR   = os.path.dirname(BASE_DIR)
 
-BASE_DIR           = os.path.dirname(os.path.abspath(__file__))
-METADATA_PATH      = os.path.join(os.path.expanduser('~'), 'backups', 'embeddings_metadata.csv')
-CLIP_DESIGN_PATH   = os.path.join(BASE_DIR, 'embeddings_clip_design.npy')
-CLIP_IMAGE_PATH    = os.path.join(BASE_DIR, 'embeddings_clip_image.npy')
-CLIP_LABEL_PATH    = os.path.join(BASE_DIR, 'embeddings_clip_design_labels.txt')
-SKIP_LOG_PATH      = os.path.join(BASE_DIR, 'build_clip_design_skip.jsonl')
-LOCAL_IMAGE_DIR    = os.path.expanduser('~/processed/processed')
-GPU_BATCH_SIZE     = 128
-SAVE_EVERY         = 5000
+METADATA_PATH    = os.path.join(AI_BASE_DIR, "vit", "outputs", "vit_output", "metadata.csv")
+PROCESSED_DIR    = os.path.join(AI_BASE_DIR, "vit", "outputs", "processed_images")
+CLIP_DESIGN_PATH = os.path.join(BASE_DIR, "embeddings_clip_design.npy")
+CLIP_IMAGE_PATH  = os.path.join(BASE_DIR, "embeddings_clip_image.npy")
 
-for i, arg in enumerate(sys.argv[1:], 1):
-    if arg == '--batch' and i < len(sys.argv) - 1:
-        GPU_BATCH_SIZE = int(sys.argv[i + 1])
+NUM_WORKERS    = 6
+GPU_BATCH_SIZE = 64
 
 # ==================== 디자인 프롬프트 (37개) ====================
 
@@ -79,176 +74,169 @@ DESIGN_PROMPTS = {
 
 DESIGN_NAMES = list(DESIGN_PROMPTS.keys())
 DESIGN_TEXTS = list(DESIGN_PROMPTS.values())
-N_DESIGNS    = len(DESIGN_NAMES)
 
-# ==================== 초기화 ====================
 
-print(f"\n{'='*55}")
-print(f"  🚀 CLIP 디자인 DB 구축 (디자인 + 이미지 임베딩)")
-print(f"{'='*55}")
-print(f"  이미지 경로  : {LOCAL_IMAGE_DIR}")
-print(f"  GPU 배치     : {GPU_BATCH_SIZE}")
-print(f"  디자인 항목  : {N_DESIGNS}개")
-print(f"  출력 1       : {CLIP_DESIGN_PATH}  (N, {N_DESIGNS})")
-print(f"  출력 2       : {CLIP_IMAGE_PATH}  (N, 512)")
-print(f"{'='*55}\n")
+def build_image_path(row):
+    return os.path.join(
+        PROCESSED_DIR,
+        str(row["image_type"]),
+        str(row["major_category"]),
+        str(row["middle_category"]),
+        f"{int(row['product_id'])}.webp",
+    )
 
-print("0️⃣  로컬 이미지 목록 로드...")
-png_files = set(os.path.basename(f) for f in glob.glob(f"{LOCAL_IMAGE_DIR}/*.png"))
-print(f"   ✅ {len(png_files):,}개\n")
-if not png_files:
-    print(f"❌ 이미지 없음: {LOCAL_IMAGE_DIR}")
-    sys.exit(1)
 
-print("1️⃣  CLIP 모델 로드...")
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-print(f"   디바이스: {device}")
-clip_model     = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
-clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
-clip_model.eval()
-with torch.no_grad():
-    text_inputs      = clip_processor(text=DESIGN_TEXTS, return_tensors="pt", padding=True).to(device)
-    cached_text_embs = F.normalize(clip_model.get_text_features(**text_inputs), dim=-1)
-print(f"   ✅ 완료\n")
+# ==================== 워커 함수 (프로세스당 CLIP 1개 로드) ====================
 
-print("2️⃣  메타데이터 로드...")
-metadata = pd.read_csv(METADATA_PATH)
-n_total  = len(metadata)
-print(f"   ✅ {n_total:,}개\n")
+def process_chunk(args):
+    """
+    chunk_id, rows_list(dict list) → (chunk_id, image_embs, design_embs)
+    rows_list: [{"idx": i, "image_type":..., ...}, ...]
+    """
+    chunk_id, rows_list, processed_dir, design_texts, design_names = args
 
-# ==================== 이어하기 ====================
+    device = "cpu"  # 멀티프로세스는 CPU 사용
+    clip_model     = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
+    clip_processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
+    clip_model.eval()
 
-# 디자인 점수
-if os.path.exists(CLIP_DESIGN_PATH):
-    existing_design = np.load(CLIP_DESIGN_PATH)
-    if existing_design.shape[1] != N_DESIGNS:
-        print(f"⚠️  디자인 차원 불일치 ({existing_design.shape[1]} → {N_DESIGNS}) → 처음부터\n")
-        start_idx      = 0
-        all_design     = []
-        all_image_embs = []
-    else:
-        start_idx      = len(existing_design)
-        all_design     = list(existing_design)
-        # 이미지 임베딩도 이어하기
-        if os.path.exists(CLIP_IMAGE_PATH):
-            existing_image = np.load(CLIP_IMAGE_PATH)
-            all_image_embs = list(existing_image)
-        else:
-            all_image_embs = []
-            start_idx = 0  # 이미지 임베딩 없으면 처음부터
-        print(f"⏩ 이어하기: {start_idx:,}개 완료, {n_total-start_idx:,}개 남음\n")
-else:
-    start_idx      = 0
-    all_design     = []
-    all_image_embs = []
-    print(f"🆕 처음부터: {n_total:,}개\n")
-
-# ==================== 추론 루프 ====================
-
-print(f"3️⃣  추론 시작...\n")
-
-skip_log   = open(SKIP_LOG_PATH, 'a', buffering=1)
-skip_count = 0
-t_start    = time.time()
-batch_imgs = []
-batch_idxs = []
-
-def flush_batch():
-    if not batch_imgs:
-        return
-    inputs = clip_processor(images=batch_imgs, return_tensors="pt", padding=True).to(device)
+    # 텍스트 임베딩 캐싱
     with torch.no_grad():
-        # 이미지 임베딩 (512차원, L2 정규화)
-        img_embs = F.normalize(clip_model.get_image_features(**inputs), dim=-1)
-        # 디자인 점수
-        logits   = (img_embs @ cached_text_embs.T) * 100
-        probs    = F.softmax(logits, dim=-1)
+        text_inputs = clip_processor(text=design_texts, return_tensors="pt", padding=True).to(device)
+        text_out    = clip_model.get_text_features(**text_inputs)
+        if not isinstance(text_out, torch.Tensor):
+            text_out = text_out.pooler_output
+        cached_text_embs = F.normalize(text_out, dim=-1)
 
-    img_embs_np = img_embs.cpu().numpy().astype(np.float32)
-    probs_np    = probs.cpu().numpy().astype(np.float32)
+    n_design  = len(design_names)
+    n_total   = len(rows_list)
+    results   = {}  # idx → (image_emb, design_emb)
+    processed = 0
 
-    for ie, pr in zip(img_embs_np, probs_np):
-        all_image_embs.append(ie)
-        all_design.append(pr)
+    batch_imgs = []
+    batch_idxs = []
 
-    batch_imgs.clear()
-    batch_idxs.clear()
+    def flush():
+        if not batch_imgs:
+            return
+        inputs = clip_processor(images=batch_imgs, return_tensors="pt", padding=True).to(device)
+        with torch.no_grad():
+            img_feats = clip_model.get_image_features(**inputs)
+            if not isinstance(img_feats, torch.Tensor):
+                img_feats = img_feats.pooler_output
+            img_embs = F.normalize(img_feats, dim=-1)
+            logits   = (img_embs @ cached_text_embs.T) * 100
+            probs    = F.softmax(logits, dim=-1)
 
-for i in range(start_idx, n_total):
-    fn         = os.path.basename(metadata.iloc[i]['saved_path'])
-    local_path = os.path.join(LOCAL_IMAGE_DIR, fn)
+        for bidx, (e, p) in zip(batch_idxs, zip(img_embs.cpu().numpy(), probs.cpu().numpy())):
+            results[bidx] = (e.astype("float32"), p.astype("float32"))
 
-    if fn not in png_files:
-        skip_count += 1
-        skip_log.write(json.dumps({
-            'db_idx': int(i), 'filename': fn,
-            'reason': 'file_not_found',
-            'skipped_at': time.strftime('%Y-%m-%d %H:%M:%S'),
-        }, ensure_ascii=False) + '\n')
-        flush_batch()
-        uniform = np.ones(N_DESIGNS, dtype=np.float32) / N_DESIGNS
-        all_design.append(uniform)
-        all_image_embs.append(np.zeros(512, dtype=np.float32))
-        continue
+        batch_imgs.clear()
+        batch_idxs.clear()
 
-    try:
-        img = Image.open(local_path).convert('RGB')
-        batch_imgs.append(img)
-        batch_idxs.append(i)
-    except Exception as e:
-        skip_count += 1
-        skip_log.write(json.dumps({
-            'db_idx': int(i), 'filename': fn,
-            'reason': str(e)[:200],
-            'skipped_at': time.strftime('%Y-%m-%d %H:%M:%S'),
-        }, ensure_ascii=False) + '\n')
-        flush_batch()
-        uniform = np.ones(N_DESIGNS, dtype=np.float32) / N_DESIGNS
-        all_design.append(uniform)
-        all_image_embs.append(np.zeros(512, dtype=np.float32))
-        continue
+    for row in rows_list:
+        orig_idx = row["orig_idx"]
+        img_path = os.path.join(
+            processed_dir,
+            str(row["image_type"]),
+            str(row["major_category"]),
+            str(row["middle_category"]),
+            f"{int(row['product_id'])}.webp",
+        )
 
-    if len(batch_imgs) >= GPU_BATCH_SIZE:
-        flush_batch()
+        if not os.path.exists(img_path):
+            results[orig_idx] = (
+                np.zeros(512, dtype="float32"),
+                np.ones(n_design, dtype="float32") / n_design,
+            )
+            continue
 
-    done = i - start_idx + 1
-    if done % 1000 == 0:
-        elapsed = time.time() - t_start
-        remain  = (n_total - start_idx - done) * elapsed / done
-        h, m_   = divmod(int(remain), 3600)
-        m_, s   = divmod(m_, 60)
-        speed   = done / elapsed * 60
-        print(f"   {i+1:>7,}/{n_total:,} | "
-              f"경과 {elapsed/60:.1f}분 | "
-              f"남은 {h}h {m_}m {s}s | "
-              f"속도 {speed:.0f}장/분 | "
-              f"스킵 {skip_count}개")
+        try:
+            img = Image.open(img_path).convert("RGB")
+            batch_imgs.append(img)
+            batch_idxs.append(orig_idx)
+        except Exception:
+            results[orig_idx] = (
+                np.zeros(512, dtype="float32"),
+                np.ones(n_design, dtype="float32") / n_design,
+            )
+            continue
 
-    if (i + 1) % SAVE_EVERY == 0:
-        flush_batch()
-        np.save(CLIP_DESIGN_PATH, np.array(all_design,     dtype=np.float32))
-        np.save(CLIP_IMAGE_PATH,  np.array(all_image_embs, dtype=np.float32))
+        if len(batch_imgs) >= GPU_BATCH_SIZE:
+            flush()
 
-flush_batch()
-skip_log.close()
+        processed += 1
+        if processed % 1000 == 0:
+            print(f"  [워커 {chunk_id}] {processed}/{n_total} 완료...")
 
-# ==================== 저장 ====================
+    flush()
 
-design_result = np.array(all_design,     dtype=np.float32)
-image_result  = np.array(all_image_embs, dtype=np.float32)
+    print(f"  [워커 {chunk_id}] 완료 ({n_total}개)")
+    return chunk_id, results
 
-np.save(CLIP_DESIGN_PATH, design_result)
-np.save(CLIP_IMAGE_PATH,  image_result)
 
-with open(CLIP_LABEL_PATH, 'w') as f:
-    f.write('\n'.join(DESIGN_NAMES))
+# ==================== 메인 ====================
 
-elapsed = time.time() - t_start
-print(f"\n{'='*55}")
-print(f"  ✅ 완료!")
-print(f"     디자인  : {design_result.shape}  → {CLIP_DESIGN_PATH}")
-print(f"     이미지  : {image_result.shape}   → {CLIP_IMAGE_PATH}")
-print(f"     소요    : {elapsed/60:.1f}분  ({elapsed/3600:.2f}시간)")
-print(f"     스킵    : {skip_count}개")
-print(f"{'='*55}")
-print(f"\n→ python rebuild_fused.py  로 DB 재구축하세요\n")
+def build_clip_database():
+    if not os.path.exists(METADATA_PATH):
+        print(f"metadata.csv 없음: {METADATA_PATH}")
+        sys.exit(1)
+
+    metadata = pd.read_csv(METADATA_PATH)
+    n_total  = len(metadata)
+    print(f"총 {n_total}개 / 워커 {NUM_WORKERS}개로 병렬 처리 시작...\n")
+
+    # metadata를 NUM_WORKERS 청크로 분할
+    rows_list = []
+    for i, row in metadata.iterrows():
+        d = row.to_dict()
+        d["orig_idx"] = i
+        rows_list.append(d)
+
+    chunk_size = (n_total + NUM_WORKERS - 1) // NUM_WORKERS
+    chunks = [rows_list[i:i + chunk_size] for i in range(0, n_total, chunk_size)]
+
+    args_list = [
+        (cid, chunk, PROCESSED_DIR, DESIGN_TEXTS, DESIGN_NAMES)
+        for cid, chunk in enumerate(chunks)
+    ]
+
+    # 결과 수집
+    all_results = {}  # orig_idx → (image_emb, design_emb)
+
+    with ProcessPoolExecutor(max_workers=NUM_WORKERS) as executor:
+        futures = {executor.submit(process_chunk, args): args[0] for args in args_list}
+        for future in as_completed(futures):
+            chunk_id = futures[future]
+            try:
+                _, chunk_results = future.result()
+                all_results.update(chunk_results)
+            except Exception as e:
+                print(f"  [워커 {chunk_id}] 오류: {e}")
+
+    # orig_idx 순서대로 정렬하여 배열 구성
+    image_embs  = []
+    design_embs = []
+    for i in range(n_total):
+        if i in all_results:
+            ie, de = all_results[i]
+        else:
+            ie = np.zeros(512, dtype="float32")
+            de = np.ones(len(DESIGN_NAMES), dtype="float32") / len(DESIGN_NAMES)
+        image_embs.append(ie)
+        design_embs.append(de)
+
+    image_result  = np.array(image_embs,  dtype="float32")
+    design_result = np.array(design_embs, dtype="float32")
+
+    np.save(CLIP_IMAGE_PATH,  image_result)
+    np.save(CLIP_DESIGN_PATH, design_result)
+
+    print(f"\n완료!")
+    print(f"  embeddings_clip_image.npy  : {image_result.shape}")
+    print(f"  embeddings_clip_design.npy : {design_result.shape}")
+
+
+if __name__ == "__main__":
+    sys.path.insert(0, AI_BASE_DIR)
+    build_clip_database()

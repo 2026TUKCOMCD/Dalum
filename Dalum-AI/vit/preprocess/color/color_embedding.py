@@ -16,9 +16,10 @@ def hex_to_lab(hex_color):
 def normalize_lab(lab):
     L, A, B = lab
 
-    L = L / 100.0
-    A = (A + 128) / 255.0
-    B = (B + 128) / 255.0
+    # OpenCV uint8 LAB: L in [0,255], A in [0,255] (a+128), B in [0,255] (b+128)
+    L = L / 255.0
+    A = A / 255.0
+    B = B / 255.0
 
     return [L, A, B]
 
@@ -29,10 +30,6 @@ def build_color_embedding(dominant_colors):
     for hex_color, ratio in dominant_colors:
         lab = hex_to_lab(hex_color)
         lab = normalize_lab(lab)
-
-        # ratio 반영 (가중 평균 효과)
-        weighted = [c * ratio for c in lab]
-
-        embedding.extend(weighted)
+        embedding.extend(lab)
 
     return embedding

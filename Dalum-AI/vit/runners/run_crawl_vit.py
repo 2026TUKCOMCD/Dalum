@@ -23,10 +23,22 @@ from vit.preprocess.material.material_postprocessor import MaterialPostProcessor
 from vit.preprocess.utils.image_enhancer import enhance_for_material
 from recommender.style_classifier import StyleClassifier
 from vit.runners.run_db_update_vit import get_db_connection, update_style_color_material
+from dupe.dupe import detect_major_category
 
 load_dotenv()
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 SKIP_S3 = True
+
+# 대분류 → model_processor에 넘길 기본 중분류 (DB 카테고리 없을 때 폴백용)
+_MAJOR_TO_DEFAULT_MIDDLE = {
+    "TOP"   : "기타 상의",
+    "OUTER" : "기타 아우터",
+    "BOTTOM": "기타 팬츠",
+    "DRESS" : "원피스",
+    "HAT"   : "기타 모자",
+    "BAG"   : "",
+    "SHOES" : "",
+}
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -115,6 +127,10 @@ def run():
             if image is None:
                 continue
 
+            if not major_category:
+                pil_raw = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+                major_category = detect_major_category(pil_raw)
+
             is_model = step1.is_model_candidate(image)
             image_type = "Model" if is_model else "Product"
 
@@ -143,9 +159,11 @@ def run():
                 except Exception as s3_err:
                     print(f"[S3 SKIP] original upload failed: {s3_err}")
 
-            # 전처리
+            # 전처리: small_category 있으면 우선, 없으면 대분류 기반 기본값
+            crop_category = category_name or _MAJOR_TO_DEFAULT_MIDDLE.get(major_category, "")
+
             if is_model:
-                rgba = model_processor.process(image, category_name)
+                rgba = model_processor.process(image, crop_category)
             else:
                 rgba = product_processor.process(image)
 
