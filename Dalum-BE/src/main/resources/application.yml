@@ -18,3 +18,7 @@ spring:
         static: ${AWS_REGION}
       s3:
         bucket: ${S3_BUCKET_NAME}
+
+  ai:
+  server:
+    url: ${AI_SERVER_URL:http://172.31.0.54:8000}

@@ -2,7 +2,6 @@ import GoogleIcon from '../../assets/icons/GoogleIcon';
 import KakaoIcon from '../../assets/icons/KakaoIcon';
 import Logo from '../../assets/icons/Logo';
 import MiniLogo from '../../assets/icons/MiniLogo';
-import NaverIcon from '../../assets/icons/NaverIcon';
 import { redirectToSocialLogin } from '../../services/auth/socialLogin';
 import { Button } from '../commons/Button';
 
@@ -32,15 +31,6 @@ const OnboardingFooter = () => {
             onClick={() => redirectToSocialLogin('kakao')}
           >
             카카오로 시작하기
-          </Button>
-          <Button
-            variant="onboarding_naver"
-            size="onboarding"
-            fullWidth
-            leftIcon={<NaverIcon className="size-8" />}
-            onClick={() => redirectToSocialLogin('naver')}
-          >
-            네이버로 시작하기
           </Button>
           <Button
             variant="onboarding_google"
