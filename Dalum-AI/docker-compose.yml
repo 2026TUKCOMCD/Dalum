@@ -9,6 +9,7 @@ services:
     volumes:
       - ~/Dalum/Dalum-AI/dupe:/app/dupe
       - ~/Dalum/Dalum-AI/app:/app/app
+      - ~/Dalum/Dalum-AI/vit/outputs:/app/vit/outputs
       - ~/.cache/huggingface:/root/.cache/huggingface
     restart: always
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 1
