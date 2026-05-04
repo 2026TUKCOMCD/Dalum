@@ -27,9 +27,10 @@ warnings.filterwarnings('ignore')  # KMeans 수렴 경고 무시
 # ==================== 설정 ====================
 
 BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
-METADATA_PATH   = os.path.join(os.path.expanduser('~'), 'backups', 'embeddings_metadata.csv')
+AI_BASE_DIR     = os.path.dirname(BASE_DIR)
+METADATA_PATH   = os.path.join(AI_BASE_DIR, 'vit', 'outputs', 'vit_output', 'metadata.csv')
 OUTPUT_PATH     = os.path.join(BASE_DIR, 'embeddings_lab_spatial.npy')
-LOCAL_IMAGE_DIR = os.path.expanduser('~/processed/processed')
+LOCAL_IMAGE_DIR = os.path.join(AI_BASE_DIR, 'vit', 'outputs', 'processed_images')
 SAVE_EVERY      = 10000
 
 GRID          = 3
@@ -58,11 +59,11 @@ print(f"{'='*55}\n")
 
 # ==================== 추출 함수 ====================
 
-def extract_lab_spatial(fn):
-    if fn == '__missing__':
+def extract_lab_spatial(full_path):
+    if full_path == '__missing__':
         return np.zeros(TOTAL_DIM, dtype=np.float32)
 
-    local_path = os.path.join(LOCAL_IMAGE_DIR, fn)
+    local_path = full_path
     try:
         img = cv2.imread(local_path)
         if img is None:
@@ -146,9 +147,6 @@ if __name__ == '__main__':
     n_total  = len(metadata)
     print(f"   ✅ {n_total:,}개\n")
 
-    png_files = set(os.listdir(LOCAL_IMAGE_DIR))
-    print(f"   로컬 이미지: {len(png_files):,}개\n")
-
     # 이어하기
     if os.path.exists(OUTPUT_PATH):
         existing  = np.load(OUTPUT_PATH)
@@ -167,8 +165,15 @@ if __name__ == '__main__':
 
     filenames = []
     for i in range(start_idx, n_total):
-        fn = os.path.basename(metadata.iloc[i]['saved_path'])
-        filenames.append(fn if fn in png_files else '__missing__')
+        row = metadata.iloc[i]
+        img_path = os.path.join(
+            LOCAL_IMAGE_DIR,
+            str(row['image_type']),
+            str(row['major_category']),
+            str(row['middle_category']),
+            f"{int(row['product_id'])}.webp",
+        )
+        filenames.append(img_path if os.path.exists(img_path) else '__missing__')
 
     print(f"2️⃣  KMeans LAB 공간 분할 추출 ({args.workers}코어)...\n")
     t_start = time.time()
