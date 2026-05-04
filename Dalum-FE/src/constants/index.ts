@@ -74,3 +74,9 @@ export const CATEGORY_LABEL_MAP: Record<string, string> = {
   BAG: '가방',
   DRESS: '한벌옷',
 };
+
+export const USER_TYPE_MAP: Record<string, string> = {
+  KAKAO: '카카오',
+  GOOGLE: '구글',
+  TEST: '테스트',
+};
