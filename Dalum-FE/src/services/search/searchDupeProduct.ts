@@ -12,7 +12,7 @@ const searchDupeProducts = async (
   const formData = toFormData(req);
 
   const { data } = await authApi.post<SearchDupeProductsResponse>(
-    '/api/v1/dupe/search',
+    '/api/v1/search/dupe',
     formData
   );
 
