@@ -9,10 +9,12 @@ import StylingPage from './pages/StylingPage';
 import OnboardingPage from './pages/OnboardingPage';
 import OnboardingLayout from './layouts/OnboardingLayout';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
+import ScrollToTop from './components/commons/ScrollToTop';
 
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <ModalPage />
       <Routes>
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />

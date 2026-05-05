@@ -46,7 +46,10 @@ const MainLayout = () => {
 
       <div className="flex flex-1 min-h-0 w-full min-w-5xl justify-center overflow-hidden">
         {/* 메인 콘텐츠 영역 + 사이드 패널 */}
-        <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-hide">
+        <main
+          id="page-scroll-container"
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain scrollbar-hide"
+        >
           <Outlet />
         </main>
       </div>
