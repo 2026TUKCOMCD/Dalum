@@ -24,7 +24,7 @@ const OnboardingFooter = () => {
         </span>
         <div className="w-full flex justify-center items-center gap-3">
           <Button
-            variant="onboarding_kakao"
+            variant="kakao"
             size="onboarding"
             fullWidth
             leftIcon={<KakaoIcon className="size-8" />}
@@ -33,7 +33,7 @@ const OnboardingFooter = () => {
             카카오로 시작하기
           </Button>
           <Button
-            variant="onboarding_google"
+            variant="google"
             size="onboarding"
             fullWidth
             leftIcon={<GoogleIcon className="size-8" />}

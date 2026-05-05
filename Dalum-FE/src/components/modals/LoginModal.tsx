@@ -1,9 +1,8 @@
-import useBaseModal from "../../stores/modals/baseModal";
-import { Button } from "../commons/Button";
-import Logo from "../../assets/icons/Logo";
-import KakaoIcon from "../../assets/icons/KakaoIcon";
-import GoogleIcon from "../../assets/icons/GoogleIcon";
-import NaverIcon from "../../assets/icons/NaverIcon";
+import useBaseModal from '../../stores/modals/baseModal';
+import { Button } from '../commons/Button';
+import Logo from '../../assets/icons/Logo';
+import KakaoIcon from '../../assets/icons/KakaoIcon';
+import GoogleIcon from '../../assets/icons/GoogleIcon';
 
 const LoginModal = () => {
   const { closeModal } = useBaseModal();
@@ -21,7 +20,7 @@ const LoginModal = () => {
       {/* 버튼 */}
       <div className="w-full flex flex-col gap-3 py-2">
         <Button
-          variant="social_kakao"
+          variant="kakao"
           size="social"
           fullWidth
           leftIcon={<KakaoIcon className="size-10.5" />}
@@ -30,16 +29,7 @@ const LoginModal = () => {
           카카오 회원가입 / 로그인
         </Button>
         <Button
-          variant="social_naver"
-          size="social"
-          fullWidth
-          leftIcon={<NaverIcon className="size-10.5" />}
-          onClick={closeModal}
-        >
-          네이버 회원가입 / 로그인
-        </Button>
-        <Button
-          variant="social_google"
+          variant="google"
           size="social"
           fullWidth
           leftIcon={<GoogleIcon className="size-10.5" />}

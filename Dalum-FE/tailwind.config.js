@@ -7,6 +7,7 @@ export default {
       colors: {
         primary: {
           900: '#1E3A8A',
+          '900/80': '#1E3A8A80',
           800: '#4B61A1',
           700: '#8F9DC5',
           600: '#D2D8E8',
@@ -27,8 +28,10 @@ export default {
         button: {
           like: '#EA4335',
           kakao: '#FAE100',
+          kakao_hover: '#FAE10090',
           naver: '#03C75A',
           google: '#F2F2F2',
+          google_hover: '#F2F2F290',
         },
         screen: {
           default: '#FCFDFF',
