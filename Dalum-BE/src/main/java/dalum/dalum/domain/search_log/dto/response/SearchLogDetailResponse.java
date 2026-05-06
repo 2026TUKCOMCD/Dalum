@@ -1,6 +1,6 @@
 package dalum.dalum.domain.search_log.dto.response;
 
-import dalum.dalum.domain.product.dto.response.ProductDto;
+import dalum.dalum.domain.dupe_product.dto.response.DupeProductDto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 
@@ -26,7 +26,7 @@ public record SearchLogDetailResponse(
         SearchConditionDto conditions,
 
         @Schema(description = "검색 결과 상품 리스트")
-        List<ProductDto> results
+        List<DupeProductDto> results
 
 ) {
 }
