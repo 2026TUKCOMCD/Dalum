@@ -89,18 +89,18 @@ const DupeCard = ({ item }: DupeCardProps) => {
             </span>
           </Button>
           <Button
-            variant={isLiked ? 'active_primary' : 'primary'}
-            size="card"
-            leftIcon={<LikeIcon className="size-3" />}
-            onClick={handleClickLike}
-            disabled={isLikeLoading}
-          />
-          <Button
             variant="primary"
             size="card"
             leftIcon={<LinkIcon className="size-3" />}
             onClick={handleClickPurchase}
             disabled={!item.purchaseUrl}
+          />
+          <Button
+            variant={isLiked ? 'active_primary' : 'primary'}
+            size="card"
+            leftIcon={<LikeIcon className="size-3" />}
+            onClick={handleClickLike}
+            disabled={isLikeLoading}
           />
         </div>
       </div>

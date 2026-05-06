@@ -35,7 +35,10 @@ public class S3Service {
         // 3. 업로드 (InputStream)
         s3Template.upload(bucketName, s3Key, file.getInputStream(), metadata);
 
-        // URL 반환
+        return s3Key;
+    }
+
+    public String getFileUrl(String s3Key) throws IOException {
         return s3Template.download(bucketName, s3Key).getURL().toString();
     }
 

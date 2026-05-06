@@ -2,15 +2,10 @@ package dalum.dalum.global.ai;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.MediaType;
-import org.springframework.http.client.MultipartBodyBuilder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -25,17 +20,13 @@ public class AiService {
     private String aiServerUrl;
 
     @SuppressWarnings("unchecked")
-    public List<Long> getRecommendations(MultipartFile file, int topK) throws IOException {
-        MultipartBodyBuilder builder = new MultipartBodyBuilder();
-        builder.part("file", new ByteArrayResource(file.getBytes()) {
-            @Override public String getFilename() { return file.getOriginalFilename(); }
-        }).contentType(MediaType.parseMediaType(
-                file.getContentType() != null ? file.getContentType() : "image/jpeg"));
+    public List<AiDupeResult> getRecommendations(String s3Key, int topK) {
+        Map<String, Object> requestBody = Map.of("s3_key", s3Key, "top_k", topK);
 
         Map<String, Object> response = webClient.post()
-                .uri(aiServerUrl + "/api/v1/dupe/search?top_k=" + topK)
-                .contentType(MediaType.MULTIPART_FORM_DATA)
-                .body(BodyInserters.fromMultipartData(builder.build()))
+                .uri(aiServerUrl + "/api/v1/dupe/dupe-search")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)
                 .timeout(Duration.ofSeconds(180))
@@ -48,7 +39,18 @@ public class AiService {
         if (results == null) return List.of();
 
         return results.stream()
-                .map(item -> Long.valueOf(item.get("product_id").toString()))
+                .map(item -> new AiDupeResult(
+                        Long.valueOf(item.get("product_id").toString()),
+                        toDouble(item.get("color_score")),
+                        toDouble(item.get("material_score")),
+                        toDouble(item.get("design_score")),
+                        toDouble(item.get("total_score"))
+                ))
                 .toList();
+    }
+
+    private Double toDouble(Object value) {
+        if (value == null) return null;
+        return ((Number) value).doubleValue();
     }
 }

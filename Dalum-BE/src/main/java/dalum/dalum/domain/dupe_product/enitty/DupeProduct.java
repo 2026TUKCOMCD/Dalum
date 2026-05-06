@@ -35,4 +35,13 @@ public class DupeProduct extends BaseEntity {
     @Column(name = "similarity_score", nullable = false)
     private Double similarityScore;
 
+    @Column(name = "color_score")
+    private Double colorScore;
+
+    @Column(name = "material_score")
+    private Double materialScore;
+
+    @Column(name = "design_score")
+    private Double designScore;
+
 }
