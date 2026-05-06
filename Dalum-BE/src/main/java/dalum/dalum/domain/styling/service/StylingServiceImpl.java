@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
+
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
@@ -127,7 +128,7 @@ public class StylingServiceImpl implements StylingService {
 
         List<ProductCandidateProjection> candidates = candidateCategories.stream()
                 .flatMap(cat -> productRepository.findCandidates(
-                        List.of(cat), targetProductId, compatibleStyles, PageRequest.of(0, 500)).stream())
+                        List.of(toCategoryString(cat)), targetProductId, compatibleStyles, 500).stream())
                 .toList();
 
         long memAfterQuery = rt.totalMemory() - rt.freeMemory();
