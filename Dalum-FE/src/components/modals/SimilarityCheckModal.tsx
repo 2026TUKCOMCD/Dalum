@@ -29,7 +29,7 @@ const SimilarityCheckModal = () => {
   const totalScore = Number((item.totalScore * 100).toFixed(1));
 
   return (
-    <div className="w-175 flex flex-col gap-7.5 p-7.5 items-center justify-center bg-screen-default rounded-[14px]">
+    <div className="w-fit flex flex-col gap-7.5 p-7.5 items-center justify-center bg-screen-default rounded-[14px]">
       {/* 닫기 버튼 */}
       <div className="w-full px-1 flex items-center justify-end">
         <CloseIcon
@@ -40,9 +40,9 @@ const SimilarityCheckModal = () => {
         />
       </div>
       {/* 컨텐츠 */}
-      <div className="w-full flex items-center justify-between">
+      <div className="w-full flex items-center justify-between gap-10">
         {/* 차트 영역 */}
-        <div className="w-fit h-fit">
+        <div className="w-67.5 h-67.5">
           <SimilarityChart data={similarityData} />
         </div>
         {/* 닮음지수 영역 */}
