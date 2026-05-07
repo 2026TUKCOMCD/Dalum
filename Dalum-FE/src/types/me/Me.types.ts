@@ -78,16 +78,19 @@ export type DetailDupeSearchList = {
 };
 
 export type DetailDupeSearchItem = {
+  productId: number;
+  name: string;
   brand: string;
   category: string;
   discountRate: number;
-  imageUrl: string;
-  isLiked: boolean;
-  name: string;
   price: number;
-  productId: number;
+  imageUrl: string;
   purchaseUrl: string | null;
-  similarity: string | null;
+  isLiked: boolean;
+  colorScore: number;
+  materialScore: number;
+  designScore: number;
+  totalScore: number;
 };
 
 export type DeleteHistoryResponse = {
