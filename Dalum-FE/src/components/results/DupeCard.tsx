@@ -80,7 +80,9 @@ const DupeCard = ({ item }: DupeCardProps) => {
             variant="primary"
             size="card"
             className="group w-fit px-4 gap-2"
-            onClick={() => openModal('similarityCheckModal')}
+            onClick={() =>
+              openModal('similarityCheckModal', { props: { item } })
+            }
           >
             <ChartIcon className="size-3" />
 
