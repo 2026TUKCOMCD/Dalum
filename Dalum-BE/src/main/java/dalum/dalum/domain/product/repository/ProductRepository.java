@@ -13,7 +13,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     @Query(value = "SELECT p.product_id AS id, p.large_category AS largeCategory, p.style AS style, p.material_vector AS materialVector, p.dominant_colors AS dominantColors " +
             "FROM product p " +
-            "WHERE p.large_category IN :categories AND p.id != :excludeId AND p.material_vector IS NOT NULL " +
+            "WHERE p.large_category IN :categories AND p.product_id != :excludeId AND p.material_vector IS NOT NULL " +
             "AND (p.style IS NULL OR p.style IN :compatibleStyles) " +
             "ORDER BY RANDOM() LIMIT :limit",
             nativeQuery = true)
