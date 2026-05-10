@@ -27,9 +27,14 @@ export type DupeProductsItem = {
   productId: number;
   name: string;
   brand: string;
+  category: string;
+  discountRate: number;
   price: number;
   imageUrl: string;
-  purchaseLink: string;
+  purchaseUrl: string;
   isLiked: boolean;
-  similarity: number;
+  colorScore: number;
+  materialScore: number;
+  designScore: number;
+  totalScore: number;
 };
