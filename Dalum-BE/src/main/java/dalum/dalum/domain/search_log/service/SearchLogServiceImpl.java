@@ -26,7 +26,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class SearchLogServiceImpl implements SearchLogService {
 
     private final SearchLogRepository searchLogRepository;
@@ -58,6 +58,10 @@ public class SearchLogServiceImpl implements SearchLogService {
         SearchLog searchLog = searchLogRepository.findById(searchLogId).orElseThrow(
                 () -> new SearchLogException(SearchLogErrorCode.NOT_FOUND)
         );
+
+        if (!searchLog.getMember().getId().equals(memberId)) {
+            throw new SearchLogException(SearchLogErrorCode.FORBIDDEN);
+        }
 
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));
