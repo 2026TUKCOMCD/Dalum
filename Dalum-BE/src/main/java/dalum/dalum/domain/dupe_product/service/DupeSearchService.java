@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -99,10 +100,11 @@ public class DupeSearchService {
 
     private void saveDupeProducts(List<AiDupeResult> aiResults, Map<Long, Product> productMap, SearchLog searchLog) {
         int rank = 1;
+        List<DupeProduct> dupeProducts = new ArrayList<>();
         for (AiDupeResult result : aiResults) {
             Product product = productMap.get(result.productId());
             if (product == null) continue;
-            DupeProduct dupeProduct = DupeProduct.builder()
+            dupeProducts.add(DupeProduct.builder()
                     .searchLog(searchLog)
                     .product(product)
                     .rank(rank++)
@@ -110,8 +112,8 @@ public class DupeSearchService {
                     .colorScore(result.colorScore())
                     .materialScore(result.materialScore())
                     .designScore(result.designScore())
-                    .build();
-            dupeProductRepository.save(dupeProduct);
+                    .build());
         }
+        dupeProductRepository.saveAll(dupeProducts);
     }
 }
