@@ -59,6 +59,10 @@ public class SearchLogServiceImpl implements SearchLogService {
                 () -> new SearchLogException(SearchLogErrorCode.NOT_FOUND)
         );
 
+        if (!searchLog.getMember().getId().equals(memberId)) {
+            throw new SearchLogException(SearchLogErrorCode.FORBIDDEN);
+        }
+
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));
 

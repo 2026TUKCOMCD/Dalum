@@ -42,7 +42,7 @@ public class AuthService {
 
         Long memberId = jwtTokenProvider.getMemberIdFromToken(refreshToken);
 
-        String storedRefreshToken = redisUtil.getData("RT :" + memberId);
+        String storedRefreshToken = redisUtil.getData("RT: " + memberId);
         if (storedRefreshToken == null) {
             throw new AuthException(AuthErrorCode.EXPIRED_TOKEN);
         }
@@ -71,8 +71,8 @@ public class AuthService {
         long memberId = Long.parseLong(jwtTokenProvider.getAuthentication(accessToken).getName());
 
         // Redis에서 해당 회원의 refresh token 삭제
-        if (redisUtil.getData("RT :" + memberId) != null) {
-            redisUtil.deleteData("RT :" + memberId);
+        if (redisUtil.getData("RT: " + memberId) != null) {
+            redisUtil.deleteData("RT: " + memberId);
         }
 
         // Access Token의 남은 유효시간 계산
