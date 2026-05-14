@@ -96,10 +96,7 @@ public class AuthService {
 
         List<SearchLog> memberLogs = searchLogRepository.findByMemberId(memberId);
 
-        for (SearchLog log : memberLogs) {
-            dupeProductRepository.deleteBySearchLog(log);
-        }
-
+        dupeProductRepository.deleteAllBySearchLogIn(memberLogs);
         searchLogRepository.deleteAll(memberLogs);
         memberRepository.deleteById(memberId);
     }
