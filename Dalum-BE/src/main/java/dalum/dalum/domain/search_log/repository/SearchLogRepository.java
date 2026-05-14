@@ -1,6 +1,5 @@
 package dalum.dalum.domain.search_log.repository;
 
-import dalum.dalum.domain.dupe_product.enitty.DupeProduct;
 import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.search_log.entity.SearchLog;
 import org.springframework.data.domain.Page;

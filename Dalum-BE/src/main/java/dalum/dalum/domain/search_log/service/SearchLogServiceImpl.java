@@ -26,7 +26,7 @@ import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
+@Transactional(readOnly = true)
 public class SearchLogServiceImpl implements SearchLogService {
 
     private final SearchLogRepository searchLogRepository;

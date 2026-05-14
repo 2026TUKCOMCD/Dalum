@@ -24,7 +24,7 @@ public class Member extends BaseEntity {
     private String nickname;
 
     @Enumerated(EnumType.STRING)
-    SocialType socialType;
+    private SocialType socialType;
 
     @Column(name = "social_id", nullable = false)
     private String socialId;
