@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 import cv2
 from PIL import Image
 from transformers import ViTModel, ViTImageProcessor
+from sklearn.cluster import KMeans
 
 from vit.utils.s3_uploader import (
     download_image_from_s3,
@@ -40,15 +41,18 @@ _MAJOR_TO_DEFAULT_MIDDLE = {
     "SHOES" : "",
 }
 
-# 영문 중분류(metadata) -> 한국어 크롭 카테고리
+# 영문 중분류(detected) -> 한국어 크롭 카테고리
 _MIDDLE_TO_CROP_CATEGORY = {
-    # TOP
-    "HOODIE"     : "후드",
-    "SWEATSHIRT" : "스웨트 셔츠",
+    # ── TOP ──
     "TSHIRT"     : "티셔츠",
     "LSHIRT"     : "긴소매 티셔츠",
+    "SWEATSHIRT" : "스웨트 셔츠",
+    "HOODIE"     : "후드",
     "KNIT"       : "니트",
-    # OUTER
+    "FLEECE"     : "플리스",
+    "BLOUSE"     : "블라우스",
+    "ETC_TOP"    : "기타 상의",
+    # ── OUTER ──
     "PADDING"    : "경량 패딩",
     "COAT"       : "코트",
     "JACKET"     : "기타 자켓",
@@ -57,23 +61,38 @@ _MIDDLE_TO_CROP_CATEGORY = {
     "CARDIGAN"   : "가디건",
     "ZIP_UP"     : "집업",
     "ETC_OUTER"  : "기타 아우터",
-    # BOTTOM
+    # ── BOTTOM ──
+    "DENIM"      : "데님 팬츠",
     "SLACKS"     : "슬랙스",
     "PANTS"      : "코튼 팬츠",
     "SHORT_PANTS": "숏 팬츠",
-    "DENIM"      : "데님 팬츠",
+    "SKIRT"      : "미디 스커트",
     "ETC_BOTTOM" : "기타 팬츠",
-    "WAIST"      : "기타 팬츠",
-    # DRESS
+    # ── DRESS ──
     "ONE_PIECE"  : "원피스",
-    # HAT
+    # ── BAG ──
+    "BACKPACK"   : "백팩",
+    "CROSSBODY"  : "크로스백",
+    "WAIST"      : "웨이스트백",
+    "SHOULDER"   : "숄더백",
+    "TOTE"       : "토트백",
+    "ETC_BAG"    : "기타 가방",
+    # ── SHOES ──
+    "SNEAKERS"       : "운동화",
+    "BOOTS"          : "부츠",
+    "LOAFER"         : "로퍼",
+    "SANDAL_SLIPPER" : "샌들/슬리퍼",
+    "ETC_SHOES"      : "기타 신발",
+    # ── HAT ──
     "CAP"        : "볼캡",
+    "SUNCAP"     : "선캡",
     "BEANIE"     : "비니",
-    "ETC_HAT"    : "기타 모자",
-    "BERET"      : "베레모",
     "BALACLAVA"  : "바라클라바",
-    "FEDORA"     : "페도라",
     "TROOPER"    : "트루퍼",
+    "FEDORA"     : "페도라",
+    "BERET"      : "베레모",
+    "BUCKET"     : "버킷햇",
+    "ETC_HAT"    : "기타 모자",
 }
 
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
@@ -124,12 +143,6 @@ style_classifier = StyleClassifier()
 
 
 def process_upload_image(s3_key: str, category_hint: str = None, image_bytes: bytes = None) -> dict:
-    """
-    Args:
-        s3_key (str): S3 original 이미지 key
-        category_hint (str): 선택적 카테고리 힌트
-        image_bytes (bytes): 직접 전달된 이미지 바이트 (S3 다운로드 생략)
-    """
 
     if image_bytes is not None:
         img_array = np.frombuffer(image_bytes, dtype=np.uint8)
@@ -181,36 +194,6 @@ def process_upload_image(s3_key: str, category_hint: str = None, image_bytes: by
         except Exception as _e:
             print(f"처리 이미지 S3 업로드 실패 (무시): {_e}")
 
-    # 의상 픽셀 평균 LAB 색상 추출 (명도·채도·색상 직접 비교용)
-    if final_img.shape[2] == 4:
-        _alpha_mask = final_img[:, :, 3] > 30
-        _bgr_pixels = final_img[:, :, :3][_alpha_mask]
-    else:
-        _gray = cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2GRAY)
-        _bgr_pixels = final_img[:, :, :3][_gray < 240]
-
-    if len(_bgr_pixels) >= 100:
-        # 상위 15% 밝기 픽셀 제거 — 광택 소재(가죽 등) 스페큘러 하이라이트 제거
-        _gray_vals = (0.299 * _bgr_pixels[:, 2].astype(np.float32)
-                      + 0.587 * _bgr_pixels[:, 1].astype(np.float32)
-                      + 0.114 * _bgr_pixels[:, 0].astype(np.float32))
-        _bright_thr = float(np.percentile(_gray_vals, 85))
-        _filtered   = _bgr_pixels[_gray_vals <= _bright_thr]
-        if len(_filtered) < 50:
-            _filtered = _bgr_pixels  # 픽셀 너무 적으면 원본 사용
-        _median_bgr     = np.median(_filtered, axis=0).astype(np.float32)
-        _median_bgr_img = _median_bgr.reshape(1, 1, 3).astype(np.uint8)
-        _median_lab_img = cv2.cvtColor(_median_bgr_img, cv2.COLOR_BGR2LAB)
-        dominant_lab = [
-            float(_median_lab_img[0, 0, 0]) * 100.0 / 255.0,
-            float(_median_lab_img[0, 0, 1]) - 128.0,
-            float(_median_lab_img[0, 0, 2]) - 128.0,
-        ]
-    else:
-        dominant_lab = [50.0, 0.0, 0.0]
-
-    print(f"[COLOR-LAB] L={dominant_lab[0]:.1f}  a={dominant_lab[1]:.1f}  b={dominant_lab[2]:.1f}")
-
     # 색상(layer3) + 형태(layer11) 임베딩 — ViT CLS 토큰
     pil_for_vit = Image.fromarray(cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB))
     vit_inputs  = vit_color_processor(images=pil_for_vit, return_tensors="pt").to(_vit_device)
@@ -218,8 +201,6 @@ def process_upload_image(s3_key: str, category_hint: str = None, image_bytes: by
         vit_out         = vit_color_model(**vit_inputs, output_hidden_states=True)
         color_embedding = vit_out.hidden_states[3][:, 0, :].cpu().numpy().squeeze().tolist()
         shape_embedding = vit_out.hidden_states[11][:, 0, :].cpu().numpy().squeeze().tolist()
-
-    dominant_color_list = []
 
     # 재질 임베딩
     bgr_for_material = final_img[:, :, :3]
@@ -234,6 +215,58 @@ def process_upload_image(s3_key: str, category_hint: str = None, image_bytes: by
         material_vector,
         category_hint or ""
     )
+
+    # 의상 픽셀 추출
+    if final_img.shape[2] == 4:
+        _alpha_mask = final_img[:, :, 3] > 30
+        _bgr_pixels = final_img[:, :, :3][_alpha_mask]
+    else:
+        _gray = cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2GRAY)
+        _bgr_pixels = final_img[:, :, :3][_gray < 240]
+
+    _SHINY_MATERIALS = {"leather", "velvet", "silk_satin"}
+
+    if len(_bgr_pixels) >= 100:
+        # 광택 소재만 하이라이트 제거 적용
+        if material_label in _SHINY_MATERIALS:
+            _gray_vals = (0.299 * _bgr_pixels[:, 2].astype(np.float32)
+                          + 0.587 * _bgr_pixels[:, 1].astype(np.float32)
+                          + 0.114 * _bgr_pixels[:, 0].astype(np.float32))
+            _bright_thr = float(np.percentile(_gray_vals, 85))
+            _filtered = _bgr_pixels[_gray_vals <= _bright_thr]
+            if len(_filtered) < 50:
+                _filtered = _bgr_pixels
+        else:
+            _filtered = _bgr_pixels
+
+        # KMeans top3 색상 추출 (LAB 공간에서 클러스터링)
+        _lab_pixels = cv2.cvtColor(
+            _filtered.reshape(-1, 1, 3), cv2.COLOR_BGR2LAB
+        ).reshape(-1, 3).astype(np.float32)
+        _n_colors = min(3, max(1, len(_lab_pixels) // 100))
+        _km = KMeans(n_clusters=_n_colors, random_state=42, n_init=5, max_iter=100)
+        _km.fit(_lab_pixels)
+        _counts = np.bincount(_km.labels_, minlength=_n_colors)
+        _ratios = _counts / _counts.sum()
+        _order = np.argsort(_ratios)[::-1]
+        _centers_lab = _km.cluster_centers_[_order]
+        _ratios = _ratios[_order]
+
+        dominant_color_list = []
+        _weighted_lab = np.zeros(3, dtype=np.float32)
+        for _k in range(_n_colors):
+            _L = float(_centers_lab[_k][0]) * 100.0 / 255.0
+            _a = float(_centers_lab[_k][1]) - 128.0
+            _b = float(_centers_lab[_k][2]) - 128.0
+            dominant_color_list.append({"lab": [_L, _a, _b], "ratio": float(_ratios[_k])})
+            _weighted_lab += np.array([_L, _a, _b], dtype=np.float32) * float(_ratios[_k])
+
+        dominant_lab = _weighted_lab.tolist()
+    else:
+        dominant_lab = [50.0, 0.0, 0.0]
+        dominant_color_list = []
+
+    print(f"[COLOR-LAB] L={dominant_lab[0]:.1f}  a={dominant_lab[1]:.1f}  b={dominant_lab[2]:.1f}  material={material_label}")
 
     # 스타일 분류
     pil_image = Image.fromarray(cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB))
