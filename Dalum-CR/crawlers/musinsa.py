@@ -4,9 +4,7 @@ import csv
 import time
 import os
 
-# ===============================
 # 설정
-# ===============================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output", "musinsa")
 
@@ -122,9 +120,7 @@ CATEGORIES = {
     "기타 모자": "https://www.musinsa.com/category/101001007"
 }
 
-# ===============================
 # 무신사 → 공통 대/중분류 매핑
-# ===============================
 CATEGORY_MAP = {
     #[OUTER 카테고리]
     #OUTER
@@ -208,9 +204,8 @@ CATEGORY_MAP = {
     "기타 모자": {"대분류": "HAT","중분류": "ETC_HAT"}
 }
 
-# ===============================
+
 # JS: 화면에 렌더된 상품 스냅샷
-# ===============================
 JS_EXTRACT = """
 () => {
   const results = [];
@@ -236,18 +231,11 @@ JS_EXTRACT = """
   return results;
 }
 """
-# ===============================
-def scroll_to_bottom(page):
-    page.evaluate("""
-    () => {
-      const items = document.querySelectorAll("div[data-index]");
-      if (items.length > 0) {
-        items[items.length - 1].scrollIntoView({ behavior: 'smooth' });
-      }
-    }
-    """)
 
-# ===============================
+def scroll_to_bottom(page):
+    # 마우스 휠 이벤트로 스크롤 (Virtuoso 가상 리스트에 가장 안정적)
+    page.mouse.wheel(0, 3000)
+
 def scrape():
     rows = []
     seen = set()
@@ -269,7 +257,7 @@ def scrape():
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/120.0.0.0 Safari/537.36",
             locale="ko-KR",
-            ignore_https_errors=True   # 🔥 이 줄 추가
+            ignore_https_errors=True
         )
 
         page = context.new_page()
@@ -338,13 +326,11 @@ def scrape():
                     break
 
                 scroll_to_bottom(page)
-                time.sleep(0.8)
+                time.sleep(1.5)
         context.close()
         browser.close()
 
-    # ===============================
     # 대분류별 CSV 저장
-    # ===============================
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     grouped = {}
@@ -358,10 +344,9 @@ def scrape():
         with open(path, "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=items[0].keys())
             writer.writeheader()
-            writer.writerows(items)  # 헤더 없음
+            writer.writerows(items) 
 
         print(f"{major}.csv 저장 ({len(items)}개)")
 
-# ===============================
 if __name__ == "__main__":
     scrape()

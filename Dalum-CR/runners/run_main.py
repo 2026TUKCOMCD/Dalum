@@ -2,7 +2,6 @@ import os
 import csv
 import subprocess
 import sys
-import hashlib
 
 # 경로 설정
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -17,7 +16,6 @@ CRAWLERS = [
     "musinsa.py",
     "musinsa_empty.py",
     "29cm.py",
-    "fruitsfamily.py",
     # "kream.py",
 ]
 
@@ -25,7 +23,6 @@ SHOP_MALLS = [
     "musinsa",
     "musinsa_empty",
     "29cm",
-    "fruitsfamily",
     # "kream",
 ]
 
@@ -91,11 +88,6 @@ def read_csv_dict(path):
         reader = csv.DictReader(f)
         return list(reader)
 
-def generate_product_id(product_url: str) -> str:
-    """
-    상품 URL 기반 고유 product_id 생성
-    """
-    return hashlib.md5(product_url.strip().encode()).hexdigest()
 
 # output → merged
 def merge_by_category():
@@ -132,6 +124,7 @@ def merge_all():
     print("\n[3/3] 최종 결과물 생성 (merged → final)")
 
     final_rows = []
+    seq = 1
 
     for category in CATEGORIES:
         path = os.path.join(MERGED_DIR, f"{category}.csv")
@@ -139,10 +132,9 @@ def merge_all():
 
         for row in rows:
             product_url = row.get("상품 URL", "")
-            product_id = generate_product_id(product_url)
 
             final_row = {
-                "product_id": product_id,
+                "product_id": seq,
                 "shopping_mall": row.get("shopping_mall", ""),
                 "large_category": row.get("대분류", ""),
                 "medium_category": row.get("중분류", ""),
@@ -157,6 +149,7 @@ def merge_all():
             }
 
             final_rows.append(final_row)
+            seq += 1
 
     if not final_rows:
         print("최종 병합 데이터 없음")
