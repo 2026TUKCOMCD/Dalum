@@ -7,18 +7,19 @@ import torch
 import torch.nn.functional as F
 from transformers import CLIPModel, CLIPProcessor
 from PIL import Image
+from sklearn.cluster import KMeans
 
 # 카테고리별 가중치 설정
 _CATEGORY_WEIGHTS = {
     "TOP": {
-        "default":   dict(clip_image=0.15, vit_color=0.03, shape=0.12, material=0.10, clip_design=0.30, clip_color=0.15, lab=0.35),
+        "default":   dict(clip_image=0.12, vit_color=0.03, shape=0.10, material=0.08, clip_design=0.25, clip_color=0.15, lab=0.27),
         "chromatic": dict(clip_image=0.10, vit_color=0.02, shape=0.10, material=0.01, clip_design=0.12, clip_color=0.20, lab=0.45),
         "material":  dict(clip_image=0.25, vit_color=0.02, shape=0.25, material=0.15, clip_design=0.20, clip_color=0.08, lab=0.05),
     },
     "OUTER": {
-        "default":   dict(clip_image=0.35, vit_color=0.02, shape=0.35, material=0.28, clip_design=0.22, clip_color=0.06, lab=0.04),
-        "chromatic": dict(clip_image=0.18, vit_color=0.02, shape=0.25, material=0.05, clip_design=0.10, clip_color=0.18, lab=0.40),
-        "material":  dict(clip_image=0.35, vit_color=0.02, shape=0.35, material=0.10, clip_design=0.22, clip_color=0.02, lab=0.01),
+        "default":   dict(clip_image=0.22, vit_color=0.02, shape=0.22, material=0.18, clip_design=0.15, clip_color=0.10, lab=0.11),
+        "chromatic": dict(clip_image=0.15, vit_color=0.02, shape=0.20, material=0.03, clip_design=0.08, clip_color=0.18, lab=0.34),
+        "material":  dict(clip_image=0.22, vit_color=0.02, shape=0.35, material=0.12, clip_design=0.18, clip_color=0.05, lab=0.06),
     },
     "BOTTOM": {
         "default":   dict(clip_image=0.20, vit_color=0.03, shape=0.28, material=0.15, clip_design=0.15, clip_color=0.10, lab=0.09),
@@ -47,7 +48,7 @@ _CATEGORY_WEIGHTS = {
     },
 }
 _FALLBACK_WEIGHTS = {
-    "default":   dict(clip_image=0.15, vit_color=0.03, shape=0.17, material=0.15, clip_design=0.30, clip_color=0.12, lab=0.30),
+    "default":   dict(clip_image=0.12, vit_color=0.02, shape=0.15, material=0.12, clip_design=0.22, clip_color=0.12, lab=0.25),
     "chromatic": dict(clip_image=0.10, vit_color=0.02, shape=0.10, material=0.01, clip_design=0.12, clip_color=0.20, lab=0.45),
     "material":  dict(clip_image=0.35, vit_color=0.02, shape=0.35, material=0.10, clip_design=0.15, clip_color=0.02, lab=0.01),
 }
@@ -66,155 +67,50 @@ DALUM_VIT_PATH   = os.path.join(_AI_BASE, "vit", "outputs", "vit_output", "embed
 META_PATH        = os.path.join(_AI_BASE, "vit", "outputs", "vit_output", "metadata.csv")
 COLOR_DB_PATH    = os.path.join(_BASE, "color_db.npy")  # 평균 LAB [N, 3]
 
-# CLIP 색상 프롬프트
-
-COLOR_PROMPTS = [
-    # 무채색 계열
-    "a clothing with black color",
-    "a clothing with charcoal or very dark gray color",
-    "a clothing with slate gray or anthracite color",
-    "a clothing with dark gray color",
-    "a clothing with medium gray color",
-    "a clothing with light gray or silver color",
-    "a clothing with white or ivory color",
-    "a clothing with off-white or cream color",
-    # 베이지·브라운 계열
-    "a clothing with beige or sand color",
-    "a clothing with khaki or tan color",
-    "a clothing with camel or brown color",
-    "a clothing with chocolate or dark brown color",
-    "a clothing with rust or terracotta color",
-    # 옐로 계열
-    "a clothing with mustard or golden yellow color",
-    "a clothing with yellow color",
-    # 오렌지·레드 계열
-    "a clothing with orange color",
-    "a clothing with coral or salmon color",
-    "a clothing with red color",
-    "a clothing with burgundy or wine color",
-    # 핑크 계열
-    "a clothing with dusty rose or mauve color",
-    "a clothing with pink color",
-    # 블루 계열
-    "a clothing with midnight navy or very dark navy color",
-    "a clothing with navy blue or dark blue color",
-    "a clothing with royal blue or cobalt blue color",
-    "a clothing with blue color",
-    "a clothing with teal or cyan color",
-    "a clothing with sky blue or baby blue color",
-    # 그린 계열
-    "a clothing with muted dark olive or khaki green color",
-    "a clothing with olive or army green color",
-    "a clothing with vivid deep forest green color",
-    "a clothing with dark hunter green color",
-    "a clothing with bright kelly or emerald green color",
-    "a clothing with green color",
-    "a clothing with mint or light green color",
-    # 퍼플 계열
-    "a clothing with purple or violet color",
-    "a clothing with lavender or lilac color",
-    # 기타
-    "a clothing with multicolor or patterned color",
-]
-
-# CLIP 디자인 프롬프트
-
-DESIGN_PROMPTS = {
-    "solid"        : "a solid color clothing with no pattern",
-    "color_block"  : "a clothing with color block design",
-    "gradient"     : "a clothing with gradient or ombre color effect",
-    "striped"      : "a clothing with stripe pattern",
-    "checkered"    : "a clothing with check or plaid pattern",
-    "argyle"       : "a clothing with argyle diamond pattern",
-    "houndstooth"  : "a clothing with houndstooth pattern",
-    "polka_dot"    : "a clothing with polka dot pattern",
-    "geometric"    : "a clothing with geometric shapes pattern",
-    "floral"       : "a clothing with floral or flower pattern",
-    "paisley"      : "a clothing with paisley or abstract pattern",
-    "animal_print" : "a clothing with animal print like leopard or zebra",
-    "camouflage"   : "a clothing with camouflage pattern",
-    "tie_dye"      : "a clothing with tie dye pattern",
-    "logo_text"    : "a clothing with logo or text print",
-    "graphic"      : "a clothing with graphic or illustration print",
-    "character"    : "a clothing with cartoon character, mascot, or animal graphic print",
-    "heart"        : "a clothing with heart shape print",
-    "star"         : "a clothing with star shape print",
-    "embroidery"   : "a clothing with embroidery or embroidered detail",
-    "rhinestone"   : "a clothing with rhinestones studs or jewel details",
-    "ribbon_bow"   : "a clothing with ribbon or bow detail",
-    "fringe"       : "a clothing with fringe or tassel detail",
-    "metallic"     : "a clothing with shiny metallic sequin or glitter",
-    "pleated"      : "a clothing with pleated or ruffle details",
-    "varsity"      : "a varsity or stadium jacket with contrast sleeves",
-    "washed"       : "a washed distressed or vintage treated clothing",
-    "denim"        : "a denim clothing like jeans or denim jacket",
-    "knit"         : "a knit or cable knit sweater clothing",
-    "leather"      : "a clothing made of leather or faux leather",
-    "fur"          : "a clothing made of fluffy fur or faux fur",
-    "fleece"       : "a clothing made of cozy fleece material",
-    "velvet"       : "a clothing made of velvet or velour fabric",
-    "silk_satin"   : "a clothing made of glossy silk or satin fabric",
-    "linen"        : "a clothing made of breathable linen fabric",
-    "sheer"        : "a sheer or transparent mesh clothing",
-    "lace"         : "a clothing with lace detail or lace fabric",
-}
-
-DESIGN_NAMES = list(DESIGN_PROMPTS.keys())
-DESIGN_TEXTS = list(DESIGN_PROMPTS.values())
+from dupe.prompts import COLOR_PROMPTS, DESIGN_NAMES, DESIGN_TEXTS
 
 # 디자인 그룹 분류
 _PLAIN_DESIGN_NAMES = {"solid", "gradient"}
 _MATERIAL_DESIGN_NAMES = {
-    "leather", "denim", "knit", "fur", "fleece",
-    "velvet", "silk_satin", "linen", "sheer", "washed",
+    "leather", "nylon", "denim", "knit", "fur", "fleece", "wool", "quilted",
+    "velvet", "silk_satin", "linen", "sheer", "washed", "lace",
 }
-_PATTERN_DESIGN_NAMES = set(DESIGN_NAMES) - _PLAIN_DESIGN_NAMES - _MATERIAL_DESIGN_NAMES
+_SHAPE_DESIGN_NAMES = {
+    "oversized", "slim_fitted", "cropped", "longline", "mini_length",
+    "hooded", "high_neck", "lapel_collar", "collarless", "off_shoulder",
+    "double_breasted", "belted", "zip_front", "open_front",
+    "bomber_silhouette", "moto_biker",
+    "wide_leg_bottom", "slim_leg_bottom", "flared_bottom",
+    "varsity",
+}
+_PATTERN_DESIGN_NAMES = (
+    set(DESIGN_NAMES) - _PLAIN_DESIGN_NAMES - _MATERIAL_DESIGN_NAMES - _SHAPE_DESIGN_NAMES
+)
 _PATTERN_DESIGN_INDICES = [i for i, n in enumerate(DESIGN_NAMES) if n in _PATTERN_DESIGN_NAMES]
+
+# CLIP 소재 디자인명 → DB small_category 키워드 매핑 (소분류 인덱스 검색용)
+_DESIGN_TO_SMALL_HINT: dict[str, list[str]] = {
+    "leather"   : ["가죽"],
+    "denim"     : ["데님"],
+    "knit"      : ["니트"],
+    "fur"       : ["퍼", "무스탕"],
+    "nylon"     : ["나일론", "코치"],
+    "fleece"    : ["플리스"],
+    "wool"      : ["울", "캐시미어"],
+    "velvet"    : ["벨벳"],
+    "quilted"   : ["패딩"],
+    "silk_satin": ["실크", "새틴"],
+    "linen"     : ["린넨"],
+    "sheer"     : ["쉬폰", "시스루"],
+    "lace"      : ["레이스"],
+}
 
 # 카테고리 감지 프롬프트
 
-CATEGORY_PROMPTS = {
-    "TOP"   : "a pullover top worn as the main garment on the upper body without any front zipper, such as t-shirts, long sleeve shirts, crew-neck sweatshirts, knit sweaters, or pullover hoodies with a hood but no front zipper",
-    "BOTTOM": "pants, jeans, shorts, skirt, or trousers worn on the lower body",
-    "OUTER" : "outerwear worn as an outer layer over other clothing, such as coats, blazers, padded jackets, parkas, windbreakers, vests, cardigans, or zip-up hoodies that have a visible full-length front zipper",
-    "DRESS" : "a dress, one-piece outfit, or jumpsuit",
-    "BAG"   : "a bag, handbag, backpack, tote, or purse",
-    "SHOES" : "shoes, sneakers, boots, sandals, or footwear",
-    "HAT"   : "a hat, cap, beanie, beret, or headwear",
-}
-
-CATEGORY_NAMES = list(CATEGORY_PROMPTS.keys())
-CATEGORY_TEXTS = list(CATEGORY_PROMPTS.values())
-
-# 중분류 감지 프롬프트 (크롭 정책이 다른 카테고리만)
-
-MIDDLE_CATEGORY_PROMPTS = {
-    "TOP": {
-        "HOODIE"     : "a pullover hoodie sweatshirt with a hood and drawstrings, no zipper in the front — must be pulled over the head to wear",
-        "SWEATSHIRT" : "a crew-neck pullover sweatshirt without a hood and without a front zipper",
-        "TSHIRT"     : "a short sleeve t-shirt with sleeves ending at or above the elbow",
-        "LSHIRT"     : "a long sleeve shirt or top with sleeves extending all the way to the wrist",
-        "KNIT"       : "a knit sweater or knitwear pullover with visible knit texture",
-    },
-    "OUTER": {
-        "COAT"       : "a long coat or overcoat reaching below the knee",
-        "PADDING"    : "a padded puffer jacket or down jacket with visible quilting",
-        "JACKET"     : "a short blazer or structured jacket",
-        "JUMPER"     : "a windbreaker, bomber jacket, or anorak",
-        "VEST"       : "a sleeveless vest or body warmer without arms",
-        "CARDIGAN"   : "a cardigan knit sweater that fully opens in the front with buttons",
-        "ZIP_UP"     : "a zip-up hoodie or zip-up sweatshirt with a full-length metal zipper running from the hem all the way up to the collar in front",
-        "ETC_OUTER"  : "a general outerwear jacket worn over other clothes",
-    },
-    "BOTTOM": {
-        "SHORT_PANTS": "shorts or short pants above the knee",
-        "SLACKS"     : "dress pants or formal slacks",
-        "PANTS"      : "casual long pants or trousers",
-        "DENIM"      : "jeans or denim pants",
-        "WAIST"      : "a skirt",
-        "ETC_BOTTOM" : "pants or bottoms",
-    },
-}
+from dupe.prompts import (
+    CATEGORY_NAMES, CATEGORY_TEXTS,
+    MIDDLE_CATEGORY_PROMPTS,
+)
 
 # 초기화
 
@@ -276,9 +172,19 @@ if _missing:
     mean_lab_db          = None
 else:
     clip_image_db  = np.load(CLIP_IMAGE_PATH)
-    clip_design_db = np.load(CLIP_DESIGN_PATH)
+    _clip_design_raw = np.load(CLIP_DESIGN_PATH)
     dalum_vit_db   = np.load(DALUM_VIT_PATH)
     metadata       = pd.read_csv(META_PATH)
+
+    # 디자인 DB 크기 호환성 체크 (프롬프트 변경 후 재빌드 전 인덱스 불일치 방지)
+    _expected_design_size = len(DESIGN_NAMES)
+    if _clip_design_raw.shape[1] != _expected_design_size:
+        print(f"   ⚠️  CLIP 디자인 DB 크기 불일치: DB={_clip_design_raw.shape[1]}차원, "
+              f"현재 프롬프트={_expected_design_size}차원")
+        print(f"      → python -m dupe.build_clip 재빌드 필요! (디자인 게이트 임시 비활성화)")
+        clip_design_db = None
+    else:
+        clip_design_db = _clip_design_raw
 
     # 카테고리별 FAISS 인덱스 구축
     faiss_indices = {}
@@ -311,6 +217,33 @@ else:
             _idx.add(_vecs)
             faiss_middle_indices[(str(_cat), str(_mid))] = (_idx, _db_idxs)
 
+    # 소분류별 FAISS 인덱스 구축 (small_category 컬럼 있을 때만)
+    faiss_small_indices = {}
+    if "small_category" in metadata.columns:
+        for _cat in _all_categories:
+            _major_mask = (metadata["major_category"] == _cat).values
+            _middle_cats = metadata[_major_mask]["middle_category"].dropna().unique()
+            for _mid in _middle_cats:
+                if str(_mid) in ("", "nan"):
+                    continue
+                _mid_mask = _major_mask & (metadata["middle_category"] == _mid).values
+                _small_cats = metadata[_mid_mask]["small_category"].dropna().unique()
+                for _small in _small_cats:
+                    if str(_small) in ("", "nan"):
+                        continue
+                    _small_mask = _mid_mask & (metadata["small_category"] == _small).values
+                    _db_idxs    = np.where(_small_mask)[0]
+                    if len(_db_idxs) < 5:
+                        continue
+                    _vecs = clip_image_db[_db_idxs].astype("float32").copy()
+                    faiss.normalize_L2(_vecs)
+                    _idx = faiss.IndexFlatIP(512)
+                    _idx.add(_vecs)
+                    faiss_small_indices[(str(_cat), str(_mid), str(_small))] = (_idx, _db_idxs)
+        print(f"   소분류 인덱스: {len(faiss_small_indices)}개")
+    else:
+        print("   소분류 인덱스: small_category 없음 (run_add_small_category.py 실행 필요)")
+
     # 전체 검색용 fallback 인덱스
     _clip_norm = clip_image_db.copy().astype("float32")
     faiss.normalize_L2(_clip_norm)
@@ -325,21 +258,28 @@ else:
         _db_color_probs  = F.softmax(_db_color_logits, dim=-1).cpu().numpy().astype("float32")
     del _clip_image_tensor
 
-    # 픽셀 평균 LAB 색상 DB 로드
+    # LAB 색상 DB 로드 ([N,12] top3 또는 [N,3] 레거시)
     if os.path.exists(COLOR_DB_PATH):
-        mean_lab_db = np.load(COLOR_DB_PATH)
-        print(f"   LAB 색상 DB: {mean_lab_db.shape}")
+        _color_raw = np.load(COLOR_DB_PATH)
+        if _color_raw.ndim == 2 and _color_raw.shape[1] == 12:
+            # top3 포맷: ratio 가중 평균으로 [N, 3] 변환
+            _top3 = _color_raw.reshape(-1, 3, 4)
+            mean_lab_db = np.sum(_top3[:, :, :3] * _top3[:, :, 3:4], axis=1).astype(np.float32)
+        else:
+            mean_lab_db = _color_raw
+        print(f"   LAB 색상 DB: {_color_raw.shape} → {mean_lab_db.shape}")
     else:
         mean_lab_db = None
         print("   LAB 색상 DB 없음 → python -m dupe.build_color_db 실행 필요")
 
     print(f"   CLIP 이미지:  {clip_image_db.shape}")
-    print(f"   CLIP 디자인:  {clip_design_db.shape}")
+    print(f"   CLIP 디자인:  {clip_design_db.shape if clip_design_db is not None else '비활성화 (재빌드 필요)'}")
     print(f"   Dalum ViT:   {dalum_vit_db.shape}")
     print(f"   CLIP 색상분포: {_db_color_probs.shape}")
     print(f"   메타데이터:   {len(metadata)}개")
     print(f"   대분류 인덱스: {list(faiss_indices.keys())}")
     print(f"   중분류 인덱스: {len(faiss_middle_indices)}개")
+    print(f"   소분류 인덱스: {len(faiss_small_indices)}개")
 
 print("초기화 완료!\n")
 
@@ -426,10 +366,17 @@ def extract_dalum_vit_embedding(image_pil):
 
 # MMR 중복 제거
 
-def lab_color_sim(q_lab: np.ndarray, db_lab: np.ndarray) -> float:
-    """CIE76 ΔE 기반 색상 유사도. sigma=20 으로 가우시안 변환 → [0, 1]"""
-    delta_e = float(np.sqrt(np.sum((q_lab - db_lab) ** 2)))
-    return float(np.exp(-delta_e / 20.0))
+def lab_color_sim(q_lab: np.ndarray, db_lab: np.ndarray, achromatic: bool = False) -> float:
+    """CIE76 ΔE 기반 색상 유사도. sigma=10 가우시안 변환 → [0, 1]
+    achromatic=True 시 a/b 성분 2.5배 가중 (웜/쿨 색조 편차 강조)"""
+    dL = float(q_lab[0] - db_lab[0])
+    da = float(q_lab[1] - db_lab[1])
+    db_ = float(q_lab[2] - db_lab[2])
+    if achromatic:
+        delta_e = float(np.sqrt(dL ** 2 + 2.5 * da ** 2 + 2.5 * db_ ** 2))
+    else:
+        delta_e = float(np.sqrt(dL ** 2 + da ** 2 + db_ ** 2))
+    return float(np.exp(-delta_e / 10.0))
 
 
 def mmr_dedup(results):
@@ -484,7 +431,8 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         _w_clip_clr = _W_CLIP_COLOR + _W_LAB_COLOR
 
     # 무지 쿼리: 후보 집합 내 min-max 정규화 → 가장 무지한 아이템=1.0, 가장 패턴한 아이템=0.0
-    if _is_plain_query and len(results) > 1:
+    _design_db_ok = clip_design_db is not None
+    if _is_plain_query and _design_db_ok and len(results) > 1:
         _all_db_idxs = np.array([item["_db_idx"] for item in results], dtype=np.int32)
         _all_ps      = clip_design_db[_all_db_idxs][:, _pat_idx_arr].sum(axis=1)
         _ps_min      = float(_all_ps.min())
@@ -508,8 +456,10 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         db_mat       = db_vit[1536:] / (np.linalg.norm(db_vit[1536:]) + 1e-8)
         material_sim = float(np.dot(q_material, db_mat))
 
-        # CLIP 디자인 유사도
-        if _is_plain_query:
+        # CLIP 디자인 유사도 (DB 호환 시에만 계산)
+        if not _design_db_ok:
+            design_sim = 0.5  # 디자인 DB 미갱신 시 중립값
+        elif _is_plain_query:
             db_pattern_sum = float(clip_design_db[db_idx][_pat_idx_arr].sum())
             design_sim = max(0.0, 1.0 - (db_pattern_sum - _ps_min) / _ps_range)
         else:
@@ -527,7 +477,7 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
 
         # 픽셀 평균 LAB 유사도
         if q_lab is not None and mean_lab_db is not None:
-            lab_sim = lab_color_sim(q_lab, mean_lab_db[db_idx])
+            lab_sim = lab_color_sim(q_lab, mean_lab_db[db_idx], achromatic=(_rc_chroma <= 10.0))
         else:
             lab_sim = 0.0
 
@@ -548,37 +498,67 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         item["material_score"] = round(float(material_sim), 4)
         item["design_score"]   = round(float(design_sim), 4)
         item["total_score"]    = round(float(_final), 4)
+        item["_shape_sim"]     = round(float(shape_sim), 4)
+        item["_clip_image"]    = round(float(item["faiss_score"]), 4)
+        item["_lab_sim"]       = round(float(lab_sim), 4)
 
     results.sort(key=lambda x: x["final_score"], reverse=True)
 
-    print("[DEBUG] top5 scores:")
-    for r in results[:5]:
-        print(f"  pid={r['product_id']} faiss={r['faiss_score']:.3f} "
-              f"color={r['color_score']:.3f} material={r['material_score']:.3f} "
-              f"design={r['design_score']:.3f} total={r['total_score']:.3f}")
+    if q_lab is not None:
+        print(f"[QUERY-LAB] L={q_lab[0]:.1f} a={q_lab[1]:.1f} b={q_lab[2]:.1f} chroma={_rc_chroma:.1f}")
+    print("[DEBUG] top10 scores:")
+    for i, r in enumerate(results[:10], 1):
+        db_idx = r["_db_idx"]
+        if q_lab is not None and mean_lab_db is not None:
+            db_lab = mean_lab_db[db_idx]
+            delta_e = float(np.sqrt(np.sum((q_lab - db_lab) ** 2)))
+            da = float(q_lab[1] - db_lab[1])
+            db_b = float(q_lab[2] - db_lab[2])
+            delta_ab = float(np.sqrt(da ** 2 + db_b ** 2))
+            lab_str = (f" | L={db_lab[0]:.1f} a={db_lab[1]:.1f} b={db_lab[2]:.1f}"
+                       f" ΔE={delta_e:.1f} Δab={delta_ab:.1f}")
+        else:
+            lab_str = ""
+        print(f"  [{i:2d}] pid={r['product_id']} "
+              f"clip={r.get('_clip_image', 0):.3f} shape={r.get('_shape_sim', 0):.3f} "
+              f"mat={r['material_score']:.3f} design={r['design_score']:.3f} "
+              f"color={r['color_score']:.3f} lab={r.get('_lab_sim', 0):.3f} "
+              f"total={r['total_score']:.3f}{lab_str}")
 
     return results
 
 def extract_mean_lab(image_pil):
-    img = np.array(image_pil.convert("RGB"))
-    lab = cv2.cvtColor(img, cv2.COLOR_RGB2LAB)
-    return lab.reshape(-1, 3).mean(axis=0).astype("float32")
+    img = cv2.cvtColor(np.array(image_pil.convert("RGB")), cv2.COLOR_RGB2BGR)
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    pixels = img[gray < 240]
+    if len(pixels) < 100:
+        return np.array([50.0, 0.0, 0.0], dtype=np.float32)
+    gray_vals = (0.299 * pixels[:, 2].astype(np.float32)
+                 + 0.587 * pixels[:, 1].astype(np.float32)
+                 + 0.114 * pixels[:, 0].astype(np.float32))
+    if float(np.percentile(gray_vals, 95)) - float(np.median(gray_vals)) > 80:
+        filtered = pixels[gray_vals <= float(np.percentile(gray_vals, 85))]
+        if len(filtered) < 50:
+            filtered = pixels
+    else:
+        filtered = pixels
+    lab_pixels = cv2.cvtColor(
+        filtered.reshape(-1, 1, 3), cv2.COLOR_BGR2LAB
+    ).reshape(-1, 3).astype(np.float32)
+    n_colors = min(3, max(1, len(lab_pixels) // 100))
+    km = KMeans(n_clusters=n_colors, random_state=42, n_init=5, max_iter=100)
+    km.fit(lab_pixels)
+    counts = np.bincount(km.labels_, minlength=n_colors)
+    ratios = counts / counts.sum()
+    weighted = np.sum(km.cluster_centers_ * ratios[:, np.newaxis], axis=0)
+    L = float(weighted[0]) * 100.0 / 255.0
+    a = float(weighted[1]) - 128.0
+    b = float(weighted[2]) - 128.0
+    return np.array([L, a, b], dtype=np.float32)
 
 # 추천
 
 def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, design_probs, top_k=10, major_category=None, middle_category=None, lab_color=None):
-    """
-    /embedding 결과값을 받아 바로 듀프 검색 수행
-    Args:
-        clip_emb        : list[float] 512-dim
-        color_emb       : list[float] 768-dim  (ViT layer3)
-        shape_emb       : list[float] 768-dim  (ViT layer11)
-        material_dict   : dict or list 33-dim
-        design_probs    : list[float] 37-dim
-        top_k           : 반환할 상품 수
-        major_category  : 대분류 필터 (예: "TOP") - None이면 전체 검색
-        middle_category : 중분류 필터 (예: "SWEATSHIRT") - 없으면 대분류로 폴백
-    """
     if faiss_indices is None:
         raise RuntimeError("듀프 임베딩 DB가 로드되지 않았습니다. build_clip.py를 먼저 실행하세요.")
 
@@ -600,8 +580,43 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
     cat_key = str(major_category) if major_category else None
     mid_key = (str(major_category), str(middle_category)) if major_category and middle_category else None
 
-    # 1순위 -> 중분류 인덱스 (후보 충분할 때)
-    if mid_key and faiss_middle_indices and mid_key in faiss_middle_indices:
+    db_index_list = None  # 명시적 초기화
+
+    # ── 소분류 인덱스 힌트 계산 ─────────────────────────────────────────
+    # design_probs에서 소재 top-1을 보고 DB small_category 키워드 결정
+    _design_arr_pre = np.array(design_probs, dtype="float32")
+    _design_arr_pre = _design_arr_pre / (_design_arr_pre.sum() + 1e-8)
+    _pre_top_idx    = int(_design_arr_pre.argmax())
+    _pre_top_name   = DESIGN_NAMES[_pre_top_idx]
+    _pre_top_prob   = float(_design_arr_pre[_pre_top_idx])
+    _small_hints    = (
+        _DESIGN_TO_SMALL_HINT.get(_pre_top_name, [])
+        if _pre_top_name in _MATERIAL_DESIGN_NAMES and _pre_top_prob > 0.10
+        else []
+    )
+
+    # 0순위 → 소분류 인덱스 (소재 명확 + small_category 인덱스 있을 때)
+    if _small_hints and faiss_small_indices and major_category and middle_category:
+        for _hint in _small_hints:
+            _matched_keys = [
+                k for k in faiss_small_indices
+                if k[0] == str(major_category)
+                and k[1] == str(middle_category)
+                and _hint in k[2]
+            ]
+            if _matched_keys:
+                _skey = _matched_keys[0]
+                _sidx, _sdb_idxs = faiss_small_indices[_skey]
+                if len(_sdb_idxs) >= top_k:
+                    search_k = min(len(_sdb_idxs), top_k * 400)
+                    distances, local_indices = _sidx.search(query_vec, search_k)
+                    db_index_list = [(int(_sdb_idxs[li]), float(sc))
+                                     for li, sc in zip(local_indices[0], distances[0]) if li >= 0]
+                    print(f"[검색] 소분류={_skey[2]} ({len(_sdb_idxs)}개) ← {_pre_top_name}")
+                    break
+
+    # 1순위 → 중분류 인덱스 (소분류 미사용 시)
+    if db_index_list is None and mid_key and faiss_middle_indices and mid_key in faiss_middle_indices:
         mid_index, mid_db_idxs = faiss_middle_indices[mid_key]
         if len(mid_db_idxs) >= top_k * 2:
             search_k = min(len(mid_db_idxs), top_k * 400)
@@ -609,11 +624,9 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
             db_index_list = [(int(mid_db_idxs[li]), float(sc))
                              for li, sc in zip(local_indices[0], distances[0]) if li >= 0]
             print(f"[검색] 중분류={middle_category} ({len(mid_db_idxs)}개)")
-        else:
-            mid_key = None  # 후보 부족 → 대분류 폴백
 
-    # 2순위 -> 대분류 인덱스
-    if not mid_key or (mid_key and faiss_middle_indices and mid_key not in faiss_middle_indices):
+    # 2순위 → 대분류 인덱스
+    if db_index_list is None:
         if cat_key and cat_key in faiss_indices:
             cat_index, cat_db_idxs = faiss_indices[cat_key]
             search_k = min(len(cat_db_idxs), top_k * 400)
@@ -622,19 +635,27 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
                              for li, sc in zip(local_indices[0], distances[0]) if li >= 0]
             print(f"[검색] 대분류={major_category} ({len(cat_db_idxs)}개) 폴백")
         else:
-            # 3순위 -> 전체 인덱스
+            # 3순위 → 전체 인덱스
             search_k = min(len(clip_image_db), top_k * 400)
             distances, indices = faiss_index_all.search(query_vec, search_k)
             db_index_list = [(int(di), float(sc))
                              for di, sc in zip(indices[0], distances[0]) if di >= 0]
             print("[검색] 전체 인덱스 폴백")
 
-    # 쿼리 디자인 로그
+    # 쿼리 디자인 로그 (top-3, 그룹 표시)
     _q_design_probs = np.array(design_probs, dtype="float32")
     _q_design_probs = _q_design_probs / (_q_design_probs.sum() + 1e-8)
-    _top2_design = np.argsort(_q_design_probs)[-2:][::-1]
-    print(f"[DESIGN] 쿼리 디자인: {DESIGN_NAMES[_top2_design[0]]}({_q_design_probs[_top2_design[0]]:.3f}) "
-          f"/ {DESIGN_NAMES[_top2_design[1]]}({_q_design_probs[_top2_design[1]]:.3f})")
+    _top3_design = np.argsort(_q_design_probs)[-3:][::-1]
+    def _design_group(n):
+        if n in _MATERIAL_DESIGN_NAMES: return "소재"
+        if n in _SHAPE_DESIGN_NAMES:    return "형태"
+        if n in _PLAIN_DESIGN_NAMES:    return "무지"
+        return "패턴"
+    _design_log = " | ".join(
+        f"{DESIGN_NAMES[i]}[{_design_group(DESIGN_NAMES[i])}]({_q_design_probs[i]:.3f})"
+        for i in _top3_design
+    )
+    print(f"[DESIGN] 쿼리 top-3: {_design_log}")
 
     # 쿼리의 CLIP 색상 분포 계산
     q_color_probs = None
@@ -648,6 +669,10 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
 
     q_lab = np.array(lab_color, dtype=np.float32) if lab_color is not None else None
     _q_chroma = float(np.sqrt(float(q_lab[1])**2 + float(q_lab[2])**2)) if q_lab is not None else 0.0
+    if q_lab is not None:
+        _achromatic_str = "무채색" if _q_chroma <= 10.0 else "유채색"
+        print(f"[QUERY-LAB] L={q_lab[0]:.1f} a={q_lab[1]:.1f} b={q_lab[2]:.1f} "
+              f"chroma={_q_chroma:.1f} → {_achromatic_str}")
 
     # 게이트 1: 동일 제품 제외
     before = len(db_index_list)
@@ -702,14 +727,14 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
         else:
             # 무채색 쿼리 (black/gray/white 등)
             # OUTER 무채색: ΔE<28 이상으로 완화하지 않음
-            _achromatic_max_gate = 28.0 if str(major_category) == "OUTER" else 35.0
-            LAB_GATE = 20.0
+            _achromatic_max_gate = 20.0 if str(major_category) == "OUTER" else 35.0
+            LAB_GATE = 14.0
             filtered = [(di, sc) for di, sc in db_index_list if _de(di) < LAB_GATE]
             print(f"[GATE-COLOR] chroma={_q_chroma:.1f} ΔE<{LAB_GATE} → {len(filtered)}개")
             if len(filtered) >= top_k * 3:
                 db_index_list = filtered
             else:
-                LAB_GATE2 = 28.0
+                LAB_GATE2 = 20.0
                 filtered2 = [(di, sc) for di, sc in db_index_list if _de(di) < LAB_GATE2]
                 if len(filtered2) >= top_k * 2:
                     db_index_list = filtered2
@@ -721,6 +746,20 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
                 else:
                     db_index_list = filtered2  # OUTER: ΔE<28 이상 허용 안 함
                     print(f"[GATE-COLOR] OUTER 무채색 ΔE<28 상한 고정 → {len(db_index_list)}개")
+
+            # 무채색 a-b 편차 게이트: 웜/브라운 색조 제거
+            # 쿼리가 중립 블랙/그레이인데 DB 아이템이 warm brown(a>0, b>0)인 경우 차단
+            _AB_GATE = 3.5 if str(major_category) == "OUTER" else 4.5
+            _ab_filtered = [
+                (di, sc) for di, sc in db_index_list
+                if float(np.sqrt(
+                    (float(q_lab[1]) - float(mean_lab_db[di][1])) ** 2 +
+                    (float(q_lab[2]) - float(mean_lab_db[di][2])) ** 2
+                )) < _AB_GATE
+            ]
+            print(f"[GATE-AB] 무채색 Δab<{_AB_GATE} → {len(_ab_filtered)}개")
+            if len(_ab_filtered) >= top_k:
+                db_index_list = _ab_filtered
 
     # CLIP 색상 분포 게이트
     # 스튜디오 조명 영향으로 LAB이 차콜처럼 측정되는 검정 제품 (3팩 등) 제거
@@ -747,7 +786,7 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
                          dalum_vit_db[di][1536:] / (np.linalg.norm(dalum_vit_db[di][1536:]) + 1e-8)))
             for di, _ in db_index_list
         ], dtype=np.float32)
-        _MAT_GATE = float(np.percentile(_mat_sims, 65))
+        _MAT_GATE = float(np.percentile(_mat_sims, 75))
         _mat_filtered = [(di, sc) for (di, sc), ms in zip(db_index_list, _mat_sims) if ms >= _MAT_GATE]
         if len(_mat_filtered) >= top_k:
             db_index_list = _mat_filtered
@@ -760,48 +799,85 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
     _top_design_prob = float(_q_design_arr[_top_design_idx])
 
     _top_design_name = DESIGN_NAMES[_top_design_idx]
-    _material_gated  = False  # 소재 게이트 적용 여부
+    _material_gated  = False
+    _is_outer        = (str(major_category) == "OUTER")
 
-    # OUTER + 무채색
+    def _apply_leather_exclusion_gates():
+        """leather 쿼리: nylon/denim 상위 40% 제거 (색상 무관 공통 적용)"""
+        nonlocal db_index_list
+        if clip_design_db is None:
+            return
+        if "nylon" in DESIGN_NAMES:
+            _nylon_idx = DESIGN_NAMES.index("nylon")
+            _nylon_scores = np.array([float(clip_design_db[di][_nylon_idx]) for di, _ in db_index_list], dtype=np.float32)
+            _NYLON_EXCL = float(np.percentile(_nylon_scores, 60))
+            _anti_nylon = [(di, sc) for (di, sc), ns in zip(db_index_list, _nylon_scores) if ns < _NYLON_EXCL]
+            if len(_anti_nylon) >= top_k:
+                db_index_list = _anti_nylon
+                print(f"[GATE-NYLON] leather nylon<{_NYLON_EXCL:.3f} → {len(db_index_list)}개")
+        if "denim" in DESIGN_NAMES:
+            _denim_idx = DESIGN_NAMES.index("denim")
+            _denim_scores = np.array([float(clip_design_db[di][_denim_idx]) for di, _ in db_index_list], dtype=np.float32)
+            _DENIM_EXCL = float(np.percentile(_denim_scores, 60))
+            _anti_denim = [(di, sc) for (di, sc), ds in zip(db_index_list, _denim_scores) if ds < _DENIM_EXCL]
+            if len(_anti_denim) >= top_k:
+                db_index_list = _anti_denim
+                print(f"[GATE-DENIM] leather denim<{_DENIM_EXCL:.3f} → {len(db_index_list)}개")
+
+    # ── 케이스 A: OUTER + 무채색 ────────────────────────────────────────
     if _outer_achromatic:
-        print(f"[GATE-DESIGN] OUTER 무채색 → 디자인 게이트 스킵 (Gate 2.8 대체)")
+        _material_gated = True
+        if _top_design_name in _MATERIAL_DESIGN_NAMES and _top_design_prob > 0.15 and clip_design_db is not None:
+            db_design_scores = np.array([float(clip_design_db[di][_top_design_idx]) for di, _ in db_index_list], dtype=np.float32)
+            DESIGN_GATE = max(0.02, float(np.percentile(db_design_scores, 70)))
+            filtered = [(di, sc) for (di, sc), ds in zip(db_index_list, db_design_scores) if ds >= DESIGN_GATE]
+            if len(filtered) >= top_k:
+                db_index_list = filtered
+                print(f"[GATE-DESIGN] OUTER 무채색+소재({_top_design_name},{_top_design_prob:.2f}) "
+                      f"clip_design>={DESIGN_GATE:.3f} → {len(db_index_list)}개")
+            else:
+                print(f"[GATE-DESIGN] OUTER 무채색 소재게이트 후보 부족({len(filtered)}개) → 스킵")
+            if _top_design_name == "leather":
+                _apply_leather_exclusion_gates()
+        else:
+            print(f"[GATE-DESIGN] OUTER 무채색 → 소재게이트 스킵 (prob={_top_design_prob:.3f})")
+
+    # ── 케이스 B: OUTER + 유채색 + leather (무채색 블록에서 미처리) ─────
+    elif _is_outer and _top_design_name == "leather" and _top_design_prob > 0.15 and clip_design_db is not None:
+        _material_gated = True
+        db_design_scores = np.array([float(clip_design_db[di][_top_design_idx]) for di, _ in db_index_list], dtype=np.float32)
+        DESIGN_GATE = max(0.02, float(np.percentile(db_design_scores, 70)))
+        filtered = [(di, sc) for (di, sc), ds in zip(db_index_list, db_design_scores) if ds >= DESIGN_GATE]
+        if len(filtered) >= top_k:
+            db_index_list = filtered
+            print(f"[GATE-DESIGN] OUTER 유채색+leather({_top_design_prob:.2f}) "
+                  f"clip_design>={DESIGN_GATE:.3f} → {len(db_index_list)}개")
+        else:
+            print(f"[GATE-DESIGN] OUTER 유채색 leather 후보 부족({len(filtered)}개) → 스킵")
+        _apply_leather_exclusion_gates()
+
+    # ── 케이스 C: 그 외 일반 디자인 게이트 ──────────────────────────────
     elif _top_design_prob > 0.10 and clip_design_db is not None:
         if _top_design_name in _MATERIAL_DESIGN_NAMES:
-            db_design_scores = np.array([
-                float(clip_design_db[di][_top_design_idx])
-                for di, _ in db_index_list
-            ], dtype=np.float32)
+            db_design_scores = np.array([float(clip_design_db[di][_top_design_idx]) for di, _ in db_index_list], dtype=np.float32)
             DESIGN_GATE = max(0.03, float(np.percentile(db_design_scores, 70)))
-            filtered = [
-                (di, sc) for di, sc in db_index_list
-                if float(clip_design_db[di][_top_design_idx]) >= DESIGN_GATE
-            ]
-            print(f"[GATE-DESIGN] 쿼리=소재({_top_design_name},{_top_design_prob:.2f}) "
-                  f"gate={DESIGN_GATE:.3f} → 통과 {len(filtered)}/{len(db_index_list)}개")
+            filtered = [(di, sc) for di, sc in db_index_list if float(clip_design_db[di][_top_design_idx]) >= DESIGN_GATE]
+            print(f"[GATE-DESIGN] 쿼리=소재({_top_design_name},{_top_design_prob:.2f}) gate={DESIGN_GATE:.3f} → 통과 {len(filtered)}/{len(db_index_list)}개")
+        elif _top_design_name in _SHAPE_DESIGN_NAMES:
+            db_design_scores = np.array([float(clip_design_db[di][_top_design_idx]) for di, _ in db_index_list], dtype=np.float32)
+            DESIGN_GATE = max(0.02, float(np.percentile(db_design_scores, 60)))
+            filtered = [(di, sc) for di, sc in db_index_list if float(clip_design_db[di][_top_design_idx]) >= DESIGN_GATE]
+            print(f"[GATE-DESIGN] 쿼리=형태({_top_design_name},{_top_design_prob:.2f}) gate={DESIGN_GATE:.3f} → 통과 {len(filtered)}/{len(db_index_list)}개")
         elif _top_design_name in _PLAIN_DESIGN_NAMES:
-            db_pattern_sums = np.array([
-                float(clip_design_db[di][_PATTERN_DESIGN_INDICES].sum())
-                for di, _ in db_index_list
-            ], dtype=np.float32)
+            db_pattern_sums = np.array([float(clip_design_db[di][_PATTERN_DESIGN_INDICES].sum()) for di, _ in db_index_list], dtype=np.float32)
             PLAIN_GATE = float(np.percentile(db_pattern_sums, 50))
-            filtered = [
-                (di, sc) for di, sc in db_index_list
-                if float(clip_design_db[di][_PATTERN_DESIGN_INDICES].sum()) <= PLAIN_GATE
-            ]
-            print(f"[GATE-DESIGN] 쿼리=무지({_top_design_name},{_top_design_prob:.2f}) "
-                  f"pattern_sum_gate<={PLAIN_GATE:.3f} → 통과 {len(filtered)}/{len(db_index_list)}개")
+            filtered = [(di, sc) for di, sc in db_index_list if float(clip_design_db[di][_PATTERN_DESIGN_INDICES].sum()) <= PLAIN_GATE]
+            print(f"[GATE-DESIGN] 쿼리=무지({_top_design_name},{_top_design_prob:.2f}) pattern_gate<={PLAIN_GATE:.3f} → 통과 {len(filtered)}/{len(db_index_list)}개")
         else:
-            db_design_scores = np.array([
-                float(clip_design_db[di][_top_design_idx])
-                for di, _ in db_index_list
-            ], dtype=np.float32)
+            db_design_scores = np.array([float(clip_design_db[di][_top_design_idx]) for di, _ in db_index_list], dtype=np.float32)
             DESIGN_GATE = max(0.03, float(np.percentile(db_design_scores, 70)))
-            filtered = [
-                (di, sc) for di, sc in db_index_list
-                if float(clip_design_db[di][_top_design_idx]) >= DESIGN_GATE
-            ]
-            print(f"[GATE-DESIGN] 쿼리=패턴({_top_design_name},{_top_design_prob:.2f}) "
-                  f"gate={DESIGN_GATE:.3f} → 통과 {len(filtered)}/{len(db_index_list)}개")
+            filtered = [(di, sc) for di, sc in db_index_list if float(clip_design_db[di][_top_design_idx]) >= DESIGN_GATE]
+            print(f"[GATE-DESIGN] 쿼리=패턴({_top_design_name},{_top_design_prob:.2f}) gate={DESIGN_GATE:.3f} → 통과 {len(filtered)}/{len(db_index_list)}개")
 
         if len(filtered) >= 3:
             db_index_list = filtered
@@ -832,7 +908,8 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
 
     # 내부용 키 제거, 공개 필드만 유지
     _internal_keys = ["_db_idx", "faiss_score", "color_sim", "shape_sim",
-                      "clip_color_sim", "lab_sim", "design_sim", "final_score"]
+                      "clip_color_sim", "lab_sim", "design_sim", "final_score",
+                      "_shape_sim", "_clip_image", "_lab_sim"]
     for item in results:
         for k in _internal_keys:
             item.pop(k, None)
