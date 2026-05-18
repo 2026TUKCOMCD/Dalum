@@ -22,9 +22,9 @@ CATEGORY_TEXTS = list(CATEGORY_PROMPTS.values())
 MIDDLE_CATEGORY_PROMPTS = {
     "TOP": {
         "TSHIRT"    : "a short-sleeve t-shirt, short-sleeve shirt, short-sleeve polo shirt, or sleeveless tank top — any top with sleeves ending above the elbow, or with no sleeves at all",
-        "LSHIRT"    : "a long-sleeve t-shirt, long-sleeve shirt, or long-sleeve polo shirt with sleeves extending fully to the wrist",
+        "LSHIRT"    : "a long-sleeve t-shirt, long-sleeve shirt, or long-sleeve polo shirt with sleeves extending fully to the wrist — no hood attached",
         "SWEATSHIRT": "a crew-neck pullover sweatshirt with no hood and no front zipper, made of cotton fleece or terry fabric — also called 맨투맨",
-        "HOODIE"    : "a pullover hoodie sweatshirt with an attached hood and drawstring cords — no front zipper, must be pulled over the head to wear",
+        "HOODIE"    : "a pullover hoodie sweatshirt with an attached hood and drawstring cords — no front zipper, must be pulled over the head to wear. When viewed from behind, a large hood drapes visibly down the upper back",
         "KNIT"      : "a knit sweater or knitwear with clearly visible knitted stitch texture — includes crewneck knit, V-neck knit, turtleneck knit, polo knit, and sleeveless knit vest",
         "FLEECE"    : "a polar fleece or micro-fleece top with a distinctively soft fuzzy brushed surface texture, typically a half-zip fleece or crew-neck fleece pullover",
         "BLOUSE"    : "a women's blouse or feminine lightweight top made of chiffon, silk, or delicate woven fabric — often featuring ruffles, bows, lace, or other elegant decorative details",
