@@ -10,7 +10,6 @@ CLOTHING_PROMPTS = [
     "a photo of shoes, bag, or hat",
     "a product photo of apparel or accessory",
 ]
-
 NOT_CLOTHING_PROMPTS = [
     "a photo of a landscape or nature scenery",
     "a photo of an animal or pet",
@@ -26,7 +25,6 @@ NOT_CLOTHING_PROMPTS = [
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(f"디바이스: {device}")
-
 model     = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
 processor = CLIPProcessor.from_pretrained("openai/clip-vit-base-patch32")
 model.eval()
@@ -42,10 +40,14 @@ def _get_text_emb(texts):
 clothing_embs     = _get_text_emb(CLOTHING_PROMPTS)
 not_clothing_embs = _get_text_emb(NOT_CLOTHING_PROMPTS)
 
-def is_clothing(image_path: str) -> bool:
-    image  = Image.open(image_path).convert("RGB")
-    inputs = processor(images=image, return_tensors="pt").to(device)
+def is_clothing(image) -> bool:
+    # ✅ 파일 경로(str) or PIL Image 둘 다 허용
+    if isinstance(image, str):
+        image = Image.open(image).convert("RGB")
+    else:
+        image = image.convert("RGB")
 
+    inputs = processor(images=image, return_tensors="pt").to(device)
     with torch.no_grad():
         img_feats = model.get_image_features(**inputs)
     if not isinstance(img_feats, torch.Tensor):
@@ -60,14 +62,12 @@ def is_clothing(image_path: str) -> bool:
 
     print(f"  의류 유사도:   {best_cloth:.4f}  ({CLOTHING_PROMPTS[cloth_sims.argmax()]})")
     print(f"  비의류 유사도: {best_not_cloth:.4f}  ({NOT_CLOTHING_PROMPTS[not_cloth_sims.argmax()]})")
-
     return best_cloth > best_not_cloth
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("사용법: python3 clothing_yesorno.py <이미지 경로>")
         sys.exit(1)
-
     result = is_clothing(sys.argv[1])
     if result:
         print("✅ 의류 이미지입니다.")
