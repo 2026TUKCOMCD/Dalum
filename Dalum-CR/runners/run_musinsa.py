@@ -2,7 +2,6 @@ import os
 import csv
 import subprocess
 import sys
-import hashlib
 import psycopg2
 
 # 경로 설정
@@ -86,10 +85,6 @@ def read_csv_dict(path):
         return list(reader)
 
 
-def generate_product_id(product_url: str) -> str:
-    return hashlib.md5(product_url.strip().encode()).hexdigest()
-
-
 def merge_by_category():
     print("\n[musinsa] output → merged")
 
@@ -170,6 +165,7 @@ def merge_all():
     print("\n[musinsa] merged → final")
 
     final_rows = []
+    seq = 1
 
     for category in CATEGORIES:
         path = os.path.join(MERGED_DIR, f"{category}.csv")
@@ -177,10 +173,9 @@ def merge_all():
 
         for row in rows:
             product_url = row.get("상품 URL", "")
-            product_id = generate_product_id(product_url)
 
             final_row = {
-                "product_id": product_id,
+                "product_id": seq,
                 "shopping_mall": row.get("shopping_mall", ""),
                 "large_category": row.get("대분류", ""),
                 "medium_category": row.get("중분류", ""),
@@ -195,18 +190,19 @@ def merge_all():
             }
 
             final_rows.append(final_row)
+            seq += 1
 
     if not final_rows:
         print("최종 병합 데이터 없음")
         return
 
-    final_path = os.path.join(FINAL_DIR, "musinsa_products.csv")
+    final_path = os.path.join(FINAL_DIR, "musinsa_products_final.csv")
     with open(final_path, "w", newline="", encoding="utf-8-sig") as f:
         writer = csv.DictWriter(f, fieldnames=FINAL_HEADER)
         writer.writeheader()
         writer.writerows(final_rows)
 
-    print(f"musinsa_products.csv 생성 완료 ({len(final_rows)}개)")
+    print(f"musinsa_products_final.csv 생성 완료 ({len(final_rows)}개)")
 
     try:
         insert_to_db(final_rows)

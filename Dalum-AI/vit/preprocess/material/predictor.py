@@ -40,25 +40,40 @@ class MaterialPredictor:
             transforms.ToTensor(),
         ])
 
-    # 5-CROP
-    def _generate_multi_crops(self, image: np.ndarray, crop_size=256):
-
+    def _generate_multi_crops(self, image: np.ndarray, crop_size: int = 256):
         h, w = image.shape[:2]
-
-        if h < crop_size or w < crop_size:
-            crop_size = min(h, w)
-
-        crops = []
-
-        cx, cy = w // 2, h // 2
+        crop_size = min(crop_size, h, w)
         half = crop_size // 2
-        crops.append(image[cy-half:cy+half, cx-half:cx+half])
 
-        crops.append(image[0:crop_size, 0:crop_size])
-        crops.append(image[0:crop_size, w-crop_size:w])
-        crops.append(image[h-crop_size:h, 0:crop_size])
-        crops.append(image[h-crop_size:h, w-crop_size:w])
+        # 배경 분리: 세그멘테이션 후 이미지는 배경이 검정(≈0)
+        gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+        fg_mask = gray > 10
+        rows = np.where(fg_mask.any(axis=1))[0]
+        cols = np.where(fg_mask.any(axis=0))[0]
 
+        if len(rows) == 0 or len(cols) == 0:
+            fy1, fy2, fx1, fx2 = 0, h, 0, w
+        else:
+            fy1, fy2 = int(rows[0]), int(rows[-1])
+            fx1, fx2 = int(cols[0]), int(cols[-1])
+
+        fg_cy = (fy1 + fy2) // 2
+        fg_cx = (fx1 + fx2) // 2
+        fg_h  = max(1, fy2 - fy1)
+        fg_w  = max(1, fx2 - fx1)
+
+        def safe_crop(cy, cx):
+            y1 = max(0, min(h - crop_size, cy - half))
+            x1 = max(0, min(w - crop_size, cx - half))
+            return image[y1:y1 + crop_size, x1:x1 + crop_size]
+
+        crops = [
+            safe_crop(fg_cy,                   fg_cx),               # 전경 중앙
+            safe_crop(fy1 + fg_h // 4,         fg_cx),               # 상단 (칼라/어깨 질감)
+            safe_crop(fy1 + fg_h * 3 // 4,     fg_cx),               # 하단 (헴 질감)
+            safe_crop(fg_cy,                   fx1 + fg_w // 4),     # 좌측 소매
+            safe_crop(fg_cy,                   fx1 + fg_w * 3 // 4), # 우측 소매
+        ]
         return crops
 
     # Multi-crop + Temperature Scaling

@@ -36,6 +36,7 @@ public class SearchLogServiceImpl implements SearchLogService {
 
     private final SearchLogConverter searchLogConverter;
 
+    @Transactional(readOnly = true)
     public SearchLogListResponse getSearchLog(Long memberId, Integer page, Integer size) {
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));
@@ -53,11 +54,16 @@ public class SearchLogServiceImpl implements SearchLogService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public SearchLogDetailResponse getSearchLogDetail(Long memberId, Long searchLogId) {
 
         SearchLog searchLog = searchLogRepository.findById(searchLogId).orElseThrow(
                 () -> new SearchLogException(SearchLogErrorCode.NOT_FOUND)
         );
+
+        if (!searchLog.getMember().getId().equals(memberId)) {
+            throw new SearchLogException(SearchLogErrorCode.FORBIDDEN);
+        }
 
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));

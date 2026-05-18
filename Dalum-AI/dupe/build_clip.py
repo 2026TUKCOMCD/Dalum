@@ -1,15 +1,4 @@
 #!/usr/bin/env python3
-"""
-CLIP DB 구축 - 디자인 점수(37개) + 이미지 임베딩(512차원)
-
-metadata.csv 형식: product_id, major_category, middle_category, image_type
-이미지 경로: vit/outputs/processed_images/{image_type}/{major_category}/{middle_category}/{product_id}.webp
-
-출력:
-    dupe/embeddings_clip_design.npy   (N, 37)
-    dupe/embeddings_clip_image.npy    (N, 512)
-"""
-
 import torch
 import torch.nn.functional as F
 from transformers import CLIPModel, CLIPProcessor
@@ -22,6 +11,9 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
 AI_BASE_DIR   = os.path.dirname(BASE_DIR)
 
+sys.path.insert(0, AI_BASE_DIR)
+from dupe.prompts import DESIGN_NAMES, DESIGN_TEXTS
+
 METADATA_PATH    = os.path.join(AI_BASE_DIR, "vit", "outputs", "vit_output", "metadata.csv")
 PROCESSED_DIR    = os.path.join(AI_BASE_DIR, "vit", "outputs", "processed_images")
 CLIP_DESIGN_PATH = os.path.join(BASE_DIR, "embeddings_clip_design.npy")
@@ -29,51 +21,6 @@ CLIP_IMAGE_PATH  = os.path.join(BASE_DIR, "embeddings_clip_image.npy")
 
 NUM_WORKERS    = 6
 GPU_BATCH_SIZE = 64
-
-# ==================== 디자인 프롬프트 (37개) ====================
-
-DESIGN_PROMPTS = {
-    "solid"        : "a solid color clothing with no pattern",
-    "color_block"  : "a clothing with color block design",
-    "gradient"     : "a clothing with gradient or ombre color effect",
-    "striped"      : "a clothing with stripe pattern",
-    "checkered"    : "a clothing with check or plaid pattern",
-    "argyle"       : "a clothing with argyle diamond pattern",
-    "houndstooth"  : "a clothing with houndstooth pattern",
-    "polka_dot"    : "a clothing with polka dot pattern",
-    "geometric"    : "a clothing with geometric shapes pattern",
-    "floral"       : "a clothing with floral or flower pattern",
-    "paisley"      : "a clothing with paisley or abstract pattern",
-    "animal_print" : "a clothing with animal print like leopard or zebra",
-    "camouflage"   : "a clothing with camouflage pattern",
-    "tie_dye"      : "a clothing with tie dye pattern",
-    "logo_text"    : "a clothing with logo or text print",
-    "graphic"      : "a clothing with graphic or illustration print",
-    "character"    : "a clothing with cartoon character, mascot, or animal graphic print",
-    "heart"        : "a clothing with heart shape print",
-    "star"         : "a clothing with star shape print",
-    "embroidery"   : "a clothing with embroidery or embroidered detail",
-    "rhinestone"   : "a clothing with rhinestones studs or jewel details",
-    "ribbon_bow"   : "a clothing with ribbon or bow detail",
-    "fringe"       : "a clothing with fringe or tassel detail",
-    "metallic"     : "a clothing with shiny metallic sequin or glitter",
-    "pleated"      : "a clothing with pleated or ruffle details",
-    "varsity"      : "a varsity or stadium jacket with contrast sleeves",
-    "washed"       : "a washed distressed or vintage treated clothing",
-    "denim"        : "a denim clothing like jeans or denim jacket",
-    "knit"         : "a knit or cable knit sweater clothing",
-    "leather"      : "a clothing made of leather or faux leather",
-    "fur"          : "a clothing made of fluffy fur or faux fur",
-    "fleece"       : "a clothing made of cozy fleece material",
-    "velvet"       : "a clothing made of velvet or velour fabric",
-    "silk_satin"   : "a clothing made of glossy silk or satin fabric",
-    "linen"        : "a clothing made of breathable linen fabric",
-    "sheer"        : "a sheer or transparent mesh clothing",
-    "lace"         : "a clothing with lace detail or lace fabric",
-}
-
-DESIGN_NAMES = list(DESIGN_PROMPTS.keys())
-DESIGN_TEXTS = list(DESIGN_PROMPTS.values())
 
 
 def build_image_path(row):
@@ -86,13 +33,9 @@ def build_image_path(row):
     )
 
 
-# ==================== 워커 함수 (프로세스당 CLIP 1개 로드) ====================
+# 워커 함수 (프로세스당 CLIP 1개 로드)
 
 def process_chunk(args):
-    """
-    chunk_id, rows_list(dict list) → (chunk_id, image_embs, design_embs)
-    rows_list: [{"idx": i, "image_type":..., ...}, ...]
-    """
     chunk_id, rows_list, processed_dir, design_texts, design_names = args
 
     device = "cpu"  # 멀티프로세스는 CPU 사용
@@ -175,7 +118,7 @@ def process_chunk(args):
     return chunk_id, results
 
 
-# ==================== 메인 ====================
+# 메인
 
 def build_clip_database():
     if not os.path.exists(METADATA_PATH):
@@ -238,5 +181,4 @@ def build_clip_database():
 
 
 if __name__ == "__main__":
-    sys.path.insert(0, AI_BASE_DIR)
     build_clip_database()

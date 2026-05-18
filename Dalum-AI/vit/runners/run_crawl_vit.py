@@ -29,6 +29,10 @@ load_dotenv()
 BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
 SKIP_S3 = True
 
+BASE_DIR_CRAWL   = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+META_PATH_LOCAL  = os.path.join(BASE_DIR_CRAWL, "vit", "outputs", "vit_output", "metadata.csv")
+PROC_DIR_LOCAL   = os.path.join(BASE_DIR_CRAWL, "vit", "outputs", "processed_images")
+
 # 대분류 → model_processor에 넘길 기본 중분류 (DB 카테고리 없을 때 폴백용)
 _MAJOR_TO_DEFAULT_MIDDLE = {
     "TOP"   : "기타 상의",
@@ -56,7 +60,7 @@ WEIGHT_PATH = os.path.join(
 )
 
 
-def run():
+def run(min_product_id: int = None):
     # DB 연결
     conn = get_db_connection()
     cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
@@ -65,16 +69,32 @@ def run():
     write_conn = get_db_connection()
     write_cursor = write_conn.cursor()
 
-    cursor.execute("""
-        SELECT product_id,
-               image_url,
-               purchase_link,
-               large_category,
-               medium_category,
-               small_category
-        FROM product
-        WHERE style IS NULL
-    """)
+    if min_product_id is not None:
+        cursor.execute("""
+            SELECT product_id,
+                   image_url,
+                   purchase_link,
+                   large_category,
+                   medium_category,
+                   small_category
+            FROM product
+            WHERE product_id >= %s
+            ORDER BY product_id
+        """, (min_product_id,))
+        print(f"product_id >= {min_product_id} 제품만 처리")
+    else:
+        cursor.execute("""
+            SELECT product_id,
+                   image_url,
+                   purchase_link,
+                   large_category,
+                   medium_category,
+                   small_category
+            FROM product
+            WHERE style IS NULL
+            ORDER BY product_id
+        """)
+        print("style IS NULL 미처리 제품 전체 처리")
 
     # 모델 초기화
     face_detector = FaceDetector()
@@ -245,11 +265,23 @@ def run():
                 embedding_list.clear()
                 batch_index += 1
 
+            # 전처리 이미지 로컬 저장
+            local_proc_path = os.path.join(
+                PROC_DIR_LOCAL, image_type,
+                major_category or "UNKNOWN",
+                middle_category or "UNKNOWN",
+                f"{product_id}.webp"
+            )
+            os.makedirs(os.path.dirname(local_proc_path), exist_ok=True)
+            cv2.imwrite(local_proc_path, final_img)
+
             metadata_rows.append({
-                "index": total_count + 1,
-                "product_id": product_id,
-                "major_category": major_category,
-                "middle_category": middle_category
+                "index"          : total_count + 1,
+                "product_id"     : product_id,
+                "major_category" : major_category,
+                "middle_category": middle_category,
+                "small_category" : category_name or "",
+                "image_type"     : image_type,
             })
             total_count += 1
             
@@ -297,27 +329,43 @@ def run():
     write_cursor.close()
     write_conn.close()
 
-    # metadata.csv 저장
-    csv_buffer = io.StringIO()
-    fieldnames = [
-        "index",
-        "product_id",
-        "major_category",
-        "middle_category",
-    ]
+    # 기존 데이터 유지
+    fieldnames = ["index", "product_id", "major_category", "middle_category", "small_category", "image_type"]
 
-    writer = csv.DictWriter(csv_buffer, fieldnames=fieldnames)
-    writer.writeheader()
-    writer.writerows(metadata_rows)
+    existing_ids: set[int] = set()
+    existing_rows: list[dict] = []
 
+    if os.path.exists(META_PATH_LOCAL):
+        import pandas as _pd
+        _existing = _pd.read_csv(META_PATH_LOCAL)
+        # small_category 컬럼 없으면 빈값으로 추가
+        if "small_category" not in _existing.columns:
+            _existing["small_category"] = ""
+        existing_ids = set(_existing["product_id"].astype(int).tolist())
+        existing_rows = _existing[fieldnames].to_dict("records")
+
+    # 중복 제외 후 신규 행만 추가
+    new_rows = [r for r in metadata_rows if int(r["product_id"]) not in existing_ids]
+    all_rows = existing_rows + new_rows
+
+    # index 재번호 매기기
+    for i, r in enumerate(all_rows, 1):
+        r["index"] = i
+
+    os.makedirs(os.path.dirname(META_PATH_LOCAL), exist_ok=True)
+    with open(META_PATH_LOCAL, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(all_rows)
+
+    print(f"metadata.csv 저장: 기존 {len(existing_rows)}개 + 신규 {len(new_rows)}개 = 총 {len(all_rows)}개")
+    print(f"저장 경로: {META_PATH_LOCAL}")
+
+    # S3 업로드 (선택)
     if not SKIP_S3:
         try:
-            upload_bytes_to_s3(
-                csv_buffer.getvalue().encode("utf-8"),
-                BUCKET_NAME,
-                "dataset/vit_output/metadata.csv",
-                content_type="text/csv"
-            )
+            with open(META_PATH_LOCAL, "rb") as f:
+                upload_bytes_to_s3(f.read(), BUCKET_NAME, "dataset/vit_output/metadata.csv", content_type="text/csv")
         except Exception as s3_err:
             print(f"[S3 SKIP] metadata csv upload failed: {s3_err}")
 
