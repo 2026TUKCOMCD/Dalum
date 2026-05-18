@@ -78,7 +78,7 @@ _MATERIAL_DESIGN_NAMES = {
 _SHAPE_DESIGN_NAMES = {
     "oversized", "slim_fitted", "cropped", "longline", "mini_length",
     "hooded", "high_neck", "lapel_collar", "collarless", "off_shoulder",
-    "double_breasted", "belted", "zip_front", "open_front",
+    "double_breasted", "belted", "zip_front", "half_zip", "open_front",
     "bomber_silhouette", "moto_biker",
     "wide_leg_bottom", "slim_leg_bottom", "flared_bottom",
     "varsity",
@@ -110,6 +110,7 @@ _DESIGN_TO_SMALL_HINT: dict[str, list[str]] = {
 from dupe.prompts import (
     CATEGORY_NAMES, CATEGORY_TEXTS,
     MIDDLE_CATEGORY_PROMPTS,
+    SMALL_CATEGORY_PROMPTS,
 )
 
 # 초기화
@@ -146,12 +147,41 @@ with torch.no_grad():
             _mid_out = _mid_out.pooler_output
         _cached_middle_embs[_major] = (_mid_names, F.normalize(_mid_out, dim=-1))
 
+    _cached_small_embs = {}
+    for (_major, _mid), _small_dict in SMALL_CATEGORY_PROMPTS.items():
+        if len(_small_dict) <= 1:
+            continue  # 소분류가 1개뿐이면 감지 불필요
+        _small_texts = list(_small_dict.values())
+        _small_names = list(_small_dict.keys())
+        _small_inputs = clip_processor(text=_small_texts, return_tensors="pt", padding=True).to(device)
+        _small_out = clip_model.get_text_features(**_small_inputs)
+        if not isinstance(_small_out, torch.Tensor):
+            _small_out = _small_out.pooler_output
+        _cached_small_embs[(_major, _mid)] = (_small_names, F.normalize(_small_out, dim=-1))
+
     _color_inputs = clip_processor(text=COLOR_PROMPTS, return_tensors="pt", padding=True).to(device)
     _color_out    = clip_model.get_text_features(**_color_inputs)
     if not isinstance(_color_out, torch.Tensor):
         _color_out = _color_out.pooler_output
     _cached_color_text_embs = F.normalize(_color_out, dim=-1)  # [C, 512]
 print("   완료")
+
+# ViT lazy 로드 (recommend() 직접 호출 시 shape 임베딩 추출용)
+_vit_model     = None
+_vit_processor = None
+
+def _get_vit():
+    global _vit_model, _vit_processor
+    if _vit_model is None:
+        from transformers import ViTModel, ViTImageProcessor
+        _vit_model = ViTModel.from_pretrained(
+            "google/vit-base-patch16-224", local_files_only=True
+        ).to(device)
+        _vit_model.eval()
+        _vit_processor = ViTImageProcessor.from_pretrained(
+            "google/vit-base-patch16-224", local_files_only=True
+        )
+    return _vit_model, _vit_processor
 
 print("임베딩 DB 로드...")
 _missing = [p for p in [CLIP_IMAGE_PATH, CLIP_DESIGN_PATH, DALUM_VIT_PATH, META_PATH]
@@ -342,6 +372,28 @@ def detect_middle_category(clip_emb: np.ndarray, major_category: str) -> str:
     return mid_names[best_idx]
 
 
+def detect_small_category(clip_emb: np.ndarray, major_category: str, middle_category: str) -> str:
+    key = (str(major_category), str(middle_category))
+    if key not in _cached_small_embs:
+        return ""
+
+    small_names, text_embs = _cached_small_embs[key]
+
+    img_emb = torch.tensor(clip_emb, dtype=torch.float32).to(device)
+    if img_emb.dim() == 1:
+        img_emb = img_emb.unsqueeze(0)
+    img_emb = F.normalize(img_emb, dim=-1)
+
+    with torch.no_grad():
+        logits = (img_emb @ text_embs.T) * 100
+        probs  = F.softmax(logits, dim=-1)[0].cpu().numpy()
+
+    best_idx = int(probs.argmax())
+    detected = small_names[best_idx]
+    print(f"[소분류] {major_category}/{middle_category} → {detected} ({probs[best_idx]:.3f})")
+    return detected
+
+
 def extract_dalum_vit_embedding(image_pil):
     from vit.preprocess.pipeline.segmentation_processor import SegmentationProcessor
     from vit.preprocess.color.color_extractor import ColorExtractor
@@ -360,7 +412,14 @@ def extract_dalum_vit_embedding(image_pil):
     enhanced     = enhance_for_material(seg_img)
     material_vec = MaterialPredictor().predict(enhanced)
     material_emb = MaterialPostProcessor().process(material_vec)
-    shape_emb = np.zeros(768, dtype="float32")  # 임시
+
+    # ViT layer11 CLS 토큰으로 shape 임베딩 추출
+    vit_model, vit_processor = _get_vit()
+    inputs = vit_processor(images=image_pil.convert("RGB"), return_tensors="pt").to(device)
+    with torch.no_grad():
+        outputs   = vit_model(**inputs, output_hidden_states=True)
+        shape_emb = outputs.hidden_states[11][:, 0, :].cpu().numpy()[0].astype("float32")
+
     return np.concatenate([color_emb, shape_emb, material_emb]).astype("float32").reshape(1, -1)
 
 
@@ -493,16 +552,19 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         item["final_score"] = _final
 
         # 공개 점수 (내부 세부 점수 대신 4개만 노출)
-        _color_w_sum = _w_lab + _w_clip_clr
-        item["color_score"]    = round((_w_lab * lab_sim + _w_clip_clr * clip_color_sim) / max(0.01, _color_w_sum), 4)
-        item["material_score"] = round(float(material_sim), 4)
-        item["design_score"]   = round(float(design_sim), 4)
-        item["total_score"]    = round(float(_final), 4)
+        _color_w_sum = _W_COLOR + _w_lab + _w_clip_clr
+        _c_score = round((_W_COLOR * color_sim + _w_lab * lab_sim + _w_clip_clr * clip_color_sim) / max(0.01, _color_w_sum), 4)
+        _m_score = round(float(material_sim), 4)
+        _d_score = round(float(design_sim), 4)
+        item["color_score"]    = _c_score
+        item["material_score"] = _m_score
+        item["design_score"]   = _d_score
+        item["total_score"]    = round((_c_score + _m_score + _d_score) / 3.0, 4)
         item["_shape_sim"]     = round(float(shape_sim), 4)
         item["_clip_image"]    = round(float(item["faiss_score"]), 4)
         item["_lab_sim"]       = round(float(lab_sim), 4)
 
-    results.sort(key=lambda x: x["final_score"], reverse=True)
+    results.sort(key=lambda x: x["total_score"], reverse=True)
 
     if q_lab is not None:
         print(f"[QUERY-LAB] L={q_lab[0]:.1f} a={q_lab[1]:.1f} b={q_lab[2]:.1f} chroma={_rc_chroma:.1f}")
@@ -558,7 +620,7 @@ def extract_mean_lab(image_pil):
 
 # 추천
 
-def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, design_probs, top_k=10, major_category=None, middle_category=None, lab_color=None):
+def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, design_probs, top_k=10, major_category=None, middle_category=None, small_category=None, lab_color=None):
     if faiss_indices is None:
         raise RuntimeError("듀프 임베딩 DB가 로드되지 않았습니다. build_clip.py를 먼저 실행하세요.")
 
@@ -595,8 +657,24 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
         else []
     )
 
-    # 0순위 → 소분류 인덱스 (소재 명확 + small_category 인덱스 있을 때)
-    if _small_hints and faiss_small_indices and major_category and middle_category:
+    # 소분류 자동 감지 (파라미터 미전달 시)
+    if not small_category and major_category and middle_category:
+        small_category = detect_small_category(clip_arr[0], major_category, middle_category)
+
+    # 0순위 → 소분류 인덱스 (자동 감지 또는 직접 지정)
+    if small_category and faiss_small_indices and major_category and middle_category:
+        _skey = (str(major_category), str(middle_category), str(small_category))
+        if _skey in faiss_small_indices:
+            _sidx, _sdb_idxs = faiss_small_indices[_skey]
+            if len(_sdb_idxs) >= top_k:
+                search_k = min(len(_sdb_idxs), top_k * 400)
+                distances, local_indices = _sidx.search(query_vec, search_k)
+                db_index_list = [(int(_sdb_idxs[li]), float(sc))
+                                 for li, sc in zip(local_indices[0], distances[0]) if li >= 0]
+                print(f"[검색] 소분류={small_category} ({len(_sdb_idxs)}개)")
+
+    # 1순위 → 소분류 인덱스 (소재 힌트 기반, small_category 미사용 시)
+    if db_index_list is None and _small_hints and faiss_small_indices and major_category and middle_category:
         for _hint in _small_hints:
             _matched_keys = [
                 k for k in faiss_small_indices
@@ -612,10 +690,10 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
                     distances, local_indices = _sidx.search(query_vec, search_k)
                     db_index_list = [(int(_sdb_idxs[li]), float(sc))
                                      for li, sc in zip(local_indices[0], distances[0]) if li >= 0]
-                    print(f"[검색] 소분류={_skey[2]} ({len(_sdb_idxs)}개) ← {_pre_top_name}")
+                    print(f"[검색] 소분류(소재힌트)={_skey[2]} ({len(_sdb_idxs)}개) ← {_pre_top_name}")
                     break
 
-    # 1순위 → 중분류 인덱스 (소분류 미사용 시)
+    # 2순위 → 중분류 인덱스 (소분류 미사용 시)
     if db_index_list is None and mid_key and faiss_middle_indices and mid_key in faiss_middle_indices:
         mid_index, mid_db_idxs = faiss_middle_indices[mid_key]
         if len(mid_db_idxs) >= top_k * 2:
@@ -625,7 +703,7 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
                              for li, sc in zip(local_indices[0], distances[0]) if li >= 0]
             print(f"[검색] 중분류={middle_category} ({len(mid_db_idxs)}개)")
 
-    # 2순위 → 대분류 인덱스
+    # 3순위 → 대분류 인덱스
     if db_index_list is None:
         if cat_key and cat_key in faiss_indices:
             cat_index, cat_db_idxs = faiss_indices[cat_key]
@@ -932,42 +1010,21 @@ def recommend(image, top_k=10):
     clip_emb, design_scores, design_probs = extract_clip_features(image_pil)
     dalum_emb = extract_dalum_vit_embedding(image_pil)
 
-    # 카테고리 자동 감지 후 해당 카테고리 인덱스 사용
-    detected_cat = detect_major_category(image_pil)
-    cat_index, cat_db_idxs = faiss_indices[detected_cat]
+    major_cat  = detect_major_category(clip_emb=clip_emb)
+    middle_cat = detect_middle_category(clip_emb=clip_emb, major_category=major_cat)
+    q_lab      = extract_mean_lab(image_pil)
 
-    query_vec = clip_emb.copy()
-    faiss.normalize_L2(query_vec)
-    search_k = min(len(cat_db_idxs), top_k * 200)
-    distances, local_indices = cat_index.search(query_vec, search_k)
+    color_emb    = dalum_emb[0, :768]
+    shape_emb    = dalum_emb[0, 768:1536]
+    material_emb = dalum_emb[0, 1536:]
 
-    results = []
-    for li, score in zip(local_indices[0], distances[0]):
-        if li < 0:
-            continue
-        db_idx = int(cat_db_idxs[li])
-        row = metadata.iloc[db_idx]
-        results.append({
-            "product_id"     : int(row["product_id"]),
-            "major_category" : row.get("major_category", ""),
-            "middle_category": row.get("middle_category", ""),
-            "image_type"     : row.get("image_type", ""),
-            "faiss_score"    : float(score),
-            "vit_sim"        : 0.0,
-            "design_sim"     : 0.0,
-            "final_score"    : float(score),
-            "_db_idx"        : db_idx,
-        })
-
-    results = mmr_dedup(results)
-    q_lab = extract_mean_lab(image_pil)
-
-    results = rerank(
-        results,
-        dalum_emb,
-        design_probs,
-        q_lab=q_lab
+    results, _ = recommend_from_embedding(
+        clip_emb, color_emb, shape_emb, material_emb, design_probs,
+        top_k=top_k,
+        major_category=major_cat,
+        middle_category=middle_cat,
+        lab_color=q_lab,
     )
 
     top_design = max(design_scores, key=design_scores.get)
-    return results[:top_k], design_scores, top_design
+    return results, design_scores, top_design
