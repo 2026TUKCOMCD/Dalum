@@ -7,11 +7,30 @@ import sys
 import argparse
 import multiprocessing as mp
 from multiprocessing import Pool
+import boto3
+from io import BytesIO
+from dotenv import load_dotenv
+load_dotenv()
 
 BASE_DIR      = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 META_PATH     = os.path.join(BASE_DIR, "vit", "outputs", "vit_output", "metadata.csv")
-PROCESSED_DIR = os.path.join(BASE_DIR, "vit", "outputs", "processed_images")
 OUTPUT_PATH   = os.path.join(os.path.dirname(__file__), "color_db.npy")
+
+_S3_BUCKET = os.getenv("S3_BUCKET_NAME", "dalum-storage")
+_S3_PREFIX = "outputs_final/processed_images"
+_s3_client = None
+
+def _get_s3():
+    global _s3_client
+    if _s3_client is None:
+        load_dotenv()
+        _s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+            region_name=os.getenv("AWS_REGION"),
+        )
+    return _s3_client
 
 DEFAULT_LAB = np.array([50.0, 0.0, 0.0, 1.0,  50.0, 0.0, 0.0, 0.0,  50.0, 0.0, 0.0, 0.0], dtype=np.float32)
 
@@ -20,8 +39,7 @@ _KMEANS_CRITERIA = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 50, 0.2)
 _KMEANS_ATTEMPTS = 3
 
 
-def extract_top3_lab(img_path: str):
-    img = cv2.imread(img_path, cv2.IMREAD_UNCHANGED)
+def extract_top3_lab(img: np.ndarray):
     if img is None or img.ndim < 3:
         return None
 
@@ -88,11 +106,17 @@ def _process_row(args):
     idx, product_id, major, middle, img_type = args
     lab = None
     for t in [img_type, "Model", "Product"]:
-        path = os.path.join(PROCESSED_DIR, t, major, middle, f"{product_id}.webp")
-        if os.path.exists(path):
-            lab = extract_top3_lab(path)
+        s3_key = f"{_S3_PREFIX}/{t}/{major}/{middle}/{product_id}.webp"
+        try:
+            resp = _get_s3().get_object(Bucket=_S3_BUCKET, Key=s3_key)
+            buf  = resp["Body"].read()
+            arr  = np.frombuffer(buf, dtype=np.uint8)
+            img  = cv2.imdecode(arr, cv2.IMREAD_UNCHANGED)
+            lab  = extract_top3_lab(img)
             if lab is not None:
                 break
+        except Exception:
+            continue
     return idx, lab
 
 
