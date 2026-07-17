@@ -6,6 +6,9 @@ from PIL import Image
 import numpy as np
 import pandas as pd
 import os, sys
+import boto3
+from io import BytesIO
+from dotenv import load_dotenv
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
 BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
@@ -36,7 +39,14 @@ def build_image_path(row):
 # 워커 함수 (프로세스당 CLIP 1개 로드)
 
 def process_chunk(args):
-    chunk_id, rows_list, processed_dir, design_texts, design_names = args
+    chunk_id, rows_list, s3_bucket, s3_prefix, design_texts, design_names = args
+    load_dotenv()
+    s3 = boto3.client(
+        "s3",
+        aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+        aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+        region_name=os.getenv("AWS_REGION"),
+    )
 
     device = "cpu"  # 멀티프로세스는 CPU 사용
     clip_model     = CLIPModel.from_pretrained("openai/clip-vit-base-patch32").to(device)
@@ -79,23 +89,13 @@ def process_chunk(args):
 
     for row in rows_list:
         orig_idx = row["orig_idx"]
-        img_path = os.path.join(
-            processed_dir,
-            str(row["image_type"]),
-            str(row["major_category"]),
-            str(row["middle_category"]),
-            f"{int(row['product_id'])}.webp",
-        )
-
-        if not os.path.exists(img_path):
-            results[orig_idx] = (
-                np.zeros(512, dtype="float32"),
-                np.ones(n_design, dtype="float32") / n_design,
-            )
-            continue
+        s3_key = (f"{s3_prefix}/{row['image_type']}/{row['major_category']}"
+                  f"/{row['middle_category']}/{int(row['product_id'])}.webp")
 
         try:
-            img = Image.open(img_path).convert("RGB")
+            resp = s3.get_object(Bucket=s3_bucket, Key=s3_key)
+            buf  = resp["Body"].read()
+            img  = Image.open(BytesIO(buf)).convert("RGB")
             batch_imgs.append(img)
             batch_idxs.append(orig_idx)
         except Exception:
@@ -139,8 +139,11 @@ def build_clip_database():
     chunk_size = (n_total + NUM_WORKERS - 1) // NUM_WORKERS
     chunks = [rows_list[i:i + chunk_size] for i in range(0, n_total, chunk_size)]
 
+    load_dotenv()
+    s3_bucket = os.getenv("S3_BUCKET_NAME", "dalum-storage")
+    s3_prefix = "outputs_final/processed_images"
     args_list = [
-        (cid, chunk, PROCESSED_DIR, DESIGN_TEXTS, DESIGN_NAMES)
+        (cid, chunk, s3_bucket, s3_prefix, DESIGN_TEXTS, DESIGN_NAMES)
         for cid, chunk in enumerate(chunks)
     ]
 

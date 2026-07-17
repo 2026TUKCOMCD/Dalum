@@ -17,21 +17,40 @@ import numpy as np
 import pandas as pd
 import cv2
 import os, sys, time, argparse
+import boto3
+from io import BytesIO
+from dotenv import load_dotenv
 from PIL import Image
 from multiprocessing import Pool, cpu_count
 from skimage.color import rgb2lab
 from sklearn.cluster import KMeans
 import warnings
 warnings.filterwarnings('ignore')  # KMeans 수렴 경고 무시
+load_dotenv()
 
 # ==================== 설정 ====================
 
-BASE_DIR        = os.path.dirname(os.path.abspath(__file__))
-AI_BASE_DIR     = os.path.dirname(BASE_DIR)
-METADATA_PATH   = os.path.join(AI_BASE_DIR, 'vit', 'outputs', 'vit_output', 'metadata.csv')
-OUTPUT_PATH     = os.path.join(BASE_DIR, 'embeddings_lab_spatial.npy')
-LOCAL_IMAGE_DIR = os.path.join(AI_BASE_DIR, 'vit', 'outputs', 'processed_images')
-SAVE_EVERY      = 10000
+BASE_DIR      = os.path.dirname(os.path.abspath(__file__))
+AI_BASE_DIR   = os.path.dirname(BASE_DIR)
+METADATA_PATH = os.path.join(AI_BASE_DIR, 'vit', 'outputs', 'vit_output', 'metadata.csv')
+OUTPUT_PATH   = os.path.join(BASE_DIR, 'embeddings_lab_spatial.npy')
+SAVE_EVERY    = 10000
+
+_S3_BUCKET = os.getenv("S3_BUCKET_NAME", "dalum-storage")
+_S3_PREFIX = "outputs_final/processed_images"
+_s3_client = None
+
+def _get_s3():
+    global _s3_client
+    if _s3_client is None:
+        load_dotenv()
+        _s3_client = boto3.client(
+            "s3",
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_KEY"),
+            region_name=os.getenv("AWS_REGION"),
+        )
+    return _s3_client
 
 GRID          = 3
 N_COLORS      = 3
@@ -59,16 +78,18 @@ print(f"{'='*55}\n")
 
 # ==================== 추출 함수 ====================
 
-def extract_lab_spatial(full_path):
-    if full_path == '__missing__':
+def extract_lab_spatial(s3_key):
+    if s3_key == '__missing__':
         return np.zeros(TOTAL_DIM, dtype=np.float32)
 
-    local_path = full_path
     try:
-        img = cv2.imread(local_path)
+        resp = _get_s3().get_object(Bucket=_S3_BUCKET, Key=s3_key)
+        buf  = resp["Body"].read()
+        arr  = np.frombuffer(buf, dtype=np.uint8)
+        img  = cv2.imdecode(arr, cv2.IMREAD_COLOR)
         if img is None:
             img = cv2.cvtColor(
-                np.array(Image.open(local_path).convert('RGB')),
+                np.array(Image.open(BytesIO(buf)).convert('RGB')),
                 cv2.COLOR_RGB2BGR
             )
 
@@ -163,25 +184,20 @@ if __name__ == '__main__':
         all_feats = []
         print(f"🆕 처음부터: {n_total:,}개\n")
 
-    filenames = []
+    s3_keys = []
     for i in range(start_idx, n_total):
         row = metadata.iloc[i]
-        img_path = os.path.join(
-            LOCAL_IMAGE_DIR,
-            str(row['image_type']),
-            str(row['major_category']),
-            str(row['middle_category']),
-            f"{int(row['product_id'])}.webp",
-        )
-        filenames.append(img_path if os.path.exists(img_path) else '__missing__')
+        s3_key = (f"{_S3_PREFIX}/{row['image_type']}/{row['major_category']}"
+                  f"/{row['middle_category']}/{int(row['product_id'])}.webp")
+        s3_keys.append(s3_key)
 
     print(f"2️⃣  KMeans LAB 공간 분할 추출 ({args.workers}코어)...\n")
     t_start = time.time()
     CHUNK   = 1000
 
     with Pool(processes=args.workers) as pool:
-        for batch_start in range(0, len(filenames), CHUNK):
-            batch   = filenames[batch_start:batch_start + CHUNK]
+        for batch_start in range(0, len(s3_keys), CHUNK):
+            batch   = s3_keys[batch_start:batch_start + CHUNK]
             results = pool.map(extract_lab_spatial, batch)
             all_feats.extend(results)
 
