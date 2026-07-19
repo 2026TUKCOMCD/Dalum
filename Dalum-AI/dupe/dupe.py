@@ -559,12 +559,12 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         item["color_score"]    = _c_score
         item["material_score"] = _m_score
         item["design_score"]   = _d_score
-        item["total_score"]    = round((_c_score + _m_score + _d_score) / 3.0, 4)
+        item["total_score"]    = round(float(_final), 4)
         item["_shape_sim"]     = round(float(shape_sim), 4)
         item["_clip_image"]    = round(float(item["faiss_score"]), 4)
         item["_lab_sim"]       = round(float(lab_sim), 4)
 
-    results.sort(key=lambda x: x["total_score"], reverse=True)
+    results.sort(key=lambda x: x["final_score"], reverse=True)
 
     if q_lab is not None:
         print(f"[QUERY-LAB] L={q_lab[0]:.1f} a={q_lab[1]:.1f} b={q_lab[2]:.1f} chroma={_rc_chroma:.1f}")
@@ -805,7 +805,7 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
         else:
             # 무채색 쿼리 (black/gray/white 등)
             # OUTER 무채색: ΔE<28 이상으로 완화하지 않음
-            _achromatic_max_gate = 20.0 if str(major_category) == "OUTER" else 35.0
+            _achromatic_max_gate = 20.0 if str(major_category) == "OUTER" else 22.0
             LAB_GATE = 14.0
             filtered = [(di, sc) for di, sc in db_index_list if _de(di) < LAB_GATE]
             print(f"[GATE-COLOR] chroma={_q_chroma:.1f} ΔE<{LAB_GATE} → {len(filtered)}개")
