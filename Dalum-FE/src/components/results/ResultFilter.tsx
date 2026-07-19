@@ -1,10 +1,15 @@
 import { scoreOptions } from '../../constants';
 
-type Props = {
-  categories: { value: string; label: string }[];
-  selectedCategories: string[];
-  onToggleCategory: (category: string) => void;
+export type SortField = 'color' | 'design' | 'material';
+export type SortDirection = 'asc' | 'desc';
 
+const SORT_FIELDS: { field: SortField; label: string }[] = [
+  { field: 'color', label: '색상 유사도' },
+  { field: 'design', label: '디자인 유사도' },
+  { field: 'material', label: '재질 유사도' },
+];
+
+type Props = {
   minPrice: number | '';
   maxPrice: number | '';
   onChangeMinPrice: (value: number | '') => void;
@@ -12,64 +17,28 @@ type Props = {
 
   scoreOption: string;
   onChangeScoreOption: (option: string) => void;
+
+  sortField: SortField | null;
+  sortDirection: SortDirection | null;
+  onChangeSort: (field: SortField, direction: SortDirection) => void;
 };
 
 const ResultFilter = ({
-  categories,
-  selectedCategories,
-  onToggleCategory,
   minPrice,
   maxPrice,
   onChangeMinPrice,
   onChangeMaxPrice,
   scoreOption,
   onChangeScoreOption,
+  sortField,
+  sortDirection,
+  onChangeSort,
 }: Props) => {
-  const isAllCategory = selectedCategories.length === 0;
-
   return (
     <div className="w-full flex flex-col gap-3 pb-4 border-b border-primary-600">
-      {/* 카테고리 필터 */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="typo-body_bold12 text-gray-600 w-14 shrink-0">
-          카테고리
-        </span>
-        <button
-          type="button"
-          onClick={() =>
-            selectedCategories.forEach((category) => onToggleCategory(category))
-          }
-          className={`typo-body_bold12 px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
-            isAllCategory
-              ? 'bg-primary-900 text-gray-0 border-primary-900'
-              : 'bg-screen-0 text-gray-600 border-gray-100'
-          }`}
-        >
-          전체
-        </button>
-        {categories.map(({ value, label }) => {
-          const isSelected = selectedCategories.includes(value);
-
-          return (
-            <button
-              key={value}
-              type="button"
-              onClick={() => onToggleCategory(value)}
-              className={`typo-body_bold12 px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
-                isSelected
-                  ? 'bg-primary-900 text-gray-0 border-primary-900'
-                  : 'bg-screen-0 text-gray-600 border-gray-100'
-              }`}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-
       {/* 점수 필터 */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="typo-body_bold12 text-gray-600 w-14 shrink-0">
+        <span className="typo-body_bold12 text-gray-600 w-18 shrink-0">
           닮음 지수
         </span>
         {scoreOptions.map((option) => {
@@ -90,6 +59,34 @@ const ResultFilter = ({
             </button>
           );
         })}
+      </div>
+
+      {/* 유사도 정렬 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="typo-body_bold12 text-gray-600 w-18 shrink-0">
+          유사도
+        </span>
+        {SORT_FIELDS.flatMap(({ field, label }) =>
+          (['desc', 'asc'] as const).map((direction) => {
+            const isSelected =
+              sortField === field && sortDirection === direction;
+
+            return (
+              <button
+                key={`${field}-${direction}`}
+                type="button"
+                onClick={() => onChangeSort(field, direction)}
+                className={`typo-body_bold12 px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
+                  isSelected
+                    ? 'bg-primary-900 text-gray-0 border-primary-900'
+                    : 'bg-screen-0 text-gray-600 border-gray-100'
+                }`}
+              >
+                {label} {direction === 'desc' ? '↑' : '↓'}
+              </button>
+            );
+          })
+        )}
       </div>
 
       {/* 가격 필터 */}

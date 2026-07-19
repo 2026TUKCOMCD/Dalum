@@ -2,22 +2,31 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import InfoIcon from '../../assets/icons/InfoIcon';
 import useBaseModal from '../../stores/modals/baseModal';
 import type { DetailDupeSearchItem } from '../../types/me/Me.types';
-import { CATEGORY_LABEL_MAP, SCORE_THRESHOLD_MAP } from '../../constants';
+import { SCORE_THRESHOLD_MAP } from '../../constants';
 import DupeCard from './DupeCard';
-import ResultFilter from './ResultFilter';
+import ResultFilter, { type SortDirection, type SortField } from './ResultFilter';
 
 type Props = {
   items: DetailDupeSearchItem[];
   priceRange?: { minPrice: number | null; maxPrice: number | null };
 };
 
+const SORT_SCORE_KEY_MAP: Record<SortField, keyof DetailDupeSearchItem> = {
+  color: 'colorScore',
+  design: 'designScore',
+  material: 'materialScore',
+};
+
 const ResultContent = ({ items, priceRange }: Props) => {
   const { openModal } = useBaseModal();
 
-  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [minPrice, setMinPrice] = useState<number | ''>('');
   const [maxPrice, setMaxPrice] = useState<number | ''>('');
   const [scoreOption, setScoreOption] = useState('전체');
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortDirection, setSortDirection] = useState<SortDirection | null>(
+    null
+  );
 
   const isPriceInitialized = useRef(false);
 
@@ -29,41 +38,36 @@ const ResultContent = ({ items, priceRange }: Props) => {
     isPriceInitialized.current = true;
   }, [priceRange]);
 
-  const categories = useMemo(() => {
-    const available = new Set(items.map((item) => item.category));
+  const changeSort = (field: SortField, direction: SortDirection) => {
+    const isSameSort = sortField === field && sortDirection === direction;
 
-    return Object.keys(CATEGORY_LABEL_MAP)
-      .filter((category) => available.has(category))
-      .map((category) => ({
-        value: category,
-        label: CATEGORY_LABEL_MAP[category],
-      }));
-  }, [items]);
-
-  const toggleCategory = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((it) => it !== category)
-        : [...prev, category]
-    );
+    setSortField(isSameSort ? null : field);
+    setSortDirection(isSameSort ? null : direction);
   };
 
   const filteredItems = useMemo(() => {
     const minScore = SCORE_THRESHOLD_MAP[scoreOption] ?? 0;
 
     return items.filter((item) => {
-      if (
-        selectedCategories.length > 0 &&
-        !selectedCategories.includes(item.category)
-      )
-        return false;
       if (minPrice !== '' && item.price < minPrice) return false;
       if (maxPrice !== '' && item.price > maxPrice) return false;
       if (item.totalScore < minScore) return false;
 
       return true;
     });
-  }, [items, selectedCategories, minPrice, maxPrice, scoreOption]);
+  }, [items, minPrice, maxPrice, scoreOption]);
+
+  const sortedItems = useMemo(() => {
+    if (!sortField || !sortDirection) return filteredItems;
+
+    const scoreKey = SORT_SCORE_KEY_MAP[sortField];
+
+    return [...filteredItems].sort((a, b) => {
+      const diff = Number(a[scoreKey]) - Number(b[scoreKey]);
+
+      return sortDirection === 'desc' ? -diff : diff;
+    });
+  }, [filteredItems, sortField, sortDirection]);
 
   return (
     <div className="w-full h-full px-12.5 pt-12.5">
@@ -79,21 +83,21 @@ const ResultContent = ({ items, priceRange }: Props) => {
 
         {/* 필터 */}
         <ResultFilter
-          categories={categories}
-          selectedCategories={selectedCategories}
-          onToggleCategory={toggleCategory}
           minPrice={minPrice}
           maxPrice={maxPrice}
           onChangeMinPrice={setMinPrice}
           onChangeMaxPrice={setMaxPrice}
           scoreOption={scoreOption}
           onChangeScoreOption={setScoreOption}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onChangeSort={changeSort}
         />
 
         {/* 듀프 제품 리스트 */}
-        {filteredItems.length > 0 ? (
+        {sortedItems.length > 0 ? (
           <div className="w-full grid grid-cols-[repeat(auto-fill,minmax(200px,1fr))] gap-y-10 overflow-y-auto pb-12.5 scrollbar-hide justify-items-center">
-            {filteredItems.map((item) => (
+            {sortedItems.map((item) => (
               <DupeCard key={item.productId} item={item} />
             ))}
           </div>
