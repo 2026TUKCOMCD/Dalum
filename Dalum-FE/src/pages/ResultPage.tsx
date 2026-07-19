@@ -33,11 +33,12 @@ const ResultPage = () => {
 
   const imageUrl = detailDupeSearchList?.imageUrl;
   const items = detailDupeSearchList?.results ?? [];
+  const priceRange = detailDupeSearchList?.conditions;
 
   return (
     <div className="w-full h-full flex">
       <ResultSidebar imageUrl={imageUrl} />
-      <ResultContent items={items} />
+      <ResultContent items={items} priceRange={priceRange} />
     </div>
   );
 };

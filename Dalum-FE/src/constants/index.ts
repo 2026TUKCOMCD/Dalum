@@ -75,6 +75,22 @@ export const CATEGORY_LABEL_MAP: Record<string, string> = {
   DRESS: '한벌옷',
 };
 
+export const scoreOptions = [
+  '전체',
+  '90점 이상',
+  '80점 이상',
+  '70점 이상',
+  '60점 이상',
+];
+
+export const SCORE_THRESHOLD_MAP: Record<string, number> = {
+  전체: 0,
+  '90점 이상': 90,
+  '80점 이상': 80,
+  '70점 이상': 70,
+  '60점 이상': 60,
+};
+
 export const USER_TYPE_MAP: Record<string, string> = {
   KAKAO: '카카오',
   GOOGLE: '구글',
