@@ -37,9 +37,7 @@ const ResultFilter = ({
         <button
           type="button"
           onClick={() =>
-            selectedCategories.forEach((category) =>
-              onToggleCategory(category)
-            )
+            selectedCategories.forEach((category) => onToggleCategory(category))
           }
           className={`typo-body_bold12 px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
             isAllCategory
@@ -69,63 +67,62 @@ const ResultFilter = ({
         })}
       </div>
 
-      {/* 가격 & 점수 필터 */}
-      <div className="flex flex-wrap items-center gap-6">
-        {/* 가격 필터 */}
-        <div className="flex items-center gap-2">
-          <span className="typo-body_bold12 text-gray-600 w-14 shrink-0">
-            가격
-          </span>
-          <input
-            type="number"
-            min={0}
-            value={minPrice}
-            onChange={(e) =>
-              onChangeMinPrice(
-                e.target.value === '' ? '' : Number(e.target.value)
-              )
-            }
-            placeholder="최소"
-            className="w-24 bg-gray-50 text-xs placeholder:font-extralight font-medium text-gray-900 px-3 py-2 rounded-sm outline-none"
-          />
-          <span className="typo-body_med12 text-gray-600">~</span>
-          <input
-            type="number"
-            min={0}
-            value={maxPrice}
-            onChange={(e) =>
-              onChangeMaxPrice(
-                e.target.value === '' ? '' : Number(e.target.value)
-              )
-            }
-            placeholder="최대"
-            className="w-24 bg-gray-50 text-xs placeholder:font-extralight font-medium text-gray-900 px-3 py-2 rounded-sm outline-none"
-          />
-          <span className="typo-body_med12 text-gray-600">원</span>
-        </div>
+      {/* 점수 필터 */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="typo-body_bold12 text-gray-600 w-14 shrink-0">
+          닮음 지수
+        </span>
+        {scoreOptions.map((option) => {
+          const isSelected = scoreOption === option;
 
-        {/* 점수 필터 */}
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="typo-body_bold12 text-gray-600">닮음 지수</span>
-          {scoreOptions.map((option) => {
-            const isSelected = scoreOption === option;
+          return (
+            <button
+              key={option}
+              type="button"
+              onClick={() => onChangeScoreOption(option)}
+              className={`typo-body_bold12 px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
+                isSelected
+                  ? 'bg-primary-900 text-gray-0 border-primary-900'
+                  : 'bg-screen-0 text-gray-600 border-gray-100'
+              }`}
+            >
+              {option}
+            </button>
+          );
+        })}
+      </div>
 
-            return (
-              <button
-                key={option}
-                type="button"
-                onClick={() => onChangeScoreOption(option)}
-                className={`typo-body_bold12 px-3 py-1.5 rounded-full border transition-colors cursor-pointer ${
-                  isSelected
-                    ? 'bg-primary-900 text-gray-0 border-primary-900'
-                    : 'bg-screen-0 text-gray-600 border-gray-100'
-                }`}
-              >
-                {option}
-              </button>
-            );
-          })}
-        </div>
+      {/* 가격 필터 */}
+      <div className="flex items-center gap-2">
+        <span className="typo-body_bold12 text-gray-600 w-14 shrink-0">
+          가격
+        </span>
+        <input
+          type="number"
+          min={0}
+          value={minPrice}
+          onChange={(e) =>
+            onChangeMinPrice(
+              e.target.value === '' ? '' : Number(e.target.value)
+            )
+          }
+          placeholder="최소"
+          className="w-24 bg-gray-50 text-xs placeholder:font-extralight font-medium text-gray-900 px-3 py-2 rounded-sm outline-none"
+        />
+        <span className="typo-body_med12 text-gray-600">~</span>
+        <input
+          type="number"
+          min={0}
+          value={maxPrice}
+          onChange={(e) =>
+            onChangeMaxPrice(
+              e.target.value === '' ? '' : Number(e.target.value)
+            )
+          }
+          placeholder="최대"
+          className="w-24 bg-gray-50 text-xs placeholder:font-extralight font-medium text-gray-900 px-3 py-2 rounded-sm outline-none"
+        />
+        <span className="typo-body_med12 text-gray-600">원</span>
       </div>
     </div>
   );
