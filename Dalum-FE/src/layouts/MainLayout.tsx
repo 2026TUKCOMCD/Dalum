@@ -8,21 +8,10 @@ import { useMemberStore } from '../stores/members/memberStore';
 import { useSearchStore } from '../stores/search/searchStore';
 
 const MainLayout = () => {
-  // 임시 토큰 발급 로직 -> 소셜 로그인 연동 이후 제거 예정
-  const { accessToken, refreshToken, createToken } = useAuthStore();
+  const { accessToken, refreshToken } = useAuthStore();
   const { stylingLoading } = useStylingStore();
   const { isLoading } = useSearchStore();
   const { userData } = useMemberStore();
-
-  useEffect(() => {
-    (async () => {
-      try {
-        await createToken();
-      } catch {
-        alert('마스터 토큰 생성 실패');
-      }
-    })();
-  }, [createToken]);
 
   useEffect(() => {
     if (!accessToken || !refreshToken) return;

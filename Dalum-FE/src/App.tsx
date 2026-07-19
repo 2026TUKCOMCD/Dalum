@@ -9,6 +9,7 @@ import StylingPage from './pages/StylingPage';
 import OnboardingPage from './pages/OnboardingPage';
 import OnboardingLayout from './layouts/OnboardingLayout';
 import OAuthCallbackPage from './pages/OAuthCallbackPage';
+import ProtectedRoute from './routes/ProtectedRoute';
 import ScrollToTop from './components/commons/ScrollToTop';
 
 function App() {
@@ -21,12 +22,14 @@ function App() {
         <Route element={<OnboardingLayout />}>
           <Route path="/" element={<OnboardingPage />} />
         </Route>
-        <Route element={<MainLayout />}>
-          <Route path="/search" element={<SearchPage />} />
-          <Route path="/result/:searchId" element={<ResultPage />} />
-          <Route path="/my" element={<MyPage />} />
-          <Route path="/styling" element={<StylingPage />} />
-          <Route path="/styling/:stylingId" element={<StylingPage />} />
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/result/:searchId" element={<ResultPage />} />
+            <Route path="/my" element={<MyPage />} />
+            <Route path="/styling" element={<StylingPage />} />
+            <Route path="/styling/:stylingId" element={<StylingPage />} />
+          </Route>
         </Route>
       </Routes>
     </BrowserRouter>
