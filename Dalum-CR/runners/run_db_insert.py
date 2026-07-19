@@ -96,15 +96,10 @@ def read_csv_from_s3():
 
     rows = []
 
-    for idx, row in enumerate(reader, start=1):
-        purchase_link = row.get("purchase_link", "")
-        try:
-            product_id = int(purchase_link.rstrip("/").split("/")[-1])
-        except (ValueError, IndexError):
-            product_id = idx
+    for row in reader:
 
         rows.append({
-            "product_id": product_id,
+            "product_id": int(row["product_id"]),
             "shopping_mall": row["shopping_mall"],
             "large_category": row["large_category"],
             "medium_category": row["medium_category"],
