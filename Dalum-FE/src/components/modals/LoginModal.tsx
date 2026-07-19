@@ -22,7 +22,7 @@ const LoginModal = () => {
       {/* 버튼 */}
       <div className="w-full flex flex-col gap-3 py-2">
         <Button
-          variant="social_kakao"
+          variant="kakao"
           size="social"
           fullWidth
           leftIcon={<KakaoIcon className="size-10.5" />}
@@ -31,7 +31,7 @@ const LoginModal = () => {
           카카오 회원가입 / 로그인
         </Button>
         <Button
-          variant="social_google"
+          variant="google"
           size="social"
           fullWidth
           leftIcon={<GoogleIcon className="size-10.5" />}

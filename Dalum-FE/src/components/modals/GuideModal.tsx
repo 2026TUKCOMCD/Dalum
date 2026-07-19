@@ -13,7 +13,7 @@ const GuideModal = () => {
   const current = guideData[step - 1];
 
   return (
-    <div className="w-150 flex flex-col gap-7.5 p-7.5 items-center justify-center bg-screen-default rounded-[14px]">
+    <div className="w-150 flex flex-col gap-5 p-7.5 items-start justify-center bg-screen-default rounded-[14px]">
       {/* 닫기 버튼 */}
       <div className="w-full px-1 flex items-center justify-end">
         <CloseIcon
@@ -39,7 +39,7 @@ const GuideModal = () => {
         </div>
         <span
           key={step}
-          className="w-full typo-body_thin16 text-gray-900 whitespace-pre-line animate-[fadeIn_300ms_ease-in-out]"
+          className="w-full typo-body_thin14 text-gray-900 whitespace-pre-line animate-[fadeIn_300ms_ease-in-out]"
         >
           {current.description}
         </span>

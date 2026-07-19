@@ -7,9 +7,7 @@ import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.exception.MemberException;
 import dalum.dalum.domain.member.exception.code.MemberErrorCode;
 import dalum.dalum.domain.member.repository.MemberRepository;
-import dalum.dalum.domain.product.converter.ProductConverter;
-import dalum.dalum.domain.product.dto.response.ProductDto;
-import dalum.dalum.domain.product.entity.Product;
+import dalum.dalum.domain.dupe_product.dto.response.DupeProductDto;
 import dalum.dalum.domain.search_log.converter.SearchLogConverter;
 import dalum.dalum.domain.search_log.dto.response.SearchLogDetailResponse;
 import dalum.dalum.domain.search_log.dto.response.SearchLogListResponse;
@@ -17,7 +15,6 @@ import dalum.dalum.domain.search_log.entity.SearchLog;
 import dalum.dalum.domain.search_log.exception.SearchLogException;
 import dalum.dalum.domain.search_log.exception.code.SearchLogErrorCode;
 import dalum.dalum.domain.search_log.repository.SearchLogRepository;
-import dalum.dalum.global.apipayload.exception.GeneralException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,8 +35,8 @@ public class SearchLogServiceImpl implements SearchLogService {
     private final LikeProductRepository likeProductRepository;
 
     private final SearchLogConverter searchLogConverter;
-    private final ProductConverter productConverter;
 
+    @Transactional(readOnly = true)
     public SearchLogListResponse getSearchLog(Long memberId, Integer page, Integer size) {
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));
@@ -57,35 +54,43 @@ public class SearchLogServiceImpl implements SearchLogService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public SearchLogDetailResponse getSearchLogDetail(Long memberId, Long searchLogId) {
 
         SearchLog searchLog = searchLogRepository.findById(searchLogId).orElseThrow(
                 () -> new SearchLogException(SearchLogErrorCode.NOT_FOUND)
         );
 
+        if (!searchLog.getMember().getId().equals(memberId)) {
+            throw new SearchLogException(SearchLogErrorCode.FORBIDDEN);
+        }
+
         Member member = memberRepository.findById(memberId).orElseThrow(
                 () -> new MemberException(MemberErrorCode.NOT_FOUND));
 
-        // Dupe 테이블 조회
         List<DupeProduct> dupeProducts = dupeProductRepository.findBySearchLog(searchLog);
 
-        // DupeProduct -> Product 객체 추출
-        List<Product> products = dupeProducts.stream()
-                .map(DupeProduct::getProduct)
-                .toList();
-
-        // 좋아요 여부 확인
-        List<Long> productIds = products.stream().map(Product::getId).toList();
+        List<Long> productIds = dupeProducts.stream().map(dp -> dp.getProduct().getId()).toList();
         Set<Long> likeProductIds = likeProductRepository.findLikeProductIds(member.getId(), productIds);
 
-        // Product -> ProductDto로 변환
-        List<ProductDto> productDtos = productConverter.toProductDtoList(products, likeProductIds);
+        List<DupeProductDto> productDtos = dupeProducts.stream()
+                .map(dp -> searchLogConverter.toDupeProductDto(dp, likeProductIds))
+                .toList();
 
-        // 최종 응답 변환
-        SearchLogDetailResponse response = searchLogConverter.toSearchLogDetailResponse(searchLog, productDtos);
-
-        return response;
+        return searchLogConverter.toSearchLogDetailResponse(searchLog, productDtos);
     }
 
+    @Override
+    public void deleteSearchLog(Long memberId, Long searchLogId) {
+        SearchLog searchLog = searchLogRepository.findById(searchLogId).orElseThrow(
+                () -> new SearchLogException(SearchLogErrorCode.NOT_FOUND));
+
+        if (!searchLog.getMember().getId().equals(memberId)) {
+            throw new SearchLogException(SearchLogErrorCode.FORBIDDEN);
+        }
+
+        dupeProductRepository.deleteBySearchLog(searchLog);
+        searchLogRepository.delete(searchLog);
+    }
 
 }

@@ -12,7 +12,6 @@ class FaceContourMasker:
             min_detection_confidence=0.5
         )
 
-        # 🔥 전신 fallback용 FaceDetection 추가
         self.face_detector = mp.solutions.face_detection.FaceDetection(
             model_selection=1,
             min_detection_confidence=0.3
@@ -29,7 +28,7 @@ class FaceContourMasker:
     def get_head_mask(
         self,
         image: np.ndarray,
-        expand_ratio: float = 1.08,
+        expand_ratio: float = 1.20,   # 1.08 → 1.20: 머리카락 영역까지 커버
         feather: int = 15
     ) -> np.ndarray:
 
@@ -52,16 +51,16 @@ class FaceContourMasker:
                 lm = landmarks.landmark[idx]
                 points.append([int(lm.x * w), int(lm.y * h)])
 
-            points = np.array(points, dtype=np.int32)
-
+            points = np.array(points, dtype=np.float32)
             center = points.mean(axis=0)
-            points = (points - center) * expand_ratio + center
-            points = points.astype(np.int32)
+            expanded = ((points - center) * expand_ratio + center).astype(np.int32)
 
-            cv2.fillPoly(mask, [points], 255)
+            # 얼굴 윤곽 폴리곤 마스킹 (직선이 아닌 얼굴 형태로 제거)
+            cv2.fillPoly(mask, [expanded], 255)
 
-            face_center_y = int(center[1])
-            mask[:face_center_y, :] = 255
+            # 머리 위쪽(머리카락) 제거: 얼굴 상단 위만 직선 처리
+            top_y = max(0, int(expanded[:, 1].min()) - 5)
+            mask[:top_y, :] = 255
 
             mask = cv2.GaussianBlur(mask, (feather, feather), 0)
             return mask
@@ -77,23 +76,27 @@ class FaceContourMasker:
             y1 = int(bbox.ymin * h)
             bw = int(bbox.width * w)
             bh = int(bbox.height * h)
-
             cx = x1 + bw // 2
             cy = y1 + bh // 2
-            radius = int(max(bw, bh) * 0.7)
 
-            cv2.circle(mask, (cx, cy), radius, 255, -1)
+            # 얼굴 타원 마스킹
+            cv2.ellipse(mask, (cx, cy), (int(bw * 0.65), int(bh * 0.65)), 0, 0, 360, 255, -1)
 
-            # 얼굴 중심 기준 위 전부 제거
-            mask[:cy, :] = 255
+            # 머리 위쪽(머리카락) 제거
+            hair_top = max(0, y1 - int(bh * 0.35))
+            mask[:hair_top, :] = 255
 
             mask = cv2.GaussianBlur(mask, (feather, feather), 0)
+            return mask
 
+        # 얼굴 미탐지 최후 수단: 상단 15% 제거
+        mask[:int(h * 0.15), :] = 255
+        mask = cv2.GaussianBlur(mask, (feather, feather), 0)
         return mask
+
     def get_face_and_below_mask(self, image):
         head_mask = self.get_head_mask(image)
 
-        # head 아래 영역도 포함하는 마스크 생성
         h, w = head_mask.shape
         mask = np.zeros_like(head_mask)
 

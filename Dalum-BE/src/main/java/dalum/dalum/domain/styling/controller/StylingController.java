@@ -44,6 +44,7 @@ public class StylingController {
     @Operation(summary = "스타일링 저장 API", description = "생성된 스타일링을 저장합니다.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "STYLING_200_1", description = "스타일링을 성공적으로 저장하였습니다."),
+            @ApiResponse(responseCode = "STYLING_403_1", description = "해당 스타일에 대한 권한이 없습니다."),
             @ApiResponse(responseCode = "STYLING_404_1", description = "해당 스타일링을 찾지 못했습니다."),
     })
     @PostMapping("/stylings/{stylingId}/save")
@@ -82,6 +83,7 @@ public class StylingController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "STYLING_200_3", description = "스타일링 상세를 성공적으로 조회하였습니다."),
             @ApiResponse(responseCode = "MEMBER_404_1", description = "해당 유저를 찾지 못했습니다."),
+            @ApiResponse(responseCode = "STYLING_403_1", description = "해당 스타일에 대한 권한이 없습니다."),
             @ApiResponse(responseCode = "STYLING_404_2", description = "해당 스타일링 기록을 찾지 못했습니다."),
             @ApiResponse(responseCode = "LIKE_PRODUCT_404_1", description = "좋아요한 상품을 찾지 못했습니다."),
     })
@@ -95,5 +97,22 @@ public class StylingController {
         MyStylingDetailResponse response = stylingService.getMyStylingDetail(memberId, stylingId);
 
         return ApiResult.success(StylingSuccessCode.DETAIL_OK, response);
+    }
+
+    @Operation(summary = "저장한 스타일링 삭제 API", description = "저장한 스타일링을 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "STYLING_200_4", description = "스타일링이 성공적으로 삭제되었습니다."),
+            @ApiResponse(responseCode = "STYLING_403_1", description = "해당 스타일링에 대한 권한이 없습니다."),
+            @ApiResponse(responseCode = "STYLING_404_1", description = "해당 스타일링을 찾지 못했습니다."),
+    })
+    @DeleteMapping("/me/stylings/{stylingId}")
+    public ApiResult<Void> deleteStyling(
+            @PathVariable Long stylingId
+    ) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+
+        stylingService.deleteStyling(memberId, stylingId);
+
+        return ApiResult.success(StylingSuccessCode.DELETED, null);
     }
 }

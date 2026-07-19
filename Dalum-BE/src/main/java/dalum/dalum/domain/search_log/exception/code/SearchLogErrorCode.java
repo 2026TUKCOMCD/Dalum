@@ -11,6 +11,9 @@ public enum SearchLogErrorCode implements BaseErrorCode {
     NOT_FOUND(HttpStatus.NOT_FOUND,
             "SEARCH_LOG_404_1",
             "해당 검색기록을 찾지 못했습니다."),
+    FORBIDDEN(HttpStatus.FORBIDDEN,
+            "SEARCH_LOG_403_1",
+            "해당 검색기록에 접근 권한이 없습니다."),
     ;
     private final HttpStatus status;
     private final String code;

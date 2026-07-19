@@ -44,6 +44,8 @@ services:
     container_name: dalum-db
     image: postgres:15-alpine
     restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
@@ -59,6 +61,8 @@ services:
     restart: always
     networks:
       - dalum-network
+
+
 
 networks:
   dalum-network:

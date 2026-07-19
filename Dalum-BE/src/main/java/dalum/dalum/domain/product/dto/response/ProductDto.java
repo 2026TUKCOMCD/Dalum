@@ -18,8 +18,11 @@ public record ProductDto(
         @Schema(description = "대분류", example = "SHOES")
         String category,
 
+        @Schema(description = "할인율", example = "50.0")
+        Double discountRate,
+
         @Schema(description = "가격", example = "100000")
-        int price,
+        Integer price,
 
         @Schema(description = "이미지 주소", example = "https://example.com/image.jpg")
         String imageUrl,
@@ -28,7 +31,7 @@ public record ProductDto(
         String purchaseUrl,
 
         @Schema(description = "유사도", example = "0.85")
-        double similarity,
+        Double similarity,
 
         @Schema(description = "좋아요 여부", example = "true")
         boolean isLiked

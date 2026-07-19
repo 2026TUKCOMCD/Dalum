@@ -11,4 +11,6 @@ public interface DupeProductRepository extends JpaRepository<DupeProduct, Long> 
     List<DupeProduct> findBySearchLog(SearchLog searchLog);
 
     void deleteBySearchLog(SearchLog searchLog);
+
+    void deleteAllBySearchLogIn(List<SearchLog> searchLogs);
 }

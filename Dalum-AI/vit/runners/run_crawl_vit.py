@@ -1,0 +1,377 @@
+import os
+import cv2
+import numpy as np
+import io
+import csv
+import gc
+import psycopg2.extras
+from dotenv import load_dotenv
+from PIL import Image
+
+from vit.utils.s3_uploader import upload_bytes_to_s3
+from vit.preprocess.utils.image_loader import load_image_from_url
+from vit.preprocess.pipeline.step1_face_judge import Step1FaceJudge
+from vit.preprocess.face.face_detector import FaceDetector
+from vit.preprocess.face.face_index import FaceIndex
+from vit.preprocess.processors.model_processor import ModelProcessor
+from vit.preprocess.processors.product_processor import ProductProcessor
+from vit.preprocess.pipeline.segmentation_processor import SegmentationProcessor
+from vit.preprocess.color.color_extractor import ColorExtractor
+from vit.preprocess.color.color_embedding import build_color_embedding
+from vit.preprocess.material.predictor import MaterialPredictor
+from vit.preprocess.material.material_postprocessor import MaterialPostProcessor
+from vit.preprocess.utils.image_enhancer import enhance_for_material
+from recommender.style_classifier import StyleClassifier
+from vit.runners.run_db_update_vit import get_db_connection, update_style_color_material
+from dupe.dupe import detect_major_category
+
+load_dotenv()
+BUCKET_NAME = os.getenv("S3_BUCKET_NAME")
+SKIP_S3 = True
+
+BASE_DIR_CRAWL   = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+META_PATH_LOCAL  = os.path.join(BASE_DIR_CRAWL, "vit", "outputs", "vit_output", "metadata.csv")
+PROC_DIR_LOCAL   = os.path.join(BASE_DIR_CRAWL, "vit", "outputs", "processed_images")
+
+# 대분류 → model_processor에 넘길 기본 중분류 (DB 카테고리 없을 때 폴백용)
+_MAJOR_TO_DEFAULT_MIDDLE = {
+    "TOP"   : "기타 상의",
+    "OUTER" : "기타 아우터",
+    "BOTTOM": "기타 팬츠",
+    "DRESS" : "원피스",
+    "HAT"   : "기타 모자",
+    "BAG"   : "",
+    "SHOES" : "",
+}
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+FACE_INDEX_PATH = os.path.join(
+    BASE_DIR, "vit", "preprocess", "datasets", "face_index.json"
+)
+
+WEIGHT_PATH = os.path.join(
+    BASE_DIR,
+    "vit",
+    "preprocess",
+    "material",
+    "weights",
+    "vits_ckpt.pth",
+)
+
+
+def run(min_product_id: int = None):
+    # DB 연결
+    conn = get_db_connection()
+    cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+    cursor.itersize = 500
+
+    write_conn = get_db_connection()
+    write_cursor = write_conn.cursor()
+
+    if min_product_id is not None:
+        cursor.execute("""
+            SELECT product_id,
+                   image_url,
+                   purchase_link,
+                   large_category,
+                   medium_category,
+                   small_category
+            FROM product
+            WHERE product_id >= %s
+            ORDER BY product_id
+        """, (min_product_id,))
+        print(f"product_id >= {min_product_id} 제품만 처리")
+    else:
+        cursor.execute("""
+            SELECT product_id,
+                   image_url,
+                   purchase_link,
+                   large_category,
+                   medium_category,
+                   small_category
+            FROM product
+            WHERE style IS NULL
+            ORDER BY product_id
+        """)
+        print("style IS NULL 미처리 제품 전체 처리")
+
+    # 모델 초기화
+    face_detector = FaceDetector()
+    face_index = FaceIndex(FACE_INDEX_PATH)
+    step1 = Step1FaceJudge(face_detector, face_index)
+
+    model_processor = ModelProcessor()
+    product_processor = ProductProcessor()
+    segmenter = SegmentationProcessor()
+
+    color_extractor = ColorExtractor(k=3)
+
+    material_predictor = MaterialPredictor(weight_path=WEIGHT_PATH)
+    material_postprocessor = MaterialPostProcessor(
+        confidence_threshold=0.20,
+        margin_threshold=0.03
+    )
+
+    style_classifier = StyleClassifier()
+
+    metadata_rows = []
+    embedding_list = []
+    total_count = 0
+
+    BATCH_SIZE = 5000
+    batch_index = 0
+
+    # 루프 시작
+    for i, row in enumerate(cursor, 1):
+        
+        product_id = None
+
+        try:
+            product_id = int(row["product_id"])
+            image_url = row["image_url"]
+            purchase_link = row["purchase_link"]
+            major_category = row["large_category"]
+            middle_category = row["medium_category"]
+            category_name = row["small_category"]
+            
+            if major_category:
+                major_category = major_category.replace("/", "_")
+
+            if middle_category:
+                middle_category = middle_category.replace("/", "_")
+
+            print(f"\n===== [{i}] START {product_id} =====")
+            
+            image = load_image_from_url(image_url)
+            if image is None:
+                continue
+
+            if not major_category:
+                pil_raw = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+                major_category = detect_major_category(pil_raw)
+
+            is_model = step1.is_model_candidate(image)
+            image_type = "Model" if is_model else "Product"
+
+            filename = f"{product_id}.webp"
+
+            # 원본 S3 업로드
+            original_key = (
+                f"dataset/original_images/"
+                f"{image_type}/{major_category}/{middle_category}/{filename}"
+            )
+
+            success, buffer = cv2.imencode(
+                ".webp",
+                image,
+                [cv2.IMWRITE_WEBP_QUALITY, 85]
+            )
+
+            if success and not SKIP_S3:
+                try:
+                    upload_bytes_to_s3(
+                        buffer.tobytes(),
+                        BUCKET_NAME,
+                        original_key,
+                        content_type="image/webp"
+                    )
+                except Exception as s3_err:
+                    print(f"[S3 SKIP] original upload failed: {s3_err}")
+
+            # 전처리: small_category 있으면 우선, 없으면 대분류 기반 기본값
+            crop_category = category_name or _MAJOR_TO_DEFAULT_MIDDLE.get(major_category, "")
+
+            if is_model:
+                rgba = model_processor.process(image, crop_category)
+            else:
+                rgba = product_processor.process(image)
+
+            final_img = segmenter.center_and_pad(rgba)
+
+            # 전처리 이미지 S3 업로드
+            processed_key = (
+                f"dataset/processed_images/"
+                f"{image_type}/{major_category}/{middle_category}/{filename}"
+            )
+
+            success, buffer = cv2.imencode(
+                ".webp",
+                final_img,
+                [cv2.IMWRITE_WEBP_QUALITY, 85]
+            )
+
+            if success and not SKIP_S3:
+                try:
+                    upload_bytes_to_s3(
+                        buffer.tobytes(),
+                        BUCKET_NAME,
+                        processed_key,
+                        content_type="image/webp"
+                    )
+                except Exception as s3_err:
+                    print(f"[S3 SKIP] processed upload failed: {s3_err}")
+
+            # 색상 & 재질 임베딩
+            dominant_colors = color_extractor.extract_dominant_colors(final_img)
+            color_embedding = np.array(
+                build_color_embedding(dominant_colors),
+                dtype=np.float32
+            ).reshape(-1)
+
+            enhanced = enhance_for_material(final_img[:, :, :3])
+
+            top3_materials, material_vector = material_predictor.predict_from_array(
+                enhanced
+            )
+
+            if material_vector is None:
+                continue
+
+            if isinstance(material_vector, dict):
+                material_vector = list(material_vector.values())
+
+            material_vector = np.array(
+                material_vector,
+                dtype=np.float32
+            ).reshape(-1)
+            
+            final_embedding = np.concatenate(
+                [color_embedding, material_vector],
+                axis=0
+            )
+
+            embedding_list.append(final_embedding)
+
+            if len(embedding_list) >= BATCH_SIZE:
+
+                batch_array = np.vstack(embedding_list)
+
+                npy_buffer = io.BytesIO()
+                np.save(npy_buffer, batch_array)
+                npy_buffer.seek(0)
+
+                if not SKIP_S3:
+                    try:
+                        upload_bytes_to_s3(
+                            npy_buffer.read(),
+                            BUCKET_NAME,
+                            f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+                            content_type="application/octet-stream"
+                        )
+                    except Exception as s3_err:
+                        print(f"[S3 SKIP] embedding batch upload failed: {s3_err}")
+
+                embedding_list.clear()
+                batch_index += 1
+
+            # 전처리 이미지 로컬 저장
+            local_proc_path = os.path.join(
+                PROC_DIR_LOCAL, image_type,
+                major_category or "UNKNOWN",
+                middle_category or "UNKNOWN",
+                f"{product_id}.webp"
+            )
+            os.makedirs(os.path.dirname(local_proc_path), exist_ok=True)
+            cv2.imwrite(local_proc_path, final_img)
+
+            metadata_rows.append({
+                "index"          : total_count + 1,
+                "product_id"     : product_id,
+                "major_category" : major_category,
+                "middle_category": middle_category,
+                "small_category" : category_name or "",
+                "image_type"     : image_type,
+            })
+            total_count += 1
+            
+            # 스타일 분류
+            pil_image = Image.fromarray(
+                cv2.cvtColor(final_img[:, :, :3], cv2.COLOR_BGR2RGB)
+            )
+            style = style_classifier.classify(pil_image)
+
+            # DB 업데이트
+            update_style_color_material(write_cursor, write_conn, purchase_link, material_vector, dominant_colors, style)
+
+            del image, rgba, final_img, enhanced
+
+            if i % 20 == 0:
+                gc.collect()
+
+        except Exception as e:
+            import traceback
+            print(f"ERROR product_id={product_id} : {e}")
+            traceback.print_exc()
+            continue
+
+    if embedding_list:
+
+        batch_array = np.vstack(embedding_list)
+
+        npy_buffer = io.BytesIO()
+        np.save(npy_buffer, batch_array)
+        npy_buffer.seek(0)
+
+        if not SKIP_S3:
+            try:
+                upload_bytes_to_s3(
+                    npy_buffer.read(),
+                    BUCKET_NAME,
+                    f"dataset/vit_output/embeddings_batch_{batch_index}.npy",
+                    content_type="application/octet-stream"
+                )
+            except Exception as s3_err:
+                print(f"[S3 SKIP] final embedding upload failed: {s3_err}")
+
+    cursor.close()
+    conn.close()
+    write_cursor.close()
+    write_conn.close()
+
+    # 기존 데이터 유지
+    fieldnames = ["index", "product_id", "major_category", "middle_category", "small_category", "image_type"]
+
+    existing_ids: set[int] = set()
+    existing_rows: list[dict] = []
+
+    if os.path.exists(META_PATH_LOCAL):
+        import pandas as _pd
+        _existing = _pd.read_csv(META_PATH_LOCAL)
+        # small_category 컬럼 없으면 빈값으로 추가
+        if "small_category" not in _existing.columns:
+            _existing["small_category"] = ""
+        existing_ids = set(_existing["product_id"].astype(int).tolist())
+        existing_rows = _existing[fieldnames].to_dict("records")
+
+    # 중복 제외 후 신규 행만 추가
+    new_rows = [r for r in metadata_rows if int(r["product_id"]) not in existing_ids]
+    all_rows = existing_rows + new_rows
+
+    # index 재번호 매기기
+    for i, r in enumerate(all_rows, 1):
+        r["index"] = i
+
+    os.makedirs(os.path.dirname(META_PATH_LOCAL), exist_ok=True)
+    with open(META_PATH_LOCAL, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(all_rows)
+
+    print(f"metadata.csv 저장: 기존 {len(existing_rows)}개 + 신규 {len(new_rows)}개 = 총 {len(all_rows)}개")
+    print(f"저장 경로: {META_PATH_LOCAL}")
+
+    # S3 업로드 (선택)
+    if not SKIP_S3:
+        try:
+            with open(META_PATH_LOCAL, "rb") as f:
+                upload_bytes_to_s3(f.read(), BUCKET_NAME, "dataset/vit_output/metadata.csv", content_type="text/csv")
+        except Exception as s3_err:
+            print(f"[S3 SKIP] metadata csv upload failed: {s3_err}")
+
+    print("\n===================================")
+    print(f"완료 | 총 처리 이미지 수: {total_count}")
+
+
+if __name__ == "__main__":
+    run()

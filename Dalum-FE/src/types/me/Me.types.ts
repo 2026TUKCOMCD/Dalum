@@ -31,6 +31,7 @@ export type StylingList = {
 export type StylingItem = {
   stylingId: number;
   mainProductImageUrl: string;
+  imageUrl?: string;
   createdAt: string;
 };
 
@@ -56,4 +57,45 @@ export type LikeItem = {
   imageUrl: string;
   purchase_link: string;
   isLiked: boolean;
+};
+
+export type GetDetailDupeSearchResponse = {
+  code: string;
+  isSuccess: boolean;
+  message: string;
+  result: DetailDupeSearchList;
+};
+
+export type DetailDupeSearchList = {
+  searchLogId: number;
+  searchDate: string;
+  imageUrl: string;
+  conditions: {
+    minPrice: number | null;
+    maxPrice: number | null;
+  };
+  results: DetailDupeSearchItem[];
+};
+
+export type DetailDupeSearchItem = {
+  productId: number;
+  name: string;
+  brand: string;
+  category: string;
+  discountRate: number;
+  price: number;
+  imageUrl: string;
+  purchaseUrl: string | null;
+  isLiked: boolean;
+  colorScore: number;
+  materialScore: number;
+  designScore: number;
+  totalScore: number;
+};
+
+export type DeleteHistoryResponse = {
+  code: string;
+  isSuccess: boolean;
+  message: string;
+  result: null;
 };

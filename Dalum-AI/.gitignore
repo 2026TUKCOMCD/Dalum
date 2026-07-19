@@ -1,29 +1,61 @@
-# =========================
-# Python
-# =========================
+# python
 __pycache__/
-*.py[cod]
-*.pyd
-*.so
-*.dll
+*.pyc
+*.pyo
 
-# Virtual Environments
+# venv
 .venv/
-.venv_*/
+.venv_mp/
 venv/
-env/
 
-# Outputs / Artifacts
-vit/outputs/
+# env
+.env
+
+# logs
+logs/
+
+# model artifacts
+*.pt
+*.pth
+*.ckpt
+
+# 데이터 및 결과물 제외
+/mnt/images/
+checkpoint.csv
+results.csv
+
+# 모델 웨이트 (용량 커서 제외함//혹시 이상 있으면 이거 수정바람)
+models/
+
+#VIT 관련 gitignore
+
+#output
 outputs/
 
-# Outputs / Artifacts
-vit/preprocess/datasets/
+#datasets
+datasets/
 
-# Logs
-*.log
+#pycharm
+.idea
 
-# OS / IDE
+#python version
+.python-version
+
+# datasets 전체 무시
+vit/preprocess/datasets/*
+
+# face_index.json은 예외
+!vit/preprocess/datasets/face_index.json
+
+# Mac OS
 .DS_Store
-Thumbs.db
-.vscode/
+
+# 로컬 전용 스크립트
+*_local.py
+
+# runtime logs
+*.log
+vit.log
+vit_*.log
+
+**/*.npy

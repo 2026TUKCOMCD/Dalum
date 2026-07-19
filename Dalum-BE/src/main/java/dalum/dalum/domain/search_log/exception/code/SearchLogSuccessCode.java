@@ -13,7 +13,10 @@ public enum SearchLogSuccessCode implements BaseSuccessCode {
             "검색기록을 성공적으로 조회하였습니다."),
     DETAIL_OK(HttpStatus.OK,
             "SEARCH_LOG_200_2",
-            "검색기록 상세를 성공적으로 조회하였습니다.");
+            "검색기록 상세를 성공적으로 조회하였습니다."),
+    DELETED(HttpStatus.OK,
+            "SEARCH_LOG_200_3",
+            "검색기록이 성공적으로 삭제되었습니다.");
     private final HttpStatus status;
     private final String code;
     private final String message;

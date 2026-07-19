@@ -10,9 +10,14 @@ _face_mesh = mp.solutions.face_mesh.FaceMesh(
     min_detection_confidence=0.5
 )
 
+# FaceMesh 통과 시 인덱스 점수가 이 값 미만이면 마네킹으로 거부
+_INDEX_REJECT_TH = -0.08
+# FaceMesh 실패해도 인덱스 점수가 이 값 이상이면 사람으로 인정 (fallback)
+_INDEX_FALLBACK_TH = 0.12
+
 
 def is_valid_face_mesh_loose(crop: np.ndarray) -> bool:
-    h, w, _ = crop.shape
+    h, w = crop.shape[:2]
     if h < 40 or w < 40:
         return False
 
@@ -28,7 +33,8 @@ def is_valid_face_mesh_loose(crop: np.ndarray) -> bool:
         for p in lm
     )
 
-    return valid_cnt >= 80
+    # 80 → 50: 측면/부분 얼굴도 허용
+    return valid_cnt >= 50
 
 
 def has_real_face(
@@ -39,10 +45,6 @@ def has_real_face(
     debug=False,
     apply_bbox_filter=True
 ):
-    """
-    return:
-      - (is_face_candidate: bool, confidence: float)
-    """
 
     h, w, _ = image.shape
     boxes = face_detector.detect(image)
@@ -50,18 +52,16 @@ def has_real_face(
     if not boxes:
         return False, 0.0
 
-    best_sim = 0.0
+    best_score = 0.0
 
     for (x1, y1, x2, y2) in boxes:
         bw = x2 - x1
         bh = y2 - y1
 
-        # bbox 필터
         if apply_bbox_filter:
             area_ratio = (bw * bh) / (w * h)
             if area_ratio > 0.45:
                 continue
-
             aspect = bw / (bh + 1e-6)
             if aspect < 0.5 or aspect > 2.0:
                 continue
@@ -70,18 +70,26 @@ def has_real_face(
         if crop.size == 0:
             continue
 
-        # FaceMesh = 얼굴 후보
-        if not is_valid_face_mesh_loose(crop):
-            continue
-
-        # face_index는 confidence 참고용
-        sims = face_index.match_all(crop)
-        best_sim = max(sims) if sims else 0.0
+        idx_score = face_index.score(crop)
+        mesh_ok = is_valid_face_mesh_loose(crop)
 
         if debug:
-            print(f"[FACE] mesh OK | confidence={best_sim:.3f}")
+            print(f"[FACE] mesh={mesh_ok} | idx_score={idx_score:.3f}")
 
-        # 얼굴 후보 확정
-        return True, best_sim
+        if mesh_ok:
+            if idx_score > _INDEX_REJECT_TH:
+                return True, idx_score
+            else:
+                if debug:
+                    print(f"[FACE] FaceMesh OK but idx_score={idx_score:.3f} → 마네킹 거부")
+                continue
 
-    return False, best_sim
+        # FaceMesh 실패 → 인덱스 fallback
+        if idx_score > _INDEX_FALLBACK_TH:
+            if debug:
+                print(f"[FACE] FaceMesh 실패 but idx_score={idx_score:.3f} → fallback 통과")
+            return True, idx_score
+
+        best_score = max(best_score, idx_score)
+
+    return False, best_score

@@ -12,6 +12,9 @@ public record LikeProductResponse(
         @Schema(description = "상품명", example = "나이키 에어포스1")
         String name,
 
+        @Schema(description = "브랜드명", example = "나이키")
+        String brand,
+
         @Schema(description = "할인율", example = "20.0")
         @JsonProperty("discount_rate") // JSON 키값 고정
         double discountRate,

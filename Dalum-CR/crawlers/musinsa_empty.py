@@ -4,9 +4,7 @@ import csv
 import time
 import os
 
-# ===============================
 # 경로 설정
-# ===============================
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUTPUT_DIR = os.path.join(BASE_DIR, "output", "musinsa-empty")
 
@@ -63,7 +61,7 @@ CATEGORY_MAP = {
     "팬츠": {"대분류": "BOTTOM", "중분류": "PANTS"},
     "스커트": {"대분류": "BOTTOM", "중분류": "SKIRT"},
     #DRESS
-    "드레스": {"대분류": "DRESS", "중분류": "ONE_PIECE"},
+    "원피스": {"대분류": "DRESS", "중분류": "ONE_PIECE"},
     #BAG
     "백팩": {"대분류": "BAG", "중분류": "BACKPACK"},
     "토트백": {"대분류": "BAG", "중분류": "TOTE"},
@@ -79,9 +77,7 @@ CATEGORY_MAP = {
 
 LIST_CONTAINER_SELECTORS = ["ul.prdList", "ul.prdList.grid4", ".prdList"]
 
-# ===============================
 # JS: 상품 스냅샷 (URL/IMG는 "img를 감싸는 a"에서만!)
-# ===============================
 JS_EXTRACT = r"""
 () => {
   const results = [];
@@ -102,7 +98,7 @@ JS_EXTRACT = r"""
   const clean = (s) => (s || "").replace(/\s+/g, " ").trim();
 
   for (const item of items) {
-    // ✅ 링크가 여러 개라서, "img를 포함한 a"만 선택
+    // 링크가 여러 개라서, "img를 포함한 a"만 선택
     const thumbCandidates = Array.from(item.querySelectorAll("div.thumbnail a[href^='/product/']"));
     const thumbLink = thumbCandidates.find(a => a.querySelector("img")) || null;
 
@@ -133,7 +129,7 @@ JS_EXTRACT = r"""
         .replace(/^브랜드\s*[:：]?\s*/i, "")
         .replace(/^brand\s*[:：]?\s*/i, "");
 
-    // ✅ 가격/할인율: 라벨이 없어서 description 전체 텍스트에서 %/원 추출
+    // 가격/할인율: 라벨이 없어서 description 전체 텍스트에서 %/원 추출
     const desc = item.querySelector(".description") || item;
     const text = desc.textContent || "";
 
@@ -160,9 +156,7 @@ JS_EXTRACT = r"""
 }
 """
 
-# ===============================
 # JS: 페이지네이션 정보(최대 페이지/next 유무/현재 페이지)
-# ===============================
 JS_PAGING_INFO = r"""
 () => {
   const toNum = (v) => {
@@ -236,11 +230,11 @@ def scrape():
     global_seen = set()
 
     with sync_playwright() as p:
-        browser = p.chromium.launch(headless=False, slow_mo=30)
+        browser = p.chromium.launch(headless=True, slow_mo=30)
         page = browser.new_page(viewport={"width": 1400, "height": 900})
 
         for category, base_url in CATEGORIES.items():
-            print(f"\n📂 {category}")
+            print(f"\n{category}")
             page_num = 1
             no_new = 0
 
@@ -302,9 +296,7 @@ def scrape():
 
         browser.close()
 
-    # ===============================
-    # 대분류별 CSV 저장 (헤더 ❌)
-    # ===============================
+    # 대분류별 CSV 저장
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     grouped = {}
@@ -314,9 +306,10 @@ def scrape():
     for major, items in grouped.items():
         with open(os.path.join(OUTPUT_DIR, f"{major}.csv"), "w", newline="", encoding="utf-8-sig") as f:
             writer = csv.DictWriter(f, fieldnames=items[0].keys())
+            writer.writeheader()
             writer.writerows(items)
 
-        print(f"✅ {major}.csv 저장 ({len(items)}개)")
+        print(f"{major}.csv 저장 ({len(items)}개)")
 
 # ===============================
 if __name__ == "__main__":

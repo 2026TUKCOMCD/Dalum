@@ -14,3 +14,12 @@ __pycache__/
 # OS / Editor
 .DS_Store
 .vscode/
+
+# 로컬 전용 스크립트
+*_local.py
+
+# env
+.env
+
+# test folders
+**/test/

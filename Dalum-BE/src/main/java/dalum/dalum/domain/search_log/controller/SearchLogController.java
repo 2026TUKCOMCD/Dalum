@@ -59,4 +59,21 @@ public class SearchLogController {
 
         return ApiResult.success(SearchLogSuccessCode.DETAIL_OK, response);
     }
+
+    @Operation(summary = "듀프 검색기록 삭제", description = "특정 검색 기록을 삭제합니다.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "SEARCH_LOG_200_3", description = "검색기록이 성공적으로 삭제되었습니다."),
+            @ApiResponse(responseCode = "SEARCH_LOG_403_1", description = "해당 검색기록에 접근 권한이 없습니다."),
+            @ApiResponse(responseCode = "SEARCH_LOG_404_1", description = "해당 검색 기록을 찾지 못했습니다."),
+    })
+    @DeleteMapping("/me/search-logs/{searchId}")
+    public ApiResult<Void> deleteSearchLog(
+            @PathVariable("searchId") Long searchId
+    ) {
+        Long memberId = SecurityUtil.getCurrentMemberId();
+
+        searchLogService.deleteSearchLog(memberId, searchId);
+
+        return ApiResult.success(SearchLogSuccessCode.DELETED, null);
+    }
 }

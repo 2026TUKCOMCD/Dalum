@@ -1,24 +1,48 @@
-import LikeIcon from "../../assets/icons/LikeIcon";
-import LinkIcon from "../../assets/icons/LinkIcon";
-import type { StylingItem } from "../../types/stylings/Styling.types";
-import { Button } from "../commons/Button";
+import LikeIcon from '../../assets/icons/LikeIcon';
+import LinkIcon from '../../assets/icons/LinkIcon';
+import { useProductStore } from '../../stores/products/productStore';
+import type { ResultStylingItem } from '../../types/stylings/Styling.types';
+import { Button } from '../commons/Button';
 
 type Props = {
-  item: StylingItem;
+  item: ResultStylingItem;
 };
 
 const StylingCard = ({ item }: Props) => {
-  const priceText = new Intl.NumberFormat("ko-KR").format(item.price) + "원";
+  const isLiked = useProductStore(
+    (s) => s.likeStatusById[item.productId] ?? false
+  );
+  const isLikeLoading = useProductStore(
+    (s) => s.isLoadingById[item.productId] ?? false
+  );
+
+  const toggleLikeStatus = useProductStore((s) => s.toggleLikeStatus);
+
+  const priceText =
+    new Intl.NumberFormat('ko-KR').format(item.discountPrice) + '원';
+
+  const purchaseLink = item.purchaseLink;
+
+  // 구매 링크 버튼 클릭 핸들러
+  const handleClickPurchase = () => {
+    if (!purchaseLink) return;
+    window.open(purchaseLink, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleClickLike = () => {
+    if (isLikeLoading) return;
+    toggleLikeStatus(item.productId);
+  };
 
   return (
-    <div className="relative w-fit h-fit flex flex-col gap-2.5 bg-gray-0 rounded-lg p-2.5 shadow-card-shadow group">
+    <div className="relative w-fit h-fit flex flex-col gap-2.5 bg-gray-0 rounded-lg p-2.5 group border border-primary-600">
       {/* 이미지 영역 */}
-      <div className="relative w-50 h-50">
+      <div className="relative w-50 h-50 flex justify-center items-center">
         {item.imageUrl ? (
           <img
             src={item.imageUrl}
             alt={item.name}
-            className="w-full h-full rounded-sm object-cover bg-secondary-900"
+            className="max-w-50 max-h-50 rounded-sm object-cover bg-secondary-900"
             loading="lazy"
           />
         ) : (
@@ -30,16 +54,16 @@ const StylingCard = ({ item }: Props) => {
           <div className="flex flex-col gap-2">
             <span className="typo-body_med12 text-gray-600">{item.brand}</span>
             <div className="flex flex-col gap-1">
-              <span className="typo-body_bold14 text-gray-900">
+              <span className="typo-body_bold12 text-gray-900 line-clamp-2 break-keep">
                 {item.name}
               </span>
 
               <div className="flex items-center gap-1">
-                {item.discountRate && (
-                  <span className="typo-body_bold14 text-button-like">
-                    {item.discountRate}%
-                  </span>
-                )}
+                <span
+                  className={`typo-body_bold14 text-button-like ${item.discountRate === 0 ? 'hidden' : ''}`}
+                >
+                  {item.discountRate}%
+                </span>
                 <span className="typo-body_med14">{priceText}</span>
               </div>
             </div>
@@ -53,15 +77,19 @@ const StylingCard = ({ item }: Props) => {
               leftIcon={<LinkIcon className="size-3" />}
               fullWidth
               className="flex-1"
+              onClick={handleClickPurchase}
+              disabled={!purchaseLink}
             >
               구매 링크
             </Button>
 
             <Button
-              variant="like"
+              variant={isLiked ? 'active_like' : 'like'}
               size="sm"
               leftIcon={<LikeIcon className="size-3" />}
               fullWidth
+              onClick={handleClickLike}
+              disabled={isLikeLoading}
             >
               좋아요
             </Button>

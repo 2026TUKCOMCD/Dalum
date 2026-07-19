@@ -1,9 +1,14 @@
 package dalum.dalum.domain.product.entity;
 
+import dalum.dalum.domain.product.converter.DominantColorsConverter;
+import dalum.dalum.domain.product.converter.MapStringDoubleConverter;
 import dalum.dalum.domain.product.enums.LargeCategory;
 import dalum.dalum.global.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
+import java.util.Map;
 
 @Entity
 @Getter
@@ -52,5 +57,16 @@ public class Product extends BaseEntity {
 
     @Column(name = "image_url", nullable = false, columnDefinition = "TEXT")
     private String imageUrl;
+
+    @Convert(converter = MapStringDoubleConverter.class)
+    @Column(name = "material_vector", columnDefinition = "TEXT")
+    private List<Double> materialVector;
+
+    @Convert(converter = DominantColorsConverter.class)
+    @Column(name = "dominant_colors", columnDefinition = "TEXT")
+    private List<Map<String, Object>> dominantColors;
+
+    @Column(name = "style")
+    private String style;
 
 }

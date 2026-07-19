@@ -1,6 +1,5 @@
 package dalum.dalum.domain.styling.converter;
 
-import dalum.dalum.domain.product.dto.response.ProductDto;
 import dalum.dalum.domain.product.entity.Product;
 import dalum.dalum.domain.styling.dto.response.*;
 import dalum.dalum.domain.styling.entity.Styling;
@@ -8,34 +7,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 public class StylingConverter {
-
-    // 스타일링 추천
-    public StylingRecommendationResponse toResponse(Styling styling, ProductDto mainItem, List<ProductDto> subItems) {
-
-        // 1. Stream으로 카테고리별 그룹핑
-        Map<String, List<ProductDto>> groupedMap = subItems.stream()
-                .collect(Collectors.groupingBy(ProductDto::category));
-
-        // 2. Map을 List<RecommendationCategoryDto>로 변환
-        List<RecommendationCategoryResponse> recommendations = groupedMap.entrySet().stream()
-                .map(entry -> RecommendationCategoryResponse.builder()
-                        .category(entry.getKey())
-                        .products(entry.getValue())
-                        .build())
-                .collect(Collectors.toList());
-
-        // 3. 최종 응답 생성
-        return StylingRecommendationResponse.builder()
-                .stylingId(styling.getId())
-                .mainItem(mainItem)
-                .resultItems(recommendations)
-                .build();
-    }
 
     public StylingSaveResponse toStylingSaveResponse(Long stylingId) {
         return StylingSaveResponse.builder()
@@ -84,6 +58,7 @@ public class StylingConverter {
         MyStylingDetailResponse.MainProductDetail mainProductDetail =
                 MyStylingDetailResponse.MainProductDetail.builder()
                         .productId(mainProduct.getId())
+                        .category(mainProduct.getLargeCategory())
                         .name(mainProduct.getProductName())
                         .brand(mainProduct.getBrand())
                         .discountRate(mainProduct.getDiscountRate())
@@ -108,6 +83,24 @@ public class StylingConverter {
             boolean isLiked
     ) {
         return MyStylingDetailResponse.RecommendedItemDetail.builder()
+                .productId(product.getId())
+                .category(product.getLargeCategory())
+                .name(product.getProductName())
+                .brand(product.getBrand())
+                .discountRate(product.getDiscountRate())
+                .discountPrice(product.getDiscountPrice())
+                .imageUrl(product.getImageUrl())
+                .purchaseLink(product.getPurchaseLink())
+                .isLiked(isLiked)
+                .build();
+    }
+
+    // 메인 상품 단일 변환
+    public MyStylingDetailResponse.MainProductDetail toMainProductDetailResponse(
+            Product product,
+            boolean isLiked
+    ) {
+        return MyStylingDetailResponse.MainProductDetail.builder()
                 .productId(product.getId())
                 .category(product.getLargeCategory())
                 .name(product.getProductName())
