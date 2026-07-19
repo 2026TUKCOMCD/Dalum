@@ -17,7 +17,7 @@ jobs:
         with:
           host: ${{ secrets.AI_EC2_HOST }}
           username: ubuntu
-          key: ${{ secrets.EC2_KEY }}
+          key: ${{ secrets.AI_EC2_KEY }}
           script: |
             echo "${{ secrets.AI_DOCKER_PASSWORD }}" | docker login -u "${{ secrets.AI_DOCKER_USERNAME }}" --password-stdin
             
