@@ -994,6 +994,12 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
     results = rerank(results, dalum_arr, design_probs_arr, q_color_probs, q_lab,
                      material_gated=_material_gated, major_category=major_category)
 
+    # 동일 제품 복합 게이트: shape 거의 동일 + clip 높으면 동일 제품으로 간주
+    _before_same = len(results)
+    results = [r for r in results if not (r.get("_shape_sim", 0) >= 0.98 and r.get("_clip_image", 0) >= 0.90)]
+    if len(results) < _before_same:
+        print(f"[GATE-SAME-COMPOSITE] {_before_same - len(results)}개 제외 (shape≥0.98 & clip≥0.90)")
+
     # 내부용 키 제거, 공개 필드만 유지
     _internal_keys = ["_db_idx", "faiss_score", "color_sim", "shape_sim",
                       "clip_color_sim", "lab_sim", "design_sim", "final_score",
