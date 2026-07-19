@@ -640,6 +640,16 @@ def recommend_from_embedding(clip_emb, color_emb, shape_emb, material_dict, desi
     faiss.normalize_L2(query_vec)
 
     cat_key = str(major_category) if major_category else None
+
+    # ── 중분류 자동 보정: hooded 디자인 감지 시 SWEATSHIRT → HOODIE ────
+    _hooded_idx = DESIGN_NAMES.index("hooded") if "hooded" in DESIGN_NAMES else -1
+    if (_hooded_idx >= 0
+            and str(middle_category) == "SWEATSHIRT"
+            and float(np.array(design_probs, dtype="float32")[_hooded_idx]) > 0.20):
+        _hooded_prob = float(np.array(design_probs, dtype="float32")[_hooded_idx])
+        print(f"[CATEGORY-CORRECT] hooded={_hooded_prob:.3f} → SWEATSHIRT → HOODIE 보정")
+        middle_category = "HOODIE"
+
     mid_key = (str(major_category), str(middle_category)) if major_category and middle_category else None
 
     db_index_list = None  # 명시적 초기화
