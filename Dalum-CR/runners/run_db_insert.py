@@ -15,6 +15,9 @@ S3_KEY = "crawling/musinsa_products.csv"
 AWS_REGION = os.getenv("AWS_REGION", "ap-northeast-2")
 
 
+CHUNK_SIZE = 10000
+
+
 def insert_to_db(rows):
 
     conn = psycopg2.connect(
@@ -23,6 +26,7 @@ def insert_to_db(rows):
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
+        connect_timeout=60,
     )
 
     cur = conn.cursor()
@@ -61,13 +65,19 @@ def insert_to_db(rows):
         ON CONFLICT (product_id) DO NOTHING;
     """
 
-    execute_batch(cur, insert_query, rows, page_size=5000)
+    total = len(rows)
+    inserted = 0
+    for i in range(0, total, CHUNK_SIZE):
+        chunk = rows[i:i + CHUNK_SIZE]
+        execute_batch(cur, insert_query, chunk, page_size=1000)
+        conn.commit()
+        inserted += len(chunk)
+        print(f"  진행: {inserted}/{total}")
 
-    conn.commit()
     cur.close()
     conn.close()
 
-    print(f"DB insert 완료: {len(rows)}개")
+    print(f"DB insert 완료: {total}개")
 
 
 def read_csv_from_s3():
