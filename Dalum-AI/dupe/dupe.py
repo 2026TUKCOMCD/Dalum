@@ -552,18 +552,21 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         item["final_score"] = _final   # 정렬 기준 — 그대로 유지
 
         # 공개 점수 (내부 세부 점수 대신 4개만 노출)
-        _color_w_sum = _W_COLOR + _w_lab + _w_clip_clr
+       _color_w_sum = _W_COLOR + _w_lab + _w_clip_clr
         _c_score_raw = (_W_COLOR * color_sim + _w_lab * lab_sim + _w_clip_clr * clip_color_sim) / max(0.01, _color_w_sum)
         _m_score     = round(float(material_sim), 4)
         _d_score_raw = float(design_sim)
 
-        _c_score = round(_c_score_raw ** 0.6, 4)   # 색상 점수 상향 보정
-        _d_score = round(_d_score_raw ** 0.6, 4)   # 디자인 점수 상향 보정
+        _COLOR_BOOST_EXP  = 0.4    # 기존 0.6 → 0.4로 더 후하게
+        _DESIGN_BOOST_EXP = 0.25   # 원본값이 낮은 분포라 더 세게 보정
+
+        _c_score = round(_c_score_raw ** _COLOR_BOOST_EXP, 4)
+        _d_score = round(_d_score_raw ** _DESIGN_BOOST_EXP, 4)
 
         item["color_score"]    = _c_score
         item["material_score"] = _m_score
         item["design_score"]   = _d_score
-        item["total_score"]    = round((_c_score + _m_score + _d_score) / 3, 4)   # 산술평균
+        item["total_score"]    = round((_c_score + _m_score + _d_score) / 3, 4)
         item["_shape_sim"]     = round(float(shape_sim), 4)
         item["_clip_image"]    = round(float(item["faiss_score"]), 4)
         item["_lab_sim"]       = round(float(lab_sim), 4)
