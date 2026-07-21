@@ -559,7 +559,7 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         item["color_score"]    = _c_score
         item["material_score"] = _m_score
         item["design_score"]   = _d_score
-        item["total_score"]    = round(float(_final), 4)
+        item["total_score"]    = round(float(_final) ** 0.6, 4)
         item["_shape_sim"]     = round(float(shape_sim), 4)
         item["_clip_image"]    = round(float(item["faiss_score"]), 4)
         item["_lab_sim"]       = round(float(lab_sim), 4)
