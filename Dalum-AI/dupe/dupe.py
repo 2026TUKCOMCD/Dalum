@@ -552,7 +552,7 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         item["final_score"] = _final   # 정렬 기준 — 그대로 유지
 
         # 공개 점수 (내부 세부 점수 대신 4개만 노출)
-       _color_w_sum = _W_COLOR + _w_lab + _w_clip_clr
+        _color_w_sum = _W_COLOR + _w_lab + _w_clip_clr
         _c_score_raw = (_W_COLOR * color_sim + _w_lab * lab_sim + _w_clip_clr * clip_color_sim) / max(0.01, _color_w_sum)
         _m_score     = round(float(material_sim), 4)
         _d_score_raw = float(design_sim)
