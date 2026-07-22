@@ -4,11 +4,14 @@ import dalum.dalum.domain.like_product.entity.LikeProduct;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.repository.MemberRepository;
-import dalum.dalum.domain.product.converter.ProductConverter;
-import dalum.dalum.domain.product.dto.response.ProductDto;
 import dalum.dalum.domain.product.entity.Product;
+import dalum.dalum.domain.product.enums.LargeCategory;
 import dalum.dalum.domain.product.repository.ProductRepository;
+import dalum.dalum.domain.product.repository.projection.ProductCandidateProjection;
+import dalum.dalum.domain.styling.client.AiStylingClient;
+import dalum.dalum.domain.styling.client.dto.AiRecommendedItem;
 import dalum.dalum.domain.styling.converter.StylingConverter;
+import dalum.dalum.domain.styling.dto.response.MyStylingDetailResponse;
 import dalum.dalum.domain.styling.dto.response.MyStylingListResponse;
 import dalum.dalum.domain.styling.dto.response.MyStylingResponse;
 import dalum.dalum.domain.styling.dto.response.StylingRecommendationResponse;
@@ -19,6 +22,7 @@ import dalum.dalum.domain.styling_product.repository.StylingProductRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -50,12 +54,25 @@ class StylingServiceTest {
     private StylingRepository stylingRepository;
     @Mock
     private StylingProductRepository stylingProductRepository;
-
     @Mock
-    private ProductConverter productConverter; // 컨버터도 Mock 처리
+    private AiStylingClient aiStylingClient;
+
     @Mock
     private StylingConverter stylingConverter; // 컨버터도 Mock 처리
 
+    // TOP 타겟 기준 후보 카테고리 (StylingServiceImpl.CATEGORY_MAP과 동일)
+    private static final List<LargeCategory> TOP_CANDIDATE_CATEGORIES =
+            List.of(LargeCategory.HAT, LargeCategory.OUTER, LargeCategory.BOTTOM, LargeCategory.SHOES, LargeCategory.BAG);
+
+    private static ProductCandidateProjection candidateOf(Long id, LargeCategory category) {
+        return new ProductCandidateProjection() {
+            @Override public Long getId() { return id; }
+            @Override public LargeCategory getLargeCategory() { return category; }
+            @Override public String getStyle() { return null; }
+            @Override public List<Double> getMaterialVector() { return List.of(0.5, 0.5); }
+            @Override public List<Map<String, Object>> getDominantColors() { return null; }
+        };
+    }
 
     @Test
     @DisplayName("추천 상품 생성 성공")
@@ -64,48 +81,122 @@ class StylingServiceTest {
         Long memberId = 1L;
         Long targetProductId = 10L;
 
-        // 가짜 객체 생성
         Member testMember = Member.builder().id(memberId).build();
-        Product targetProduct = Product.builder().id(targetProductId).build();
+        Product targetProduct = Product.builder().id(targetProductId).largeCategory(LargeCategory.TOP).build();
         LikeProduct testLikeProduct = LikeProduct.builder().member(testMember).product(targetProduct).build();
         Product recommendedProduct = Product.builder().id(20L).build();
 
-        // 1. Repository Mocking
-        when(memberRepository.findById(memberId))
-                .thenReturn(Optional.of(testMember));
-
-        when(productRepository.findById(targetProductId))
-                .thenReturn(Optional.of(targetProduct));
-
-        when(likeProductRepository.findById(targetProductId))
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+        when(productRepository.findById(targetProductId)).thenReturn(Optional.of(targetProduct));
+        when(likeProductRepository.findByMemberAndProduct(testMember, targetProduct))
                 .thenReturn(Optional.of(testLikeProduct));
-
-        when(productRepository.findAllById(anyList()))
-                .thenReturn(List.of(recommendedProduct));
-
-        when(likeProductRepository.findLikeProductIds(any(), anyList()))
-                .thenReturn(Set.of(targetProductId));
-
-        // 2. Converter Mocking
-        ProductDto targetProductDto = ProductDto.builder().productId(targetProductId).build();
-        ProductDto recommendedProductDto = ProductDto.builder().productId(20L).build();
-        StylingRecommendationResponse mockResponse = StylingRecommendationResponse.builder().stylingId(100L).build();
-
-        when(productConverter.toProductDto(eq(targetProduct), anyBoolean()))
-                .thenReturn(targetProductDto);
-
-        when(productConverter.toProductDtoList(anyList(), anySet()))
-                .thenReturn(List.of(recommendedProductDto));
-
-        when(stylingConverter.toResponse(any(Styling.class), eq(targetProductDto), anyList()))
-                .thenReturn(mockResponse);
+        when(stylingProductRepository.findRecommendedProductIds(memberId, targetProductId))
+                .thenReturn(List.of());
+        when(productRepository.findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class)))
+                .thenAnswer(inv -> {
+                    List<LargeCategory> cats = inv.getArgument(0);
+                    return List.of(candidateOf(20L + cats.get(0).ordinal(), cats.get(0)));
+                });
+        when(aiStylingClient.recommend(any()))
+                .thenReturn(Map.of("bottom", List.of(new AiRecommendedItem(20L, 0.9))));
+        when(productRepository.findAllById(anyList())).thenReturn(List.of(recommendedProduct));
+        when(likeProductRepository.findLikeProductIds(any(), anyList())).thenReturn(Set.of(targetProductId));
+        when(stylingConverter.toMainProductDetailResponse(eq(targetProduct), anyBoolean()))
+                .thenReturn(mock(MyStylingDetailResponse.MainProductDetail.class));
+        when(stylingConverter.toRecommendItemDetailResponse(any(Product.class), anyBoolean()))
+                .thenReturn(mock(MyStylingDetailResponse.RecommendedItemDetail.class));
 
         // When
         StylingRecommendationResponse response = stylingService.createRecommendation(memberId, targetProductId);
 
         // Then
         assertThat(response).isNotNull();
+        assertThat(response.resultItems()).hasSize(1);
         verify(stylingRepository, times(1)).save(any(Styling.class));
+        verify(stylingProductRepository, times(1)).saveAll(anyList());
+    }
+
+    @Test
+    @DisplayName("재추천 시 이전 추천 상품을 후보에서 제외")
+    void testCreateRecommendationExcludesPreviousProducts() {
+        // Given
+        Long memberId = 1L;
+        Long targetProductId = 10L;
+        Long previouslyRecommendedId = 99L;
+
+        Member testMember = Member.builder().id(memberId).build();
+        Product targetProduct = Product.builder().id(targetProductId).largeCategory(LargeCategory.TOP).build();
+        LikeProduct testLikeProduct = LikeProduct.builder().member(testMember).product(targetProduct).build();
+
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+        when(productRepository.findById(targetProductId)).thenReturn(Optional.of(targetProduct));
+        when(likeProductRepository.findByMemberAndProduct(testMember, targetProduct))
+                .thenReturn(Optional.of(testLikeProduct));
+        when(stylingProductRepository.findRecommendedProductIds(memberId, targetProductId))
+                .thenReturn(List.of(previouslyRecommendedId));
+        when(productRepository.findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class)))
+                .thenAnswer(inv -> {
+                    List<LargeCategory> cats = inv.getArgument(0);
+                    return List.of(candidateOf(20L + cats.get(0).ordinal(), cats.get(0)));
+                });
+        when(aiStylingClient.recommend(any())).thenReturn(Map.of());
+        when(likeProductRepository.findLikeProductIds(any(), anyList())).thenReturn(Set.of());
+        when(stylingConverter.toMainProductDetailResponse(eq(targetProduct), anyBoolean()))
+                .thenReturn(mock(MyStylingDetailResponse.MainProductDetail.class));
+
+        // When
+        stylingService.createRecommendation(memberId, targetProductId);
+
+        // Then — 이전 추천 상품 + 타겟 상품이 제외 목록에 포함, 카테고리 5개 각각 1회 조회
+        ArgumentCaptor<List<Long>> excludeCaptor = ArgumentCaptor.forClass(List.class);
+        verify(productRepository, times(TOP_CANDIDATE_CATEGORIES.size()))
+                .findCandidates(anyList(), excludeCaptor.capture(), anyList(), any(PageRequest.class));
+        for (List<Long> excludeIds : excludeCaptor.getAllValues()) {
+            assertThat(excludeIds).contains(previouslyRecommendedId, targetProductId);
+        }
+    }
+
+    @Test
+    @DisplayName("이전 추천 제외로 후보가 빈 카테고리가 생기면 제외를 리셋하고 재조회")
+    void testCreateRecommendationResetsWhenCandidatesExhausted() {
+        // Given
+        Long memberId = 1L;
+        Long targetProductId = 10L;
+        Long previouslyRecommendedId = 99L;
+
+        Member testMember = Member.builder().id(memberId).build();
+        Product targetProduct = Product.builder().id(targetProductId).largeCategory(LargeCategory.TOP).build();
+        LikeProduct testLikeProduct = LikeProduct.builder().member(testMember).product(targetProduct).build();
+
+        when(memberRepository.findById(memberId)).thenReturn(Optional.of(testMember));
+        when(productRepository.findById(targetProductId)).thenReturn(Optional.of(targetProduct));
+        when(likeProductRepository.findByMemberAndProduct(testMember, targetProduct))
+                .thenReturn(Optional.of(testLikeProduct));
+        when(stylingProductRepository.findRecommendedProductIds(memberId, targetProductId))
+                .thenReturn(List.of(previouslyRecommendedId));
+        // 이전 추천 제외 조회는 빈 결과, 리셋 조회(타겟만 제외)는 후보 반환
+        when(productRepository.findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class)))
+                .thenAnswer(inv -> {
+                    List<Long> excludeIds = inv.getArgument(1);
+                    if (excludeIds.contains(previouslyRecommendedId)) {
+                        return List.of();
+                    }
+                    List<LargeCategory> cats = inv.getArgument(0);
+                    return List.of(candidateOf(20L + cats.get(0).ordinal(), cats.get(0)));
+                });
+        when(aiStylingClient.recommend(any())).thenReturn(Map.of());
+        when(likeProductRepository.findLikeProductIds(any(), anyList())).thenReturn(Set.of());
+        when(stylingConverter.toMainProductDetailResponse(eq(targetProduct), anyBoolean()))
+                .thenReturn(mock(MyStylingDetailResponse.MainProductDetail.class));
+
+        // When
+        stylingService.createRecommendation(memberId, targetProductId);
+
+        // Then — 제외 조회 5회 + 리셋 조회 5회
+        verify(productRepository, times(TOP_CANDIDATE_CATEGORIES.size() * 2))
+                .findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class));
+        verify(productRepository, times(TOP_CANDIDATE_CATEGORIES.size()))
+                .findCandidates(anyList(), eq(List.of(targetProductId)), anyList(), any(PageRequest.class));
     }
 
     @Test
@@ -126,6 +217,8 @@ class StylingServiceTest {
         StylingSaveResponse mockResponse = StylingSaveResponse.builder().stylingId(stylingId).build();
 
         // 1. Repository Mocking
+        when(memberRepository.findById(memberId))
+                .thenReturn(Optional.of(testMember));
         when(stylingRepository.findById(stylingId))
                 .thenReturn(Optional.of(testStyling));
 

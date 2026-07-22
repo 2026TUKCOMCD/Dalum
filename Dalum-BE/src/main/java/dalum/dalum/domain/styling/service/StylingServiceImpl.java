@@ -57,6 +57,7 @@ public class StylingServiceImpl implements StylingService {
 
     private static final double SCORE_THRESHOLD = 0.1;
     private static final double STYLE_FILTER_THRESHOLD = 0.5;
+    private static final int CANDIDATES_PER_CATEGORY = 1000;
 
     private static final Map<LargeCategory, List<LargeCategory>> CATEGORY_MAP = new EnumMap<>(LargeCategory.class);
 
@@ -126,10 +127,20 @@ public class StylingServiceImpl implements StylingService {
                 targetProduct.getLargeCategory(), List.of());
         List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
 
-        List<ProductCandidateProjection> candidates = candidateCategories.stream()
-                .flatMap(cat -> productRepository.findCandidates(
-                        List.of(cat), targetProductId, compatibleStyles, PageRequest.of(0, 500)).stream())
-                .toList();
+        // 같은 상품으로 이전에 추천받은 상품들은 제외 → 재요청 시 다른 조합 노출
+        List<Long> previousIds = stylingProductRepository.findRecommendedProductIds(memberId, targetProductId);
+        List<Long> excludeIds = new ArrayList<>(previousIds);
+        excludeIds.add(targetProductId);
+
+        List<ProductCandidateProjection> candidates = findCandidatesExcluding(
+                candidateCategories, excludeIds, compatibleStyles);
+
+        // 제외 후 후보가 비는 카테고리가 생기면 이전 추천 제외를 풀고 전체에서 다시 조회
+        if (!previousIds.isEmpty() && hasMissingCategory(candidates, candidateCategories)) {
+            logger.info("[스타일링] 후보 소진으로 이전 추천 제외 리셋 - 제외했던 상품 수: {}개", previousIds.size());
+            candidates = findCandidatesExcluding(
+                    candidateCategories, List.of(targetProductId), compatibleStyles);
+        }
 
         long memAfterQuery = rt.totalMemory() - rt.freeMemory();
         logger.info("[스타일링] 후보 조회 완료 - 후보 수: {}개, 사용 메모리: {}MB (증가: {}MB)",
@@ -294,6 +305,22 @@ public class StylingServiceImpl implements StylingService {
         }
 
         stylingRepository.delete(styling);
+    }
+
+    private List<ProductCandidateProjection> findCandidatesExcluding(
+            List<LargeCategory> categories, List<Long> excludeIds, List<String> compatibleStyles) {
+        return categories.stream()
+                .flatMap(cat -> productRepository.findCandidates(
+                        List.of(cat), excludeIds, compatibleStyles, PageRequest.of(0, CANDIDATES_PER_CATEGORY)).stream())
+                .toList();
+    }
+
+    private static boolean hasMissingCategory(
+            List<ProductCandidateProjection> candidates, List<LargeCategory> categories) {
+        Set<LargeCategory> found = candidates.stream()
+                .map(ProductCandidateProjection::getLargeCategory)
+                .collect(Collectors.toSet());
+        return !found.containsAll(categories);
     }
 
     private Member getMember(Long memberId) {

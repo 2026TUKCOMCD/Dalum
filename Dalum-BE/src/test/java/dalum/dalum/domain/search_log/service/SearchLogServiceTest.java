@@ -1,12 +1,11 @@
 package dalum.dalum.domain.search_log.service;
 
+import dalum.dalum.domain.dupe_product.dto.response.DupeProductDto;
 import dalum.dalum.domain.dupe_product.enitty.DupeProduct;
 import dalum.dalum.domain.dupe_product.repository.DupeProductRepository;
 import dalum.dalum.domain.like_product.repository.LikeProductRepository;
 import dalum.dalum.domain.member.entity.Member;
 import dalum.dalum.domain.member.repository.MemberRepository;
-import dalum.dalum.domain.product.converter.ProductConverter;
-import dalum.dalum.domain.product.dto.response.ProductDto;
 import dalum.dalum.domain.product.entity.Product;
 import dalum.dalum.domain.search_log.converter.SearchLogConverter;
 import dalum.dalum.domain.search_log.dto.response.SearchLogDetailResponse;
@@ -50,9 +49,6 @@ class SearchLogServiceTest {
 
     @Mock
     private SearchLogConverter searchLogConverter;
-
-    @Mock
-    private ProductConverter productConverter;
 
     @InjectMocks
     private SearchLogServiceImpl searchLogService;
@@ -187,27 +183,27 @@ class SearchLogServiceTest {
         List<Long> productIds = List.of(1L, 2L);
         Set<Long> likeProductIds = Set.of(1L); // product1만 좋아요
 
-        ProductDto productDto1 = ProductDto.builder()
+        DupeProductDto productDto1 = DupeProductDto.builder()
                 .productId(1L)
                 .name("상품1")
-                        .brand("브랜드1")
-                                .price(10000)
-                                .imageUrl("https://example.com/product1.jpg")
-                                        .similarity(0.95)
-                                        .isLiked(true)
-                                        .build();
+                .brand("브랜드1")
+                .price(10000)
+                .imageUrl("https://example.com/product1.jpg")
+                .totalScore(0.95)
+                .isLiked(true)
+                .build();
 
-        ProductDto productDto2 = ProductDto.builder()
+        DupeProductDto productDto2 = DupeProductDto.builder()
                 .productId(2L)
                 .name("상품2")
-                        .brand("브랜드2")
-                                .price(20000)
-                                .imageUrl("https://example.com/product2.jpg")
-                                        .similarity(0.85)
-                                        .isLiked(false)
-                                        .build();
+                .brand("브랜드2")
+                .price(20000)
+                .imageUrl("https://example.com/product2.jpg")
+                .totalScore(0.85)
+                .isLiked(false)
+                .build();
 
-        List<ProductDto> productDtos = List.of(productDto1, productDto2);
+        List<DupeProductDto> productDtos = List.of(productDto1, productDto2);
 
         SearchLogDetailResponse expectedResponse = SearchLogDetailResponse.builder()
                 .searchLogId(searchLogId)
@@ -220,7 +216,8 @@ class SearchLogServiceTest {
         when(memberRepository.findById(memberId)).thenReturn(Optional.of(member));
         when(dupeProductRepository.findBySearchLog(searchLog)).thenReturn(dupeProducts);
         when(likeProductRepository.findLikeProductIds(memberId, productIds)).thenReturn(likeProductIds);
-        when(productConverter.toProductDtoList(products, likeProductIds)).thenReturn(productDtos);
+        when(searchLogConverter.toDupeProductDto(dupeProduct1, likeProductIds)).thenReturn(productDto1);
+        when(searchLogConverter.toDupeProductDto(dupeProduct2, likeProductIds)).thenReturn(productDto2);
         when(searchLogConverter.toSearchLogDetailResponse(searchLog, productDtos)).thenReturn(expectedResponse);
 
         // when
@@ -237,7 +234,7 @@ class SearchLogServiceTest {
         verify(memberRepository).findById(memberId);
         verify(dupeProductRepository).findBySearchLog(searchLog);
         verify(likeProductRepository).findLikeProductIds(memberId, productIds);
-        verify(productConverter).toProductDtoList(products, likeProductIds);
+        verify(searchLogConverter, times(2)).toDupeProductDto(any(DupeProduct.class), eq(likeProductIds));
         verify(searchLogConverter).toSearchLogDetailResponse(searchLog, productDtos);
     }
 
@@ -280,7 +277,7 @@ class SearchLogServiceTest {
                         .build();
 
         List<DupeProduct> emptyDupeProducts = Collections.emptyList();
-        List<ProductDto> emptyProductDtos = Collections.emptyList();
+        List<DupeProductDto> emptyProductDtos = Collections.emptyList();
 
         SearchLogDetailResponse expectedResponse = SearchLogDetailResponse.builder()
                 .searchLogId(searchLogId)
@@ -294,8 +291,6 @@ class SearchLogServiceTest {
         when(dupeProductRepository.findBySearchLog(searchLog)).thenReturn(emptyDupeProducts);
         when(likeProductRepository.findLikeProductIds(memberId, Collections.emptyList()))
                 .thenReturn(Collections.emptySet());
-        when(productConverter.toProductDtoList(Collections.emptyList(), Collections.emptySet()))
-                .thenReturn(emptyProductDtos);
         when(searchLogConverter.toSearchLogDetailResponse(searchLog, emptyProductDtos))
                 .thenReturn(expectedResponse);
 
@@ -310,7 +305,6 @@ class SearchLogServiceTest {
         verify(memberRepository).findById(memberId);
         verify(dupeProductRepository).findBySearchLog(searchLog);
         verify(likeProductRepository).findLikeProductIds(memberId, Collections.emptyList());
-        verify(productConverter).toProductDtoList(Collections.emptyList(), Collections.emptySet());
         verify(searchLogConverter).toSearchLogDetailResponse(searchLog, emptyProductDtos);
     }
 
