@@ -36,6 +36,10 @@ OPTIONAL_THRESHOLDS: Dict[str, float] = {
     "bag": 0.6,
 }
 
+# 색상각 차이 → 조화 점수 보간 앵커 (기존 구간 경계값 유지, 구간 사이는 선형 보간)
+HUE_DIFF_ANCHORS  = (0.0, 30.0, 60.0, 90.0, 150.0, 180.0)
+HUE_SCORE_ANCHORS = (1.0, 1.0, 0.75, 0.4, 0.85, 0.85)
+
 
 class StylingRecommender:
     """
@@ -62,9 +66,20 @@ class StylingRecommender:
     # ──────────────────────────────────────────
 
     @staticmethod
-    def _hex_to_hsv(hex_color: str) -> tuple[float, float, float]:
-        hex_color = hex_color.lstrip("#")
-        r, g, b   = (int(hex_color[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+    def _hex_to_hsv(hex_color: Any) -> Optional[tuple[float, float, float]]:
+        if not isinstance(hex_color, str):
+            return None
+
+        hex_color = hex_color.strip().lstrip("#")
+        if len(hex_color) == 3:
+            hex_color = "".join(ch * 2 for ch in hex_color)
+        if len(hex_color) != 6:
+            return None
+
+        try:
+            r, g, b = (int(hex_color[i:i+2], 16) / 255.0 for i in (0, 2, 4))
+        except ValueError:
+            return None
 
         cmax, cmin = max(r, g, b), min(r, g, b)
         delta = cmax - cmin
@@ -83,38 +98,67 @@ class StylingRecommender:
 
         return h, s, v
 
-    def _single_hue_harmony(self, h1: float, s1: float, h2: float, s2: float) -> float:
+    def _single_hue_harmony(
+        self,
+        hsv1: tuple[float, float, float],
+        hsv2: tuple[float, float, float],
+    ) -> float:
+        h1, s1, v1 = hsv1
+        h2, s2, v2 = hsv2
+
         if s1 < ACHROMATIC_SATURATION or s2 < ACHROMATIC_SATURATION:
-            return 1.0
+            # 무채색은 무난 — 명도 대비가 클수록 소폭 가산 (0.85 ~ 0.95)
+            return 0.85 + 0.1 * abs(v1 - v2)
 
         diff = abs(h1 - h2) % 360
         if diff > 180:
             diff = 360 - diff
 
-        if diff <= 30:   return 1.0   # 유사색 (모노톤)
-        elif diff <= 60: return 0.75  # 유사 조화
-        elif diff >= 150: return 0.85  # 보색 (포인트)
-        else:            return 0.4   # 부조화
+        return float(np.interp(diff, HUE_DIFF_ANCHORS, HUE_SCORE_ANCHORS))
 
-    def _color_harmony_score(self, colors1: List[Dict], colors2: List[Dict]) -> float:
-        if not colors1 or not colors2:
+    def _prepare_colors(self, colors: Optional[List[Dict]]) -> List[tuple]:
+        """
+        hex 파싱에 성공한 색상만 (hsv, ratio)로 변환하고 ratio 내림차순 정렬.
+        ratio가 없으면 0.0 — 정렬은 안정적이므로 원래 순서 유지.
+        """
+        prepared = []
+        for c in colors or []:
+            if not isinstance(c, dict):
+                continue
+            hsv = self._hex_to_hsv(c.get("hex"))
+            if hsv is None:
+                continue
+            try:
+                ratio = float(c.get("ratio", 0.0))
+            except (TypeError, ValueError):
+                ratio = 0.0
+            prepared.append((hsv, ratio))
+
+        prepared.sort(key=lambda x: x[1], reverse=True)
+        return prepared
+
+    def _color_harmony_score(self, colors1: Optional[List[Dict]], colors2: Optional[List[Dict]]) -> float:
+        p1 = self._prepare_colors(colors1)
+        p2 = self._prepare_colors(colors2)
+        if not p1 or not p2:
             return 0.7
 
-        h1, s1, _ = self._hex_to_hsv(colors1[0]["hex"])
-        h2, s2, _ = self._hex_to_hsv(colors2[0]["hex"])
-        primary   = self._single_hue_harmony(h1, s1, h2, s2)
+        primary = self._single_hue_harmony(p1[0][0], p2[0][0])
 
-        secondary_scores = [
-            self._single_hue_harmony(
-                *self._hex_to_hsv(c1["hex"])[:2],
-                *self._hex_to_hsv(c2["hex"])[:2],
-            )
-            for c1 in colors1[1:]
-            for c2 in colors2[1:]
+        # 보조색 쌍은 ratio 곱으로 가중 평균 (ratio 정보 없으면 균등 평균)
+        pairs = [
+            (self._single_hue_harmony(hsv_a, hsv_b), ra * rb)
+            for hsv_a, ra in p1[1:]
+            for hsv_b, rb in p2[1:]
         ]
 
-        if secondary_scores:
-            return 0.7 * primary + 0.3 * (sum(secondary_scores) / len(secondary_scores))
+        if pairs:
+            total_w = sum(w for _, w in pairs)
+            if total_w > 0:
+                secondary = sum(s * w for s, w in pairs) / total_w
+            else:
+                secondary = sum(s for s, _ in pairs) / len(pairs)
+            return 0.7 * primary + 0.3 * secondary
         return primary
 
     # ──────────────────────────────────────────
@@ -124,7 +168,7 @@ class StylingRecommender:
     @staticmethod
     def _style_score(style1: Optional[str], style2: Optional[str]) -> float:
         if not style1 or not style2:
-            return 0.7
+            return 0.5
         return STYLE_COMPATIBILITY.get(style1.lower(), {}).get(style2.lower(), 0.5)
 
     # ──────────────────────────────────────────
@@ -137,11 +181,11 @@ class StylingRecommender:
         has_color: bool, has_style: bool,
     ) -> float:
         if has_color and has_style:
-            return 0.2 * mat + 0.3 * col + 0.50 * sty
+            return 0.10 * mat + 0.45 * col + 0.45 * sty
         if has_color:
-            return 0.50 * mat + 0.50 * col
+            return 0.15 * mat + 0.85 * col
         if has_style:
-            return 0.50 * mat + 0.50 * sty
+            return 0.15 * mat + 0.85 * sty
         return mat
 
     # ──────────────────────────────────────────
