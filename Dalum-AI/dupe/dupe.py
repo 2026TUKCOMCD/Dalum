@@ -481,7 +481,6 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
     _W_LAB_COLOR   = _wt["lab"]
     print(f"[RERANK] cat={major_category} mode={_mode} shape={_W_SHAPE} clip_img={_W_CLIP_IMAGE} lab={_W_LAB_COLOR}")
 
-    # w_lab / w_clip_clr: LAB DB 존재 여부에 따라 가중치 재분배
     if q_lab is not None and mean_lab_db is not None:
         _w_lab      = _W_LAB_COLOR
         _w_clip_clr = _W_CLIP_COLOR
@@ -489,7 +488,6 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         _w_lab      = 0.0
         _w_clip_clr = _W_CLIP_COLOR + _W_LAB_COLOR
 
-    # 무지 쿼리: 후보 집합 내 min-max 정규화 → 가장 무지한 아이템=1.0, 가장 패턴한 아이템=0.0
     _design_db_ok = clip_design_db is not None
     if _is_plain_query and _design_db_ok and len(results) > 1:
         _all_db_idxs = np.array([item["_db_idx"] for item in results], dtype=np.int32)
@@ -503,21 +501,17 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
         db_idx = item["_db_idx"]
         db_vit = dalum_vit_db[db_idx].astype("float32")
 
-        # 색상 유사도: ViT layer3 cosine (768-dim)
         db_color  = db_vit[:768] / (np.linalg.norm(db_vit[:768]) + 1e-8)
         color_sim = max(0.0, float(np.dot(q_color, db_color)))
 
-        # 형태 유사도: ViT layer11 cosine (768-dim)
         db_shape  = db_vit[768:1536] / (np.linalg.norm(db_vit[768:1536]) + 1e-8)
         shape_sim = max(0.0, float(np.dot(q_shape, db_shape)))
 
-        # 소재 유사도 (33-dim)
         db_mat       = db_vit[1536:] / (np.linalg.norm(db_vit[1536:]) + 1e-8)
         material_sim = float(np.dot(q_material, db_mat))
 
-        # CLIP 디자인 유사도 (DB 호환 시에만 계산)
         if not _design_db_ok:
-            design_sim = 0.5  # 디자인 DB 미갱신 시 중립값
+            design_sim = 0.5
         elif _is_plain_query:
             db_pattern_sum = float(clip_design_db[db_idx][_pat_idx_arr].sum())
             design_sim = max(0.0, 1.0 - (db_pattern_sum - _ps_min) / _ps_range)
@@ -527,14 +521,12 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
             top2_w     = q_design[top2_idx] / (q_design[top2_idx].sum() + 1e-8)
             design_sim = float(np.dot(top2_w, db_d[top2_idx]))
 
-        # CLIP 색상 분포 유사도
         if q_color_probs is not None and _db_color_probs is not None:
             db_color_p     = _db_color_probs[db_idx]
             clip_color_sim = float(np.dot(q_color_probs, db_color_p))
         else:
             clip_color_sim = 0.0
 
-        # 픽셀 평균 LAB 유사도
         if q_lab is not None and mean_lab_db is not None:
             lab_sim = lab_color_sim(q_lab, mean_lab_db[db_idx], achromatic=(_rc_chroma <= 10.0))
         else:
@@ -549,16 +541,15 @@ def rerank(results, dalum_emb, design_probs, q_color_probs=None, q_lab=None, mat
             + _w_clip_clr    * clip_color_sim
             + _w_lab         * lab_sim
         )
-        item["final_score"] = _final   # 정렬 기준 — 그대로 유지
+        item["final_score"] = _final
 
-        # 공개 점수 (내부 세부 점수 대신 4개만 노출)
-       _color_w_sum = _W_COLOR + _w_lab + _w_clip_clr
+        _color_w_sum = _W_COLOR + _w_lab + _w_clip_clr
         _c_score_raw = (_W_COLOR * color_sim + _w_lab * lab_sim + _w_clip_clr * clip_color_sim) / max(0.01, _color_w_sum)
         _m_score     = round(float(material_sim), 4)
         _d_score_raw = float(design_sim)
 
-        _COLOR_BOOST_EXP  = 0.4    # 기존 0.6 → 0.4로 더 후하게
-        _DESIGN_BOOST_EXP = 0.25   # 원본값이 낮은 분포라 더 세게 보정
+        _COLOR_BOOST_EXP  = 0.4
+        _DESIGN_BOOST_EXP = 0.25
 
         _c_score = round(_c_score_raw ** _COLOR_BOOST_EXP, 4)
         _d_score = round(_d_score_raw ** _DESIGN_BOOST_EXP, 4)
