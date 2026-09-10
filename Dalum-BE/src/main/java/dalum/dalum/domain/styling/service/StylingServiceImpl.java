@@ -58,6 +58,7 @@ public class StylingServiceImpl implements StylingService {
     private static final double SCORE_THRESHOLD = 0.1;
     private static final double STYLE_FILTER_THRESHOLD = 0.5;
     private static final int CANDIDATES_PER_CATEGORY = 1000;
+    private static final int RECENT_STYLING_LIMIT = 3;
 
     private static final Map<LargeCategory, List<LargeCategory>> CATEGORY_MAP = new EnumMap<>(LargeCategory.class);
 
@@ -280,8 +281,12 @@ public class StylingServiceImpl implements StylingService {
                 targetProduct.getLargeCategory(), List.of());
         List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
 
-        // 같은 상품으로 이전에 추천받은 상품들은 제외 → 재요청 시 다른 조합 노출
-        List<Long> previousIds = stylingProductRepository.findRecommendedProductIds(memberId, targetProductId);
+        // 같은 상품으로 최근 N번 추천받은 상품들은 제외 → 재요청 시 다른 조합 노출
+        List<Long> recentStylingIds = stylingRepository.findRecentStylingIds(
+                memberId, targetProductId, PageRequest.of(0, RECENT_STYLING_LIMIT));
+        List<Long> previousIds = recentStylingIds.isEmpty()
+                ? List.of()
+                : stylingProductRepository.findProductIdsByStylingIds(recentStylingIds);
         List<Long> excludeIds = new ArrayList<>(previousIds);
         excludeIds.add(targetProductId);
 
@@ -306,8 +311,8 @@ public class StylingServiceImpl implements StylingService {
                         p.getId(),
                         toCategoryString(p.getLargeCategory()),
                         p.getStyle(),
-                        p.getMaterialVector() != null ? p.getMaterialVector() : List.of(),
-                        p.getDominantColors()))
+                        p.getMaterialVectorJson(),
+                        p.getDominantColorsJson()))
                 .toList();
 
         AiRecommendRequest aiRequest = new AiRecommendRequest(aiInput, candidateItems, 3, SCORE_THRESHOLD);
@@ -318,7 +323,7 @@ public class StylingServiceImpl implements StylingService {
             List<LargeCategory> categories, List<Long> excludeIds, List<String> compatibleStyles) {
         return categories.stream()
                 .flatMap(cat -> productRepository.findCandidates(
-                        List.of(cat), excludeIds, compatibleStyles, PageRequest.of(0, CANDIDATES_PER_CATEGORY)).stream())
+                        List.of(cat.name()), excludeIds, compatibleStyles, CANDIDATES_PER_CATEGORY).stream())
                 .toList();
     }
 

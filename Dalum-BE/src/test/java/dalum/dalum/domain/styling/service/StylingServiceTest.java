@@ -69,8 +69,8 @@ class StylingServiceTest {
             @Override public Long getId() { return id; }
             @Override public LargeCategory getLargeCategory() { return category; }
             @Override public String getStyle() { return null; }
-            @Override public List<Double> getMaterialVector() { return List.of(0.5, 0.5); }
-            @Override public List<Map<String, Object>> getDominantColors() { return null; }
+            @Override public String getMaterialVectorJson() { return "[0.5,0.5]"; }
+            @Override public String getDominantColorsJson() { return null; }
         };
     }
 
@@ -90,12 +90,13 @@ class StylingServiceTest {
         when(productRepository.findById(targetProductId)).thenReturn(Optional.of(targetProduct));
         when(likeProductRepository.findByMemberAndProduct(testMember, targetProduct))
                 .thenReturn(Optional.of(testLikeProduct));
-        when(stylingProductRepository.findRecommendedProductIds(memberId, targetProductId))
+        when(stylingRepository.findRecentStylingIds(eq(memberId), eq(targetProductId), any(PageRequest.class)))
                 .thenReturn(List.of());
-        when(productRepository.findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class)))
+        when(productRepository.findCandidates(anyList(), anyList(), anyList(), anyInt()))
                 .thenAnswer(inv -> {
-                    List<LargeCategory> cats = inv.getArgument(0);
-                    return List.of(candidateOf(20L + cats.get(0).ordinal(), cats.get(0)));
+                    List<String> cats = inv.getArgument(0);
+                    LargeCategory cat = LargeCategory.valueOf(cats.get(0));
+                    return List.of(candidateOf(20L + cat.ordinal(), cat));
                 });
         when(aiStylingClient.recommend(any()))
                 .thenReturn(Map.of("bottom", List.of(new AiRecommendedItem(20L, 0.9))));
@@ -132,12 +133,16 @@ class StylingServiceTest {
         when(productRepository.findById(targetProductId)).thenReturn(Optional.of(targetProduct));
         when(likeProductRepository.findByMemberAndProduct(testMember, targetProduct))
                 .thenReturn(Optional.of(testLikeProduct));
-        when(stylingProductRepository.findRecommendedProductIds(memberId, targetProductId))
+        Long recentStylingId = 500L;
+        when(stylingRepository.findRecentStylingIds(eq(memberId), eq(targetProductId), any(PageRequest.class)))
+                .thenReturn(List.of(recentStylingId));
+        when(stylingProductRepository.findProductIdsByStylingIds(List.of(recentStylingId)))
                 .thenReturn(List.of(previouslyRecommendedId));
-        when(productRepository.findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class)))
+        when(productRepository.findCandidates(anyList(), anyList(), anyList(), anyInt()))
                 .thenAnswer(inv -> {
-                    List<LargeCategory> cats = inv.getArgument(0);
-                    return List.of(candidateOf(20L + cats.get(0).ordinal(), cats.get(0)));
+                    List<String> cats = inv.getArgument(0);
+                    LargeCategory cat = LargeCategory.valueOf(cats.get(0));
+                    return List.of(candidateOf(20L + cat.ordinal(), cat));
                 });
         when(aiStylingClient.recommend(any())).thenReturn(Map.of());
         when(likeProductRepository.findLikeProductIds(any(), anyList())).thenReturn(Set.of());
@@ -150,7 +155,7 @@ class StylingServiceTest {
         // Then — 이전 추천 상품 + 타겟 상품이 제외 목록에 포함, 카테고리 5개 각각 1회 조회
         ArgumentCaptor<List<Long>> excludeCaptor = ArgumentCaptor.forClass(List.class);
         verify(productRepository, times(TOP_CANDIDATE_CATEGORIES.size()))
-                .findCandidates(anyList(), excludeCaptor.capture(), anyList(), any(PageRequest.class));
+                .findCandidates(anyList(), excludeCaptor.capture(), anyList(), anyInt());
         for (List<Long> excludeIds : excludeCaptor.getAllValues()) {
             assertThat(excludeIds).contains(previouslyRecommendedId, targetProductId);
         }
@@ -172,17 +177,21 @@ class StylingServiceTest {
         when(productRepository.findById(targetProductId)).thenReturn(Optional.of(targetProduct));
         when(likeProductRepository.findByMemberAndProduct(testMember, targetProduct))
                 .thenReturn(Optional.of(testLikeProduct));
-        when(stylingProductRepository.findRecommendedProductIds(memberId, targetProductId))
+        Long recentStylingId = 500L;
+        when(stylingRepository.findRecentStylingIds(eq(memberId), eq(targetProductId), any(PageRequest.class)))
+                .thenReturn(List.of(recentStylingId));
+        when(stylingProductRepository.findProductIdsByStylingIds(List.of(recentStylingId)))
                 .thenReturn(List.of(previouslyRecommendedId));
         // 이전 추천 제외 조회는 빈 결과, 리셋 조회(타겟만 제외)는 후보 반환
-        when(productRepository.findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class)))
+        when(productRepository.findCandidates(anyList(), anyList(), anyList(), anyInt()))
                 .thenAnswer(inv -> {
                     List<Long> excludeIds = inv.getArgument(1);
                     if (excludeIds.contains(previouslyRecommendedId)) {
                         return List.of();
                     }
-                    List<LargeCategory> cats = inv.getArgument(0);
-                    return List.of(candidateOf(20L + cats.get(0).ordinal(), cats.get(0)));
+                    List<String> cats = inv.getArgument(0);
+                    LargeCategory cat = LargeCategory.valueOf(cats.get(0));
+                    return List.of(candidateOf(20L + cat.ordinal(), cat));
                 });
         when(aiStylingClient.recommend(any())).thenReturn(Map.of());
         when(likeProductRepository.findLikeProductIds(any(), anyList())).thenReturn(Set.of());
@@ -194,9 +203,9 @@ class StylingServiceTest {
 
         // Then — 제외 조회 5회 + 리셋 조회 5회
         verify(productRepository, times(TOP_CANDIDATE_CATEGORIES.size() * 2))
-                .findCandidates(anyList(), anyList(), anyList(), any(PageRequest.class));
+                .findCandidates(anyList(), anyList(), anyList(), anyInt());
         verify(productRepository, times(TOP_CANDIDATE_CATEGORIES.size()))
-                .findCandidates(anyList(), eq(List.of(targetProductId)), anyList(), any(PageRequest.class));
+                .findCandidates(anyList(), eq(List.of(targetProductId)), anyList(), anyInt());
     }
 
     @Test
