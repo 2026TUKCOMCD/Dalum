@@ -29,7 +29,7 @@ public class AiService {
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(Map.class)
-                .timeout(Duration.ofSeconds(180))
+                .timeout(Duration.ofSeconds(30))
                 .block();
 
         if (response == null) return List.of();
