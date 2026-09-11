@@ -59,6 +59,8 @@ public class StylingServiceImpl implements StylingService {
     private static final double STYLE_FILTER_THRESHOLD = 0.5;
     private static final int CANDIDATES_PER_CATEGORY = 1000;
     private static final int RECENT_STYLING_LIMIT = 3;
+    // product_id는 IDENTITY 시퀀스라 -1이 나올 수 없음 — "제외 없음"을 표현하는 용도의 sentinel 값
+    private static final List<Long> NO_EXCLUDE = List.of(-1L);
 
     private static final Map<LargeCategory, List<LargeCategory>> CATEGORY_MAP = new EnumMap<>(LargeCategory.class);
 
@@ -96,6 +98,7 @@ public class StylingServiceImpl implements StylingService {
     private final StylingRepository stylingRepository;
     private final StylingProductRepository stylingProductRepository;
     private final AiStylingClient aiStylingClient;
+    private final CandidatePoolCache candidatePoolCache;
 
     private final StylingConverter stylingConverter;
 
@@ -281,26 +284,34 @@ public class StylingServiceImpl implements StylingService {
                 targetProduct.getLargeCategory(), List.of());
         List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
 
+        // (largeCategory, style) 단위로 캐싱된 후보 풀 — 제외 목록은 여기 안 걸고 아래서 메모리 필터링
+        List<ProductCandidateProjection> pool = getOrLoadCandidatePool(
+                targetProduct.getLargeCategory(), targetProduct.getStyle(), candidateCategories, compatibleStyles);
+
         // 같은 상품으로 최근 N번 추천받은 상품들은 제외 → 재요청 시 다른 조합 노출
         List<Long> recentStylingIds = stylingRepository.findRecentStylingIds(
                 memberId, targetProductId, PageRequest.of(0, RECENT_STYLING_LIMIT));
         List<Long> previousIds = recentStylingIds.isEmpty()
                 ? List.of()
                 : stylingProductRepository.findProductIdsByStylingIds(recentStylingIds);
-        List<Long> excludeIds = new ArrayList<>(previousIds);
+
+        Set<Long> excludeIds = new HashSet<>(previousIds);
         excludeIds.add(targetProductId);
+        List<ProductCandidateProjection> candidates = filterOut(pool, excludeIds);
 
-        List<ProductCandidateProjection> candidates = findCandidatesExcluding(
-                candidateCategories, excludeIds, compatibleStyles);
-
-        // 제외 후 후보가 비는 카테고리가 생기면 이전 추천 제외를 풀고 전체에서 다시 조회
+        // 제외 후 후보가 비는 카테고리가 생기면 이전 추천 제외를 풀고(타겟만 제외) 같은 풀에서 다시 필터링
         if (!previousIds.isEmpty() && hasMissingCategory(candidates, candidateCategories)) {
             logger.info("[스타일링] 후보 소진으로 이전 추천 제외 리셋 - 제외했던 상품 수: {}개", previousIds.size());
-            candidates = findCandidatesExcluding(
-                    candidateCategories, List.of(targetProductId), compatibleStyles);
+            candidates = filterOut(pool, Set.of(targetProductId));
         }
 
         return candidates;
+    }
+
+    private List<ProductCandidateProjection> filterOut(List<ProductCandidateProjection> pool, Set<Long> excludeIds) {
+        return pool.stream()
+                .filter(p -> !excludeIds.contains(p.getId()))
+                .toList();
     }
 
     private Map<String, List<AiRecommendedItem>> requestAiRecommendation(
@@ -319,12 +330,23 @@ public class StylingServiceImpl implements StylingService {
         return aiStylingClient.recommend(aiRequest);
     }
 
-    private List<ProductCandidateProjection> findCandidatesExcluding(
-            List<LargeCategory> categories, List<Long> excludeIds, List<String> compatibleStyles) {
-        return categories.stream()
+    private List<ProductCandidateProjection> getOrLoadCandidatePool(
+            LargeCategory targetCategory, String targetStyle,
+            List<LargeCategory> candidateCategories, List<String> compatibleStyles) {
+
+        String cacheKey = candidatePoolCache.buildKey(targetCategory, targetStyle);
+        List<ProductCandidateProjection> cached = candidatePoolCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        List<ProductCandidateProjection> pool = candidateCategories.stream()
                 .flatMap(cat -> productRepository.findCandidates(
-                        List.of(cat.name()), excludeIds, compatibleStyles, CANDIDATES_PER_CATEGORY).stream())
+                        List.of(cat.name()), NO_EXCLUDE, compatibleStyles, CANDIDATES_PER_CATEGORY).stream())
                 .toList();
+
+        candidatePoolCache.put(cacheKey, pool);
+        return pool;
     }
 
     private static boolean hasMissingCategory(
