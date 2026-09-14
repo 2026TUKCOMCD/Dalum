@@ -20,7 +20,7 @@ import java.util.List;
 public class CandidatePoolCache {
 
     private static final long MAX_WEIGHT_BYTES = 150L * 1024 * 1024; // 150MB
-    private static final Duration TTL = Duration.ofMinutes(60);
+    private static final Duration TTL = Duration.ofHours(24);
     private static final int ENTRY_OVERHEAD_BYTES = 64;
 
     private final Cache<String, List<ProductCandidateProjection>> cache = Caffeine.newBuilder()
