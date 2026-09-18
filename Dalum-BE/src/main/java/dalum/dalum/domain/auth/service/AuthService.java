@@ -30,6 +30,7 @@ public class AuthService {
     private final LikeProductRepository likeProductRepository;
     private final SearchLogRepository searchLogRepository;
     private final DupeProductRepository dupeProductRepository;
+    private final StylingRepository stylingRepository;
 
     @Value("${jwt.access-expiration}")
     private Long accessExpiration;
@@ -92,6 +93,8 @@ public class AuthService {
             throw new MemberException(MemberErrorCode.NOT_FOUND);
         }
 
+        // Styling → LikeProduct FK 참조 있어 Styling(및 cascade되는 StylingProduct)부터 먼저 삭제
+        stylingRepository.deleteByMemberId(memberId);
         likeProductRepository.deleteByMemberId(memberId);
 
         List<SearchLog> memberLogs = searchLogRepository.findByMemberId(memberId);

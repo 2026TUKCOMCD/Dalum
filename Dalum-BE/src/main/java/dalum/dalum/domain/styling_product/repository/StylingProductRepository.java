@@ -13,8 +13,6 @@ public interface StylingProductRepository extends JpaRepository<StylingProduct, 
     List<StylingProduct> findByStyling(Styling styling);
 
     @Query("SELECT DISTINCT sp.product.id FROM StylingProduct sp " +
-            "WHERE sp.styling.member.id = :memberId " +
-            "AND sp.styling.likeProduct.product.id = :targetProductId")
-    List<Long> findRecommendedProductIds(@Param("memberId") Long memberId,
-                                         @Param("targetProductId") Long targetProductId);
+            "WHERE sp.styling.id IN :stylingIds")
+    List<Long> findProductIdsByStylingIds(@Param("stylingIds") List<Long> stylingIds);
 }

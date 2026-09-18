@@ -58,6 +58,9 @@ dependencies {
 	// OAuth2
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-client'
 
+	// In-memory 캐시 (스타일링 추천 후보 풀)
+	implementation 'com.github.ben-manes.caffeine:caffeine'
+
 }
 
 tasks.named('test') {

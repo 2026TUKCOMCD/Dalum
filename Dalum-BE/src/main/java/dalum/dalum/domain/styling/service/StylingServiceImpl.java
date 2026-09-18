@@ -58,6 +58,9 @@ public class StylingServiceImpl implements StylingService {
     private static final double SCORE_THRESHOLD = 0.1;
     private static final double STYLE_FILTER_THRESHOLD = 0.5;
     private static final int CANDIDATES_PER_CATEGORY = 1000;
+    private static final int RECENT_STYLING_LIMIT = 3;
+    // product_id는 IDENTITY 시퀀스라 -1이 나올 수 없음 — "제외 없음"을 표현하는 용도의 sentinel 값
+    private static final List<Long> NO_EXCLUDE = List.of(-1L);
 
     private static final Map<LargeCategory, List<LargeCategory>> CATEGORY_MAP = new EnumMap<>(LargeCategory.class);
 
@@ -95,15 +98,12 @@ public class StylingServiceImpl implements StylingService {
     private final StylingRepository stylingRepository;
     private final StylingProductRepository stylingProductRepository;
     private final AiStylingClient aiStylingClient;
+    private final CandidatePoolCache candidatePoolCache;
 
     private final StylingConverter stylingConverter;
 
     @Override
     public StylingRecommendationResponse createRecommendation(Long memberId, Long targetProductId) {
-
-        Runtime rt = Runtime.getRuntime();
-        long memBefore = rt.totalMemory() - rt.freeMemory();
-        logger.info("[스타일링] 추천 시작 - 사용 메모리: {}MB", memBefore / 1024 / 1024);
 
         Member member = getMember(memberId);
 
@@ -113,68 +113,29 @@ public class StylingServiceImpl implements StylingService {
         LikeProduct likeProduct = likeProductRepository.findByMemberAndProduct(member, targetProduct)
                 .orElseThrow(() -> new LikeProductException(LikeProductErrorCode.NOT_FOUND));
 
-        // AI 입력 구성
-        String inputCategory = toCategoryString(targetProduct.getLargeCategory());
-        AiInputItem aiInput = new AiInputItem(
-                targetProduct.getMaterialVector() != null ? targetProduct.getMaterialVector() : List.of(),
-                targetProduct.getDominantColors(),
-                targetProduct.getStyle(),
-                inputCategory
-        );
+        AiInputItem aiInput = buildAiInput(targetProduct);
+        List<ProductCandidateProjection> candidates = findRecommendationCandidates(memberId, targetProductId, targetProduct);
+        Map<String, List<AiRecommendedItem>> aiResponse = requestAiRecommendation(aiInput, candidates);
 
-        // 카테고리에 맞는 후보 상품 조회
-        List<LargeCategory> candidateCategories = CATEGORY_MAP.getOrDefault(
-                targetProduct.getLargeCategory(), List.of());
-        List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
-
-        // 같은 상품으로 이전에 추천받은 상품들은 제외 → 재요청 시 다른 조합 노출
-        List<Long> previousIds = stylingProductRepository.findRecommendedProductIds(memberId, targetProductId);
-        List<Long> excludeIds = new ArrayList<>(previousIds);
-        excludeIds.add(targetProductId);
-
-        List<ProductCandidateProjection> candidates = findCandidatesExcluding(
-                candidateCategories, excludeIds, compatibleStyles);
-
-        // 제외 후 후보가 비는 카테고리가 생기면 이전 추천 제외를 풀고 전체에서 다시 조회
-        if (!previousIds.isEmpty() && hasMissingCategory(candidates, candidateCategories)) {
-            logger.info("[스타일링] 후보 소진으로 이전 추천 제외 리셋 - 제외했던 상품 수: {}개", previousIds.size());
-            candidates = findCandidatesExcluding(
-                    candidateCategories, List.of(targetProductId), compatibleStyles);
-        }
-
-        long memAfterQuery = rt.totalMemory() - rt.freeMemory();
-        logger.info("[스타일링] 후보 조회 완료 - 후보 수: {}개, 사용 메모리: {}MB (증가: {}MB)",
-                candidates.size(), memAfterQuery / 1024 / 1024, (memAfterQuery - memBefore) / 1024 / 1024);
-
-        // 후보 상품 → AI 요청 형태 변환
-        List<AiCandidateItem> candidateItems = candidates.stream()
-                .map(p -> new AiCandidateItem(
-                        p.getId(),
-                        toCategoryString(p.getLargeCategory()),
-                        p.getStyle(),
-                        p.getMaterialVector() != null ? p.getMaterialVector() : List.of(),
-                        p.getDominantColors()))
-                .toList();
-
-        // AI 서버 호출
-        AiRecommendRequest aiRequest = new AiRecommendRequest(aiInput, candidateItems, 3, SCORE_THRESHOLD);
-        Map<String, List<AiRecommendedItem>> aiResponse = aiStylingClient.recommend(aiRequest);
-
-        // 스타일링 저장
         Styling styling = Styling.builder()
                 .member(member)
                 .likeProduct(likeProduct)
                 .build();
         stylingRepository.save(styling);
 
-        // AI 결과에서 추천 상품 ID 수집
+        Map<Long, Product> productMap = saveStylingProducts(styling, aiResponse);
+
+        return buildRecommendationResponse(memberId, targetProductId, targetProduct, styling, aiResponse, productMap);
+    }
+
+    private Map<Long, Product> saveStylingProducts(
+            Styling styling, Map<String, List<AiRecommendedItem>> aiResponse) {
         List<Long> recommendedIds = aiResponse.values().stream()
                 .flatMap(List::stream)
                 .map(AiRecommendedItem::productId)
                 .distinct()
                 .toList();
 
-        // 추천 상품 조회 및 StylingProduct 저장
         Map<Long, Product> productMap = productRepository.findAllById(recommendedIds).stream()
                 .collect(Collectors.toMap(Product::getId, p -> p));
 
@@ -187,16 +148,20 @@ public class StylingServiceImpl implements StylingService {
                 .toList();
         stylingProductRepository.saveAll(stylingProducts);
 
-        // 좋아요 여부 확인
-        List<Long> allProductIds = new ArrayList<>(recommendedIds);
+        return productMap;
+    }
+
+    private StylingRecommendationResponse buildRecommendationResponse(
+            Long memberId, Long targetProductId, Product targetProduct, Styling styling,
+            Map<String, List<AiRecommendedItem>> aiResponse, Map<Long, Product> productMap) {
+
+        List<Long> allProductIds = new ArrayList<>(productMap.keySet());
         allProductIds.add(targetProductId);
         Set<Long> likedIds = likeProductRepository.findLikeProductIds(memberId, allProductIds);
 
-        // 메인 상품 DTO 변환
         MyStylingDetailResponse.MainProductDetail mainProductDetail =
                 stylingConverter.toMainProductDetailResponse(targetProduct, likedIds.contains(targetProductId));
 
-        // 카테고리별 추천 상품 DTO 변환
         List<RecommendationCategoryResponse> resultItems = aiResponse.entrySet().stream()
                 .filter(e -> !e.getValue().isEmpty())
                 .map(e -> {
@@ -213,10 +178,6 @@ public class StylingServiceImpl implements StylingService {
                 })
                 .toList();
 
-        long memAfter = rt.totalMemory() - rt.freeMemory();
-        logger.info("[스타일링] 추천 완료 - 사용 메모리: {}MB (총 증가: {}MB)",
-                memAfter / 1024 / 1024, (memAfter - memBefore) / 1024 / 1024);
-
         return StylingRecommendationResponse.builder()
                 .stylingId(styling.getId())
                 .mainItem(mainProductDetail)
@@ -231,9 +192,7 @@ public class StylingServiceImpl implements StylingService {
         Styling styling = stylingRepository.findById(stylingId).orElseThrow(
                 () -> new StylingException(StylingErrorCode.NOT_FOUND));
 
-        if (!styling.getMember().getId().equals(memberId)) {
-            throw new StylingException(StylingErrorCode.FORBIDDEN); // 소유권 검증
-        }
+        validateOwnership(styling, memberId);
 
         styling.confirmSave();
 
@@ -264,9 +223,7 @@ public class StylingServiceImpl implements StylingService {
         Styling styling = stylingRepository.findById(stylingId).orElseThrow(
                 () -> new StylingException(StylingErrorCode.NOT_FOUND));
 
-        if (!styling.getMember().getId().equals(memberId)) {
-            throw new StylingException(StylingErrorCode.FORBIDDEN);
-        }
+        validateOwnership(styling, memberId);
 
         if (styling.getLikeProduct() == null) {
             throw new LikeProductException(LikeProductErrorCode.NOT_FOUND);
@@ -300,19 +257,96 @@ public class StylingServiceImpl implements StylingService {
         Styling styling = stylingRepository.findById(stylingId).orElseThrow(
                 () -> new StylingException(StylingErrorCode.NOT_FOUND));
 
-        if (!styling.getMember().getId().equals(memberId)) {
-            throw new StylingException(StylingErrorCode.FORBIDDEN);
-        }
+        validateOwnership(styling, memberId);
 
         stylingRepository.delete(styling);
     }
 
-    private List<ProductCandidateProjection> findCandidatesExcluding(
-            List<LargeCategory> categories, List<Long> excludeIds, List<String> compatibleStyles) {
-        return categories.stream()
-                .flatMap(cat -> productRepository.findCandidates(
-                        List.of(cat), excludeIds, compatibleStyles, PageRequest.of(0, CANDIDATES_PER_CATEGORY)).stream())
+    private void validateOwnership(Styling styling, Long memberId) {
+        if (!styling.getMember().getId().equals(memberId)) {
+            throw new StylingException(StylingErrorCode.FORBIDDEN);
+        }
+    }
+
+    private AiInputItem buildAiInput(Product targetProduct) {
+        return new AiInputItem(
+                targetProduct.getMaterialVector() != null ? targetProduct.getMaterialVector() : List.of(),
+                targetProduct.getDominantColors(),
+                targetProduct.getStyle(),
+                toCategoryString(targetProduct.getLargeCategory())
+        );
+    }
+
+    private List<ProductCandidateProjection> findRecommendationCandidates(
+            Long memberId, Long targetProductId, Product targetProduct) {
+
+        List<LargeCategory> candidateCategories = CATEGORY_MAP.getOrDefault(
+                targetProduct.getLargeCategory(), List.of());
+        List<String> compatibleStyles = getCompatibleStyles(targetProduct.getStyle());
+
+        // (largeCategory, style) 단위로 캐싱된 후보 풀 — 제외 목록은 여기 안 걸고 아래서 메모리 필터링
+        List<ProductCandidateProjection> pool = getOrLoadCandidatePool(
+                targetProduct.getLargeCategory(), targetProduct.getStyle(), candidateCategories, compatibleStyles);
+
+        // 같은 상품으로 최근 N번 추천받은 상품들은 제외 → 재요청 시 다른 조합 노출
+        List<Long> recentStylingIds = stylingRepository.findRecentStylingIds(
+                memberId, targetProductId, PageRequest.of(0, RECENT_STYLING_LIMIT));
+        List<Long> previousIds = recentStylingIds.isEmpty()
+                ? List.of()
+                : stylingProductRepository.findProductIdsByStylingIds(recentStylingIds);
+
+        Set<Long> excludeIds = new HashSet<>(previousIds);
+        excludeIds.add(targetProductId);
+        List<ProductCandidateProjection> candidates = filterOut(pool, excludeIds);
+
+        // 제외 후 후보가 비는 카테고리가 생기면 이전 추천 제외를 풀고(타겟만 제외) 같은 풀에서 다시 필터링
+        if (!previousIds.isEmpty() && hasMissingCategory(candidates, candidateCategories)) {
+            logger.info("[스타일링] 후보 소진으로 이전 추천 제외 리셋 - 제외했던 상품 수: {}개", previousIds.size());
+            candidates = filterOut(pool, Set.of(targetProductId));
+        }
+
+        return candidates;
+    }
+
+    private List<ProductCandidateProjection> filterOut(List<ProductCandidateProjection> pool, Set<Long> excludeIds) {
+        return pool.stream()
+                .filter(p -> !excludeIds.contains(p.getId()))
                 .toList();
+    }
+
+    private Map<String, List<AiRecommendedItem>> requestAiRecommendation(
+            AiInputItem aiInput, List<ProductCandidateProjection> candidates) {
+
+        List<AiCandidateItem> candidateItems = candidates.stream()
+                .map(p -> new AiCandidateItem(
+                        p.getId(),
+                        toCategoryString(p.getLargeCategory()),
+                        p.getStyle(),
+                        p.getMaterialVectorJson(),
+                        p.getDominantColorsJson()))
+                .toList();
+
+        AiRecommendRequest aiRequest = new AiRecommendRequest(aiInput, candidateItems, 3, SCORE_THRESHOLD);
+        return aiStylingClient.recommend(aiRequest);
+    }
+
+    private List<ProductCandidateProjection> getOrLoadCandidatePool(
+            LargeCategory targetCategory, String targetStyle,
+            List<LargeCategory> candidateCategories, List<String> compatibleStyles) {
+
+        String cacheKey = candidatePoolCache.buildKey(targetCategory, targetStyle);
+        List<ProductCandidateProjection> cached = candidatePoolCache.get(cacheKey);
+        if (cached != null) {
+            return cached;
+        }
+
+        List<ProductCandidateProjection> pool = candidateCategories.stream()
+                .flatMap(cat -> productRepository.findCandidates(
+                        List.of(cat.name()), NO_EXCLUDE, compatibleStyles, CANDIDATES_PER_CATEGORY).stream())
+                .toList();
+
+        candidatePoolCache.put(cacheKey, pool);
+        return pool;
     }
 
     private static boolean hasMissingCategory(
@@ -329,14 +363,6 @@ public class StylingServiceImpl implements StylingService {
     }
 
     private static String toCategoryString(LargeCategory category) {
-        return switch (category) {
-            case TOP -> "top";
-            case BOTTOM -> "bottom";
-            case SHOES -> "shoes";
-            case OUTER -> "outer";
-            case BAG -> "bag";
-            case HAT -> "hat";
-            case DRESS -> "dress";
-        };
+        return category.name().toLowerCase();
     }
 }
